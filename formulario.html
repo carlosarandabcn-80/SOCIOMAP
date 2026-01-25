@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Formulario Sociométrico — SOCIOMAP</title>
 
+  <!-- LIBRERÍAS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
@@ -29,6 +30,8 @@
     h1{margin-bottom:6px;}
     p{margin-top:0;color:#cbd5e1;}
 
+    label{display:block;margin-top:12px;}
+
     input, select{
       width:100%;
       padding:8px;
@@ -39,10 +42,14 @@
 
     .checkbox-row{
       display:flex;
-      justify-content:center;
       align-items:center;
-      gap:8px;
-      margin-top:8px;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .checkbox-row input[type="text"]{
+      flex:1;
+      margin:0;
     }
 
     .btn{
@@ -59,7 +66,7 @@
     .btn-primary{
       background:#3b82f6;
       color:white;
-      margin-top:10px;
+      margin-top:12px;
     }
 
     .btn-primary:hover{background:#2563eb;}
@@ -105,7 +112,7 @@
     }
 
     .export-row{
-      display:flex;
+      display:none;
       justify-content:center;
       gap:12px;
       margin-top:18px;
@@ -140,30 +147,31 @@
   <p>Introduce la tabla sociométrica (3 elecciones + y 3 rechazos − por persona).</p>
 
   <label>Nombre del grupo</label>
-  <input id="grupo" type="text" />
+  <input id="grupo" type="text" placeholder="Ej.: Taller A1">
 
   <label>Número de participantes</label>
   <select id="num"></select>
 
+  <!-- CHECK + TEXTO + INPUT EN LA MISMA LÍNEA -->
   <div class="checkbox-row">
     <input type="checkbox" id="custom">
     <label for="custom">Usar nombres personalizados</label>
+    <input id="names" type="text" placeholder="Ana, Juan, Lucía..." style="display:none;">
   </div>
 
-  <input id="names" type="text" placeholder="Ana, Juan, Lucía..." style="display:none;" />
-
-  <!-- BOTÓN CREAR TABLA -->
+  <!-- CREAR TABLA -->
   <button class="btn btn-primary" onclick="crearTabla()">Crear tabla</button>
 
   <div id="tabla"></div>
 
-  <!-- BOTÓN CREAR RANKING -->
-  <div style="margin-top:18px;">
-    <button id="btnRanking" class="btn btn-disabled" disabled onclick="procesar()">Crear ranking</button>
-    <span id="infoText" style="font-size:13px;color:#94a3b8;margin-left:8px;">
-      Completa correctamente la tabla para habilitar
-    </span>
+  <!-- CREAR RANKING (NO VISIBLE AL INICIO) -->
+  <div id="rankingControl" style="margin-top:18px; display:none;">
+    <button class="btn btn-primary" onclick="procesar()">Crear ranking</button>
   </div>
+
+  <p id="infoText" style="font-size:13px;color:#94a3b8;margin-top:10px;">
+    Completa correctamente la tabla sociométrica para generar el ranking
+  </p>
 
   <!-- RANKING -->
   <div id="ranking" class="ranking-box"></div>
@@ -175,8 +183,8 @@
     <p style="font-size:13px;color:#64748b;">Pasa el cursor sobre las barras para explorar valores.</p>
   </div>
 
-  <!-- EXPORTACIÓN -->
-  <div class="export-row">
+  <!-- EXPORTACIÓN (OCULTA HASTA FINAL) -->
+  <div class="export-row" id="exportBtns">
     <button class="btn" onclick="exportar('tablaVotos','tabla_sociometrica')">Exportar tabla</button>
     <button class="btn" onclick="exportar('ranking','ranking_roles')">Exportar ranking</button>
     <button class="btn" onclick="exportarCanvas()">Exportar gráfico</button>
@@ -211,7 +219,7 @@ function crearTabla(){
   names.forEach((r,i)=>{
     h+=`<tr><th>${r}</th>`;
     names.forEach((_,j)=>{
-      h+=i===j?`<td></td>`:`<td><select class="cell" data-j="${j}">
+      h+=i===j?`<td></td>`:`<td><select class="cell">
       <option>0</option><option>+</option><option>-</option></select></td>`;
     });
     h+=`<td class="checkOK" id="c${i}"></td></tr>`;
@@ -219,7 +227,14 @@ function crearTabla(){
 
   h+=`</tbody></table>`;
   document.getElementById("tabla").innerHTML=h;
+
   document.querySelectorAll(".cell").forEach(c=>c.onchange=validar);
+
+  document.getElementById("rankingControl").style.display="none";
+  document.getElementById("ranking").style.display="none";
+  document.getElementById("graficoBox").style.display="none";
+  document.getElementById("exportBtns").style.display="none";
+  document.getElementById("infoText").style.display="block";
 }
 
 function validar(){
@@ -234,10 +249,8 @@ function validar(){
     if(p!==3||n!==3)ok=false;
   });
 
-  const btn=document.getElementById("btnRanking");
-  btn.disabled=!ok;
-  btn.classList.toggle("btn-disabled",!ok);
-  document.getElementById("infoText").style.display=ok?"none":"inline";
+  document.getElementById("rankingControl").style.display=ok?"block":"none";
+  document.getElementById("infoText").style.display=ok?"none":"block";
 }
 
 function determinarRol(p,n){
@@ -255,8 +268,8 @@ function procesar(){
 
   const stats=Object.fromEntries(labels.map(l=>[l,{p:0,n:0}]));
 
-  document.querySelectorAll(".cell").forEach(c=>{
-    const j=c.dataset.j;
+  document.querySelectorAll(".cell").forEach((c,i)=>{
+    const j=i%labels.length;
     if(c.value==="+")stats[labels[j]].p++;
     if(c.value==="-")stats[labels[j]].n++;
   });
@@ -274,7 +287,8 @@ function procesar(){
   res.forEach(r=>{
     html+=`<tr><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
   });
-  html+=`</table><p style="margin-top:10px;font-size:14px;">
+  html+=`</table>
+  <p style="margin-top:10px;font-size:14px;">
   <strong>Resumen:</strong> ${Object.entries(conteo).map(([k,v])=>`${v} ${k}`).join(" · ")}
   </p>`;
 
@@ -283,6 +297,7 @@ function procesar(){
   rank.style.display="block";
 
   crearGrafico(res);
+  document.getElementById("exportBtns").style.display="flex";
 }
 
 let chart;
