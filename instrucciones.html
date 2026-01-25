@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Instrucciones — SOCIOMAP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #0f172a, #0b1222);
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 24px 32px 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+
+    .logo-wrapper {
+      background: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      margin-bottom: 24px;
+      display: inline-block;
+    }
+
+    .logo-wrapper img {
+      width: 180px;
+      display: block;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    p {
+      font-size: 17px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    .buttons {
+      margin-top: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+
+    a.button {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: bold;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 12px;
+      text-decoration: none;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      min-width: 280px;
+      text-align: center;
+    }
+
+    a.button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    }
+
+    footer {
+      margin-top: 36px;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        margin: 20px;
+        padding: 24px;
+      }
+
+      a.button {
+        min-width: unset;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="logo-wrapper">
+      <img src="logo.png" alt="SOCIOLOGO">
+    </div>
+
+    <h1>Instrucciones para la aplicación del Sociograma</h1>
+    <p>
+      Descarga la plantilla, repártela al grupo para que la rellene de forma individual y confidencial, y recoge todas las respuestas.<br><br>
+      Después, pulsa <strong>Siguiente</strong> para acceder a la tabla sociométrica e introducir los resultados.
+    </p>
+
+    <div class="buttons">
+      <a href="SOCIOMAP_Votacion_Afinidad.pdf" download class="button">Descargar plantilla de votación</a>
+      <a href="formulario.html" class="button">Siguiente</a>
+    </div>
+
+    <footer>
+      &copy; SOCIOMAP - ARANDA TOOLS <span id="year"></span>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
