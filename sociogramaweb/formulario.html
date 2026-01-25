@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Formulario Sociométrico — SOCIOMAP</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: rgba(255,255,255,0.05);
+      padding: 32px;
+      border-radius: 16px;
+    }
+    img.logo {
+      height: 72px;
+      background: white;
+      border-radius: 12px;
+      padding: 4px 12px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .btn {
+      padding: 10px 20px;
+      margin: 12px;
+      border-radius: 8px;
+      border: none;
+      background: #e2e8f0;
+      color: #0f172a;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #cbd5e1;
+    }
+    .btn-large {
+      padding: 16px 32px;
+      margin-top: 12px;
+      font-size: 18px;
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-large:hover {
+      background: #2563eb;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #475569;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background: #1e293b;
+    }
+    .checkOK {
+      color: #22c55e;
+      font-weight: bold;
+    }
+    .roles-table {
+      background: white;
+      color: black;
+      border-radius: 8px;
+      margin-top: 20px;
+      padding: 20px;
+    }
+    .roles-table table {
+      width: 100%;
+    }
+    .rol-lider { background: #dcfce7; }
+    .rol-rechazado { background: #fee2e2; }
+    .rol-aislado { background: #e5e7eb; }
+    .rol-ambivalente { background: #fef9c3; }
+    .rol-integrado { background: #dbeafe; }
+    footer {
+      margin-top: 20px;
+      color: #94a3b8;
+    }
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <img src="logo.png" class="logo" alt="Logo SOCIOMAP" />
+  <h1>Formulario Sociométrico</h1>
+  <p>Completa la tabla con + / − / 0.<br>Cada fila debe tener <strong>3 +</strong> y <strong>3 −</strong>.</p>
+
+  <label for="grupo">Nombre del grupo:</label>
+  <input type="text" id="grupo" placeholder="Ej: 3ºA, Equipo Verde..."/>
+
+  <label for="num-participantes">Número de participantes:</label>
+  <select id="num-participantes">
+    <option value="">-- Elige --</option>
+  </select>
+
+  <div>
+    <label>
+      <input type="checkbox" id="personalizados" />
+      Usar nombres personalizados
+    </label>
+    <div id="campoNombres" style="display:none;">
+      <label for="nombres">Nombres personalizados (coma):</label>
+      <input type="text" id="nombres" placeholder="Ana, Juan, Pedro, Lucia..."/>
+    </div>
+  </div>
+
+  <button class="btn" onclick="generarTabla()">Crear Tabla</button>
+
+  <div id="tabla-container"></div>
+
+  <button class="btn btn-large" id="btnContinuar" onclick="procesar()" disabled>CREAR RANKING</button>
+
+  <div class="button-row">
+    <button class="btn" onclick="exportarTabla()">Exportar Tabla a PNG</button>
+    <button class="btn" onclick="exportarRanking()">Exportar Ranking a PNG</button>
+  </div>
+
+  <button class="btn btn-large" onclick="window.location.href='Sociograma_web.html'">CREAR SOCIOGRAMA</button>
+
+  <div id="rankingBox"></div>
+</div>
+
+<footer>
+  © SOCIOMAP - ARANDA TOOLS <span id="year"></span>
+</footer>
+
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+
+const sel = document.getElementById("num-participantes");
+const chkPersonalizados = document.getElementById("personalizados");
+const campoNombres = document.getElementById("campoNombres");
+const inputNombres = document.getElementById("nombres");
+
+// Cargar participantes
+for (let i = 7; i <= 40; i++) {
+  sel.innerHTML += `<option value="${i}">${i}</option>`;
+}
+
+sel.onchange = () => {
+  const v = parseInt(sel.value);
+  if (!v) return;
+  const arr = Array.from({length:v}, (_,i) => "P" + (i+1));
+  if (chkPersonalizados.checked) {
+    inputNombres.value = "";
+    inputNombres.disabled = false;
+    campoNombres.style.display = "block";
+  } else {
+    inputNombres.value = arr.join(", ");
+    inputNombres.disabled = true;
+    campoNombres.style.display = "none";
+  }
+};
+
+chkPersonalizados.onchange = () => {
+  sel.onchange();
+};
+
+// Bloqueo retroceso
+history.pushState(null, null, location.href);
+window.onpopstate = () => { history.go(1); };
+
+function generarTabla() {
+  const nombres = document.getElementById("nombres").value
+    .split(",").map(x => x.trim()).filter(x => x);
+  if (nombres.length < 2) {
+    alert("Debes ingresar al menos 2 nombres.");
+    return;
+  }
+
+  let html = `<table id="tablaVotos"><thead><tr><th>De\\A</th>`;
+  nombres.forEach(n => html += `<th>${n}</th>`);
+  html += `<th>✔</th></tr></thead><tbody>`;
+
+  nombres.forEach((from,i) => {
+    html += `<tr><th>${from}</th>`;
+    nombres.forEach((to,j) => {
+      if (i===j) html += `<td style="background:#1e293b;"></td>`;
+      else html += `<td><select class="cell" data-i="${i}" data-j="${j}">
+        <option value="0">0</option><option value="+">+</option><option value="-">-</option>
+      </select></td>`;
+    });
+    html += `<td class="checkOK" id="check-${i}"></td></tr>`;
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById("tabla-container").innerHTML = html;
+  document.querySelectorAll(".cell").forEach(el => el.onchange = validarFilas);
+  document.getElementById("btnContinuar").disabled = true;
+}
+
+function validarFilas() {
+  const rows = document.querySelectorAll("#tablaVotos tbody tr");
+  let todasOK = true;
+
+  rows.forEach((tr,i) => {
+    const selects = tr.querySelectorAll("select.cell");
+    let countPos=0, countNeg=0;
+    selects.forEach(s => {
+      if (s.value === "+") countPos++;
+      if (s.value === "-") countNeg++;
+    });
+    const checkCell = document.getElementById(`check-${i}`);
+    if (countPos===3 && countNeg===3) {
+      checkCell.textContent = "✔";
+    } else {
+      checkCell.textContent = "";
+      todasOK = false;
+    }
+  });
+
+  document.getElementById("btnContinuar").disabled = !todasOK;
+}
+
+function procesar() {
+  const selects = document.querySelectorAll(".cell");
+  const n = document.querySelectorAll("#tablaVotos thead th").length - 2;
+  const matrix = Array.from({length:n},()=>Array(n).fill("0"));
+
+  selects.forEach(sel => {
+    const i = +sel.dataset.i;
+    const j = +sel.dataset.j;
+    matrix[i][j] = sel.value;
+  });
+
+  const labels = [];
+  document.querySelectorAll("#tablaVotos thead th").forEach((th,i) => {
+    if (i>0 && i <= n) labels.push(th.textContent);
+  });
+
+  const grupo = document.getElementById("grupo").value.trim();
+  sessionStorage.setItem("socio_grupo", grupo);
+  sessionStorage.setItem("socio_labels", JSON.stringify(labels));
+  sessionStorage.setItem("socio_matrix", JSON.stringify(matrix));
+
+  mostrarRanking(labels, matrix);
+}
+
+function mostrarRanking(labels, matrix) {
+  const stats = {};
+  labels.forEach(l => stats[l] = {pos:0, neg:0});
+
+  matrix.forEach((row,i) => {
+    row.forEach((val,j) => {
+      if (val === "+") stats[labels[j]].pos++;
+      if (val === "-") stats[labels[j]].neg++;
+    });
+  });
+
+  const resultados = labels.map(name => {
+    const p = stats[name].pos;
+    const n = stats[name].neg;
+    return {
+      name,
+      pos: p,
+      neg: n,
+      rol: determinarRol(p, n)
+    };
+  }).sort((a,b) => b.pos - a.pos);
+
+  let html = `<div class="roles-table" id="rankingBoxInner"><h3>Ranking y Roles Sociométricos</h3><table><tr><th>Nombre</th><th>+ Positivos</th><th>− Negativos</th><th>Rol</th></tr>`;
+  resultados.forEach(r => {
+    const css = "rol-" + r.rol.toLowerCase();
+    html += `<tr class="${css}"><td>${r.name}</td><td>${r.pos}</td><td>${r.neg}</td><td>${r.rol}</td></tr>`;
+  });
+  html += `</table></div>`;
+  document.getElementById("rankingBox").innerHTML = html;
+}
+
+function determinarRol(pos, neg) {
+  if (pos >= 3 && neg === 0) return "Lider";
+  if (neg >= 3 && pos === 0) return "Rechazado";
+  if (pos === 0 && neg === 0) return "Aislado";
+  if (pos > 0 && neg > 0) return "Ambivalente";
+  if (pos >= 2 && neg < 2) return "Integrado";
+  return "Aislado";
+}
+
+function exportarTabla() {
+  html2canvas(document.getElementById("tablaVotos")).then(canvas => {
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL();
+    a.download = "tabla_sociometrica.png";
+    a.click();
+  });
+}
+
+function exportarRanking() {
+  html2canvas(document.getElementById("rankingBoxInner")).then(canvas => {
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL();
+    a.download = "ranking_sociometrico.png";
+    a.click();
+  });
+}
+</script>
+</body>
+</html>
