@@ -137,6 +137,13 @@
       padding:4px 12px;
       margin-top:12px;
     }
+
+    /* 🎨 COLORES POR ROL */
+    .fila-lider { background-color: #22c55e20; }
+    .fila-rechazado { background-color: #ef444420; }
+    .fila-aislado { background-color: #94a3b820; }
+    .fila-ambivalente { background-color: #eab30820; }
+    .fila-integrado { background-color: #3b82f620; }
   </style>
 </head>
 
@@ -152,7 +159,6 @@
   <label>Número de participantes</label>
   <select id="num"></select>
 
-  <!-- CHECK + TEXTO + INPUT EN LA MISMA LÍNEA -->
   <div class="checkbox-row">
     <input type="checkbox" id="custom">
     <label for="custom">Usar nombres personalizados</label>
@@ -164,7 +170,7 @@
 
   <div id="tabla"></div>
 
-  <!-- CREAR RANKING (NO VISIBLE AL INICIO) -->
+  <!-- CREAR RANKING -->
   <div id="rankingControl" style="margin-top:18px; display:none;">
     <button class="btn btn-primary" onclick="procesar()">Crear ranking</button>
   </div>
@@ -183,12 +189,17 @@
     <p style="font-size:13px;color:#64748b;">Pasa el cursor sobre las barras para explorar valores.</p>
   </div>
 
-  <!-- EXPORTACIÓN (OCULTA HASTA FINAL) -->
+  <!-- EXPORTAR -->
   <div class="export-row" id="exportBtns">
     <button class="btn" onclick="exportar('tablaVotos','tabla_sociometrica')">Exportar tabla</button>
     <button class="btn" onclick="exportar('ranking','ranking_roles')">Exportar ranking</button>
     <button class="btn" onclick="exportarCanvas()">Exportar gráfico</button>
   </div>
+
+  <!-- NUEVO BOTÓN: SOCIOGRAMA -->
+  <button onclick="window.location.href='Sociograma_web.html'" class="btn btn-primary" style="margin-top:24px;font-size:16px;padding:12px 22px;border-radius:10px;">
+    ➕ Crear Sociograma
+  </button>
 
   <img src="logo.png" class="logo" alt="SOCIOMAP">
   <footer>© SOCIOMAP · Aranda Tools</footer>
@@ -285,7 +296,15 @@ function procesar(){
   let html=`<h3>Ranking y roles sociométricos</h3>
   <table><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
   res.forEach(r=>{
-    html+=`<tr><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
+    let clase = '';
+    switch(r.rol){
+      case "Líder": clase = "fila-lider"; break;
+      case "Rechazado": clase = "fila-rechazado"; break;
+      case "Aislado": clase = "fila-aislado"; break;
+      case "Ambivalente": clase = "fila-ambivalente"; break;
+      case "Integrado": clase = "fila-integrado"; break;
+    }
+    html += `<tr class="${clase}"><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
   });
   html+=`</table>
   <p style="margin-top:10px;font-size:14px;">
@@ -339,3 +358,5 @@ function exportarCanvas(){
 </script>
 </body>
 </html>
+
+
