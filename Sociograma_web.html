@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Sociograma — SOCIOMAP</title>
-
-  <!-- LIBRERÍA D3 -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
 
   <style>
@@ -13,12 +11,12 @@
       color: #fff;
       font-family: Arial, sans-serif;
       padding: 32px;
-      text-align: center;
+      margin: 0;
     }
 
     h1 {
       font-size: 36px;
-      color: white;
+      text-align: center;
       margin-bottom: 10px;
     }
 
@@ -68,21 +66,28 @@
       border-radius: 50%;
     }
 
-    .tag {
-      font-size: 12px;
-      background: rgba(0,0,0,0.6);
-      padding: 3px 6px;
-      border-radius: 6px;
-      fill: #fff;
-      pointer-events: none;
-    }
-
     footer {
       margin-top: 40px;
+      text-align: center;
     }
 
     .footer-logo {
       height: 80px;
+    }
+
+    .votos-label {
+      font-size: 12px;
+      fill: #ffffff;
+      text-anchor: middle;
+      dy: 24px;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .nombre-nodo {
+      font-size: 14px;
+      fill: #ffffff;
+      text-anchor: middle;
+      dy: -8px;
     }
   </style>
 </head>
@@ -92,9 +97,8 @@
   <h1>Sociograma Interactivo</h1>
   <div class="grupo-info" id="grupo-info"></div>
 
-  <!-- SOCIOGRAMA D3 -->
   <div id="sociograma"></div>
-  <p style="font-size:15px; color:#a5f3fc;">💡 Puedes reorganizar los nodos manualmente para una mejor visualización.</p>
+  <p style="font-size:15px; color:#a5f3fc; text-align: center;">💡 Puedes reorganizar los nodos manualmente para una mejor visualización.</p>
 
   <div class="leyenda">
     <p><strong>Leyenda del Sociograma:</strong></p>
@@ -110,96 +114,101 @@
     <p>Gracias por usar Sociomap 💙</p>
   </footer>
 
-<script>
-  history.pushState(null, null, location.href);
-  window.onpopstate = () => history.go(1);
+  <script>
+    history.pushState(null, null, location.href);
+    window.onpopstate = () => history.go(1);
 
-  const labels = JSON.parse(sessionStorage.getItem("socio_labels") || "[]");
-  const matrix = JSON.parse(sessionStorage.getItem("socio_matrix") || "[]");
-  const grupo = sessionStorage.getItem("socio_grupo") || "SIN NOMBRE";
+    const labels = JSON.parse(sessionStorage.getItem("socio_labels") || "[]");
+    const matrix = JSON.parse(sessionStorage.getItem("socio_matrix") || "[]");
+    const grupo = sessionStorage.getItem("socio_grupo") || "SIN NOMBRE";
 
-  const fechaObj = new Date();
-  const fechaFormateada = fechaObj.toLocaleDateString("es-ES", { year:'numeric', month:'long', day:'numeric' });
+    const fechaObj = new Date();
+    const fechaFormateada = fechaObj.toLocaleDateString("es-ES", {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
 
-  document.getElementById("grupo-info").innerHTML = `
-    <span>Grupo: ${grupo}</span>
-    Fecha de análisis: ${fechaFormateada}
-  `;
+    document.getElementById("grupo-info").innerHTML = `
+      <span>Grupo: ${grupo}</span>
+      Fecha de análisis: ${fechaFormateada}
+    `;
 
-  const width = 1200, height = 800;
-  const nodes = labels.map((name, i) => {
-    let p=0, n=0;
-    matrix.forEach(row => { if(row[i]==="+") p++; if(row[i]==="-") n++; });
-    return {id:i, name, votosPos:p, votosNeg:n};
-  });
+    const width = 1200, height = 800;
 
-  const liderIndex = nodes.reduce((a,c,i,arr) => c.votosPos > arr[a].votosPos ? i : a, 0);
+    const nodes = labels.map((name, i) => {
+      let p = 0, n = 0;
+      matrix.forEach(row => {
+        if (row[i] === "+") p++;
+        if (row[i] === "-") n++;
+      });
+      return { id: i, name, votosPos: p, votosNeg: n };
+    });
 
-  const links = [];
-  matrix.forEach((row,i)=> row.forEach((v,j) => {
-    if(v==="+"||v==="-") links.push({source:i, target:j, type:v});
-  }));
+    const liderIndex = nodes.reduce((a, c, i, arr) =>
+      c.votosPos > arr[a].votosPos ? i : a, 0
+    );
 
-  const svg = d3.select("#sociograma").append("svg")
-    .attr("width", width).attr("height", height);
+    const links = [];
+    matrix.forEach((row, i) => row.forEach((v, j) => {
+      if (v === "+" || v === "-") links.push({ source: i, target: j, type: v });
+    }));
 
-  const sim = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d=>d.id).distance(150))
-    .force("charge", d3.forceManyBody().strength(-350))
-    .force("center", d3.forceCenter(width/2, height/2));
+    const svg = d3.select("#sociograma").append("svg")
+      .attr("width", width)
+      .attr("height", height);
 
-  const linkElems = svg.append("g").selectAll("line")
-    .data(links).enter().append("line")
-    .attr("stroke", d=> d.type==="+" ? "#22c55e" : "#ef4444")
-    .attr("stroke-width", 2);
+    const sim = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+      .force("charge", d3.forceManyBody().strength(-350))
+      .force("center", d3.forceCenter(width / 2, height / 2));
 
-  const nodeElems = svg.append("g").selectAll("g")
-    .data(nodes).enter().append("g")
+    const linkElems = svg.append("g").selectAll("line")
+      .data(links).enter().append("line")
+      .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+      .attr("stroke-width", 2);
+
+    const nodeElems = svg.append("g").selectAll("g")
+      .data(nodes).enter().append("g")
       .call(d3.drag().on("start", dragStart).on("drag", drag).on("end", dragEnd));
 
-  nodeElems.append("circle")
-    .attr("r", d=> 30 + d.votosPos * 3)
-    .attr("fill", d=> d.id === liderIndex ? "#facc15" : "#0ea5e9");
+    nodeElems.append("circle")
+      .attr("r", d => 30 + d.votosPos * 3)
+      .attr("fill", d => d.id === liderIndex ? "#facc15" : "#0ea5e9");
 
-  nodeElems.append("text")
-    .text(d => d.name)
-    .attr("font-size", "14px")
-    .attr("fill", "#fff")
-    .attr("text-anchor", "middle")
-    .attr("dy", -8);
+    nodeElems.append("text")
+      .attr("class", "nombre-nodo")
+      .text(d => d.name);
 
-  nodeElems.append("text")
-    .text(d => `+${d.votosPos} / -${d.votosNeg}`)
-    .attr("class", "tag")
-    .attr("text-anchor", "middle")
-    .attr("dy", 20);
+    nodeElems.append("text")
+      .attr("class", "votos-label")
+      .text(d => `+${d.votosPos} / -${d.votosNeg}`);
 
-  sim.on("tick", () => {
-    linkElems
-      .attr("x1", d=>d.source.x)
-      .attr("y1", d=>d.source.y)
-      .attr("x2", d=>d.target.x)
-      .attr("y2", d=>d.target.y);
+    sim.on("tick", () => {
+      linkElems
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
 
-    nodeElems.attr("transform", d=>`translate(${d.x},${d.y})`);
-  });
+      nodeElems.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
 
-  function dragStart(event,d){
-    if (!event.active) sim.alphaTarget(0.3).restart();
-    d.fx = d.x; d.fy = d.y;
-  }
+    function dragStart(event, d) {
+      if (!event.active) sim.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
 
-  function drag(event,d){
-    d.fx = event.x; d.fy = event.y;
-  }
+    function drag(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
 
-  function dragEnd(event,d){
-    if (!event.active) sim.alphaTarget(0);
-    d.fx = null; d.fy = null;
-  }
-</script>
+    function dragEnd(event, d) {
+      if (!event.active) sim.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+  </script>
 
 </body>
 </html>
-
-
