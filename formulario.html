@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Formulario Sociométrico — SOCIOMAP</title>
 
   <!-- LIBRERÍAS -->
@@ -38,11 +38,16 @@
       margin:6px 0;
       border-radius:8px;
       font-size:14px;
+      box-sizing:border-box;
     }
 
+    /* CHECKBOX BIEN HECHO */
     .checkbox-row{
-      margin-top:10px;
-      text-align:left;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+      margin-top:12px;
     }
 
     .btn{
@@ -110,26 +115,26 @@
       padding:7px 14px;
     }
 
-    footer{
-      margin-top:14px;
-      color:#94a3b8;
-      font-size:14px;
-    }
-
     img.logo{
       height:64px;
       background:white;
       border-radius:12px;
       padding:4px 12px;
-      margin-top:12px;
+      margin-top:16px;
+    }
+
+    footer{
+      margin-top:10px;
+      color:#94a3b8;
+      font-size:14px;
     }
 
     /* COLORES POR ROL */
-    .fila-lider { background-color: #22c55e20; }
-    .fila-rechazado { background-color: #ef444420; }
-    .fila-aislado { background-color: #94a3b820; }
-    .fila-ambivalente { background-color: #eab30820; }
-    .fila-integrado { background-color: #3b82f620; }
+    .fila-lider { background:#22c55e20; }
+    .fila-rechazado { background:#ef444420; }
+    .fila-aislado { background:#94a3b820; }
+    .fila-ambivalente { background:#eab30820; }
+    .fila-integrado { background:#3b82f620; }
   </style>
 </head>
 
@@ -145,15 +150,13 @@
   <label>Número de participantes</label>
   <select id="num"></select>
 
-  <!-- CHECKBOX CON TEXTO CLARO -->
+  <!-- CHECKBOX + TEXTO JUNTOS -->
   <div class="checkbox-row">
-    <label style="display:flex;align-items:center;gap:10px;">
-      <input type="checkbox" id="custom">
-      Usar nombres personalizados
-    </label>
+    <input type="checkbox" id="custom">
+    <label for="custom" style="margin:0;">Usar nombres personalizados</label>
   </div>
 
-  <!-- INPUT NOMBRES (DEBAJO) -->
+  <!-- INPUT NOMBRES DEBAJO -->
   <input id="names" type="text" placeholder="Ana, Juan, Lucía..." style="display:none;margin-top:8px;">
 
   <!-- CREAR TABLA -->
@@ -162,7 +165,7 @@
   <div id="tabla"></div>
 
   <!-- CREAR RANKING -->
-  <div id="rankingControl" style="margin-top:18px; display:none;">
+  <div id="rankingControl" style="margin-top:18px;display:none;">
     <button class="btn btn-primary" onclick="procesar()">Crear ranking</button>
   </div>
 
@@ -180,7 +183,7 @@
     <p style="font-size:13px;color:#64748b;">Pasa el cursor sobre las barras para explorar valores.</p>
   </div>
 
-  <!-- EXPORTACIÓN -->
+  <!-- EXPORTAR -->
   <div class="export-row" id="exportBtns">
     <button class="btn" onclick="exportar('tablaVotos','tabla_sociometrica')">Exportar tabla</button>
     <button class="btn" onclick="exportar('ranking','ranking_roles')">Exportar ranking</button>
@@ -214,7 +217,7 @@ function crearTabla(){
     ?document.getElementById("names").value.split(",").map(x=>x.trim())
     :Array.from({length:n},(_,i)=>"P"+(i+1));
 
-  if(names.length!==+n)return alert("Número de nombres incorrecto");
+  if(names.length!==+n){alert("Número de nombres incorrecto");return;}
 
   let h=`<table id="tablaVotos"><thead><tr><th>De\\A</th>`;
   names.forEach(x=>h+=`<th>${x}</th>`);
@@ -267,9 +270,7 @@ function determinarRol(p,n){
 }
 
 function procesar(){
-  const labels=[...document.querySelectorAll("#tablaVotos thead th")]
-    .slice(1,-1).map(th=>th.textContent);
-
+  const labels=[...document.querySelectorAll("#tablaVotos thead th")].slice(1,-1).map(th=>th.textContent);
   const stats=Object.fromEntries(labels.map(l=>[l,{p:0,n:0}]));
 
   document.querySelectorAll(".cell").forEach((c,i)=>{
@@ -283,26 +284,16 @@ function procesar(){
     return{l,p,n,rol:determinarRol(p,n)};
   }).sort((a,b)=>b.p-a.p);
 
-  const conteo={};
-  res.forEach(r=>conteo[r.rol]=(conteo[r.rol]||0)+1);
-
   let html=`<h3>Ranking y roles sociométricos</h3>
   <table><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
+
   res.forEach(r=>{
-    let clase='';
-    if(r.rol==="Líder")clase="fila-lider";
-    if(r.rol==="Rechazado")clase="fila-rechazado";
-    if(r.rol==="Aislado")clase="fila-aislado";
-    if(r.rol==="Ambivalente")clase="fila-ambivalente";
-    if(r.rol==="Integrado")clase="fila-integrado";
-    html+=`<tr class="${clase}"><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
+    html+=`<tr class="fila-${r.rol.toLowerCase()}">
+      <td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td>
+    </tr>`;
   });
 
-  html+=`</table>
-  <p style="margin-top:10px;font-size:14px;">
-  <strong>Resumen:</strong> ${Object.entries(conteo).map(([k,v])=>`${v} ${k}`).join(" · ")}
-  </p>`;
-
+  html+=`</table>`;
   const rank=document.getElementById("ranking");
   rank.innerHTML=html;
   rank.style.display="block";
@@ -324,10 +315,6 @@ function crearGrafico(res){
         {label:"Votos +",data:res.map(r=>r.p),backgroundColor:"#22c55e"},
         {label:"Votos -",data:res.map(r=>-r.n),backgroundColor:"#ef4444"}
       ]
-    },
-    options:{
-      plugins:{tooltip:{callbacks:{label:c=>Math.abs(c.parsed.y)}}},
-      scales:{y:{ticks:{callback:v=>Math.abs(v)}}}
     }
   });
 }
