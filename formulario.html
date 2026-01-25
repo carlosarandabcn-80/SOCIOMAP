@@ -9,133 +9,126 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    body {
-      background: #0f172a;
-      color: #e2e8f0;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
+    body{
+      background:#0f172a;
+      color:#e2e8f0;
+      font-family:Arial, sans-serif;
+      margin:0;
+      padding:20px;
+      text-align:center;
     }
 
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 28px;
-      border-radius: 14px;
-      animation: fadeIn 0.8s ease;
+    .container{
+      max-width:1000px;
+      margin:auto;
+      background:rgba(255,255,255,0.05);
+      padding:28px;
+      border-radius:14px;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    h1{margin-bottom:6px;}
+    p{margin-top:0;color:#cbd5e1;}
+
+    input, select{
+      width:100%;
+      padding:8px;
+      margin:6px 0;
+      border-radius:8px;
+      font-size:14px;
     }
 
-    input, select {
-      width: 100%;
-      padding: 8px;
-      margin: 6px 0;
-      border-radius: 8px;
-      font-size: 14px;
+    .checkbox-row{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+      margin-top:8px;
     }
 
-    .btn {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: none;
-      background: #e2e8f0;
-      color: #0f172a;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all .25s ease;
-      font-size: 14px;
+    .btn{
+      padding:8px 14px;
+      border-radius:8px;
+      border:none;
+      background:#e2e8f0;
+      color:#0f172a;
+      font-weight:bold;
+      cursor:pointer;
+      font-size:14px;
     }
 
-    .btn:hover {
-      background: #cbd5e1;
-      transform: translateY(-1px);
+    .btn-primary{
+      background:#3b82f6;
+      color:white;
+      margin-top:10px;
     }
 
-    .btn-primary {
-      background: #3b82f6;
-      color: white;
-      margin-top: 12px;
+    .btn-primary:hover{background:#2563eb;}
+
+    .btn-disabled{
+      background:#475569;
+      color:#cbd5e1;
+      cursor:not-allowed;
+      opacity:.6;
     }
 
-    .btn-primary:hover {
-      background: #2563eb;
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:20px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+    th,td{
+      border:1px solid #475569;
+      padding:6px;
+      text-align:center;
     }
 
-    th, td {
-      border: 1px solid #475569;
-      padding: 6px;
-      text-align: center;
+    th{background:#1e293b;}
+
+    .checkOK{color:#22c55e;font-weight:bold;}
+
+    .ranking-box{
+      margin-top:24px;
+      background:white;
+      color:black;
+      border-radius:12px;
+      padding:16px;
+      display:none;
     }
 
-    th {
-      background: #1e293b;
+    .grafico-box{
+      background:white;
+      padding:18px;
+      border-radius:12px;
+      margin-top:22px;
+      display:none;
     }
 
-    .checkOK {
-      color: #22c55e;
-      font-weight: bold;
+    .export-row{
+      display:flex;
+      justify-content:center;
+      gap:12px;
+      margin-top:18px;
+      flex-wrap:wrap;
     }
 
-    .grafico-box {
-      background: white;
-      padding: 18px;
-      border-radius: 12px;
-      margin-top: 22px;
-      display: none;
+    .export-row .btn{
+      font-size:13px;
+      padding:7px 14px;
     }
 
-    .grafico-box h3 {
-      color: #0f172a;
-      font-size: 16px;
-      margin-bottom: 6px;
+    footer{
+      margin-top:14px;
+      color:#94a3b8;
+      font-size:14px;
     }
 
-    .grafico-box p {
-      color: #64748b;
-      font-size: 13px;
-    }
-
-    .export-row {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 18px;
-      flex-wrap: wrap;
-    }
-
-    .export-row .btn {
-      font-size: 13px;
-      padding: 7px 14px;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    footer {
-      margin-top: 14px;
-      color: #94a3b8;
-      font-size: 14px;
-    }
-
-    img.logo {
-      height: 64px;
-      background: white;
-      border-radius: 12px;
-      padding: 4px 12px;
-      margin-top: 12px;
+    img.logo{
+      height:64px;
+      background:white;
+      border-radius:12px;
+      padding:4px 12px;
+      margin-top:12px;
     }
   </style>
 </head>
@@ -147,28 +140,39 @@
   <p>Introduce la tabla sociométrica (3 elecciones + y 3 rechazos − por persona).</p>
 
   <label>Nombre del grupo</label>
-  <input id="grupo" type="text" placeholder="Ej.: Taller A1" />
+  <input id="grupo" type="text" />
 
   <label>Número de participantes</label>
   <select id="num"></select>
 
-  <label><input type="checkbox" id="custom"> Usar nombres personalizados</label>
+  <div class="checkbox-row">
+    <input type="checkbox" id="custom">
+    <label for="custom">Usar nombres personalizados</label>
+  </div>
+
   <input id="names" type="text" placeholder="Ana, Juan, Lucía..." style="display:none;" />
 
-  <!-- BOTÓN MOVIDO ABAJO -->
-  <button class="btn btn-primary" id="btnTabla" onclick="crearTabla()">Crear tabla</button>
+  <!-- BOTÓN CREAR TABLA -->
+  <button class="btn btn-primary" onclick="crearTabla()">Crear tabla</button>
 
   <div id="tabla"></div>
 
-  <!-- RANKING y GRAFICO OCULTOS POR DEFECTO -->
-  <button class="btn btn-primary hidden" id="btnRanking" onclick="procesar()">Crear ranking</button>
+  <!-- BOTÓN CREAR RANKING -->
+  <div style="margin-top:18px;">
+    <button id="btnRanking" class="btn btn-disabled" disabled onclick="procesar()">Crear ranking</button>
+    <span id="infoText" style="font-size:13px;color:#94a3b8;margin-left:8px;">
+      Completa correctamente la tabla para habilitar
+    </span>
+  </div>
 
-  <div id="ranking" class="hidden"></div>
+  <!-- RANKING -->
+  <div id="ranking" class="ranking-box"></div>
 
+  <!-- GRÁFICO -->
   <div class="grafico-box" id="graficoBox">
     <h3>📊 Gráfico de barras sociométrico (interactivo)</h3>
     <canvas id="chart"></canvas>
-    <p>💡 Pasa el cursor sobre las barras para ver los votos.</p>
+    <p style="font-size:13px;color:#64748b;">Pasa el cursor sobre las barras para explorar valores.</p>
   </div>
 
   <!-- EXPORTACIÓN -->
@@ -178,153 +182,143 @@
     <button class="btn" onclick="exportarCanvas()">Exportar gráfico</button>
   </div>
 
-  <img src="logo.png" class="logo" alt="SOCIOMAP" />
+  <img src="logo.png" class="logo" alt="SOCIOMAP">
   <footer>© SOCIOMAP · Aranda Tools</footer>
+
 </div>
 
 <script>
-const num = document.getElementById("num");
-for (let i = 7; i <= 40; i++) num.innerHTML += `<option>${i}</option>`;
+const num=document.getElementById("num");
+for(let i=7;i<=40;i++)num.innerHTML+=`<option>${i}</option>`;
 
-document.getElementById("custom").onchange = e => {
-  document.getElementById("names").style.display = e.target.checked ? "block" : "none";
+document.getElementById("custom").onchange=e=>{
+  document.getElementById("names").style.display=e.target.checked?"block":"none";
 };
 
-function crearTabla() {
-  const n = num.value;
-  const custom = document.getElementById("custom").checked;
-  let names = custom
-    ? document.getElementById("names").value.split(",").map(x => x.trim())
-    : Array.from({ length: n }, (_, i) => "P" + (i + 1));
+function crearTabla(){
+  const n=num.value;
+  const custom=document.getElementById("custom").checked;
+  let names=custom
+    ?document.getElementById("names").value.split(",").map(x=>x.trim())
+    :Array.from({length:n},(_,i)=>"P"+(i+1));
 
-  if (names.length !== +n) return alert("Número de nombres incorrecto");
+  if(names.length!==+n)return alert("Número de nombres incorrecto");
 
-  let h = `<table id="tablaVotos"><thead><tr><th>De\\A</th>`;
-  names.forEach(x => h += `<th>${x}</th>`);
-  h += `<th>✔</th></tr></thead><tbody>`;
+  let h=`<table id="tablaVotos"><thead><tr><th>De\\A</th>`;
+  names.forEach(x=>h+=`<th>${x}</th>`);
+  h+=`<th>✔</th></tr></thead><tbody>`;
 
-  names.forEach((r, i) => {
-    h += `<tr><th>${r}</th>`;
-    names.forEach((_, j) => {
-      h += i === j ? `<td></td>` : `<td><select class="cell" data-i="${i}" data-j="${j}">
+  names.forEach((r,i)=>{
+    h+=`<tr><th>${r}</th>`;
+    names.forEach((_,j)=>{
+      h+=i===j?`<td></td>`:`<td><select class="cell" data-j="${j}">
       <option>0</option><option>+</option><option>-</option></select></td>`;
     });
-    h += `<td class="checkOK" id="c${i}"></td></tr>`;
+    h+=`<td class="checkOK" id="c${i}"></td></tr>`;
   });
 
-  h += `</tbody></table>`;
-  document.getElementById("tabla").innerHTML = h;
-
-  document.querySelectorAll(".cell").forEach(c => c.onchange = validar);
-
-  document.getElementById("btnRanking").classList.add("hidden");
-  document.getElementById("ranking").classList.add("hidden");
-  document.getElementById("graficoBox").style.display = "none";
+  h+=`</tbody></table>`;
+  document.getElementById("tabla").innerHTML=h;
+  document.querySelectorAll(".cell").forEach(c=>c.onchange=validar);
 }
 
-function validar() {
-  let ok = true;
-  document.querySelectorAll("#tablaVotos tbody tr").forEach((tr, i) => {
-    let p = 0, n = 0;
-    tr.querySelectorAll("select").forEach(s => {
-      if (s.value === "+") p++;
-      if (s.value === "-") n++;
+function validar(){
+  let ok=true;
+  document.querySelectorAll("#tablaVotos tbody tr").forEach((tr,i)=>{
+    let p=0,n=0;
+    tr.querySelectorAll("select").forEach(s=>{
+      if(s.value==="+")p++;
+      if(s.value==="-")n++;
     });
-    document.getElementById("c" + i).textContent = (p === 3 && n === 3) ? "✔" : "";
-    if (p !== 3 || n !== 3) ok = false;
+    document.getElementById("c"+i).textContent=(p===3&&n===3)?"✔":"";
+    if(p!==3||n!==3)ok=false;
   });
 
-  document.getElementById("btnRanking").classList.toggle("hidden", !ok);
+  const btn=document.getElementById("btnRanking");
+  btn.disabled=!ok;
+  btn.classList.toggle("btn-disabled",!ok);
+  document.getElementById("infoText").style.display=ok?"none":"inline";
 }
 
-function procesar() {
-  const labels = [...document.querySelectorAll("#tablaVotos thead th")]
-    .slice(1, -1).map(th => th.textContent);
+function determinarRol(p,n){
+  if(p>3 && n<=1) return "Líder";
+  if(n>3) return "Rechazado";
+  if(p===0) return "Aislado";
+  if(p>=2 && n>=2) return "Ambivalente";
+  if(p>=2 && n<=1) return "Integrado";
+  return "Sin rol claro";
+}
 
-  const stats = Object.fromEntries(labels.map(l => [l, { p: 0, n: 0 }]));
+function procesar(){
+  const labels=[...document.querySelectorAll("#tablaVotos thead th")]
+    .slice(1,-1).map(th=>th.textContent);
 
-  document.querySelectorAll(".cell").forEach(c => {
-    const i = c.dataset.i, j = c.dataset.j;
-    if (c.value === "+") stats[labels[j]].p++;
-    if (c.value === "-") stats[labels[j]].n++;
+  const stats=Object.fromEntries(labels.map(l=>[l,{p:0,n:0}]));
+
+  document.querySelectorAll(".cell").forEach(c=>{
+    const j=c.dataset.j;
+    if(c.value==="+")stats[labels[j]].p++;
+    if(c.value==="-")stats[labels[j]].n++;
   });
 
-  const res = labels.map(l => {
-    const p = stats[l].p, n = stats[l].n;
-    return { l, p, n };
-  }).sort((a, b) => b.p - a.p);
+  const res=labels.map(l=>{
+    const p=stats[l].p,n=stats[l].n;
+    return{l,p,n,rol:determinarRol(p,n)};
+  }).sort((a,b)=>b.p-a.p);
 
-  let html = `<div id="rankingBox"><table><tr><th>Nombre</th><th>+</th><th>-</th></tr>`;
-  res.forEach(r => html += `<tr><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td></tr>`);
-  html += `</table></div>`;
+  const conteo={};
+  res.forEach(r=>conteo[r.rol]=(conteo[r.rol]||0)+1);
 
-  const rankingDiv = document.getElementById("ranking");
-  rankingDiv.innerHTML = html;
-  rankingDiv.classList.remove("hidden");
+  let html=`<h3>Ranking y roles sociométricos</h3>
+  <table><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
+  res.forEach(r=>{
+    html+=`<tr><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
+  });
+  html+=`</table><p style="margin-top:10px;font-size:14px;">
+  <strong>Resumen:</strong> ${Object.entries(conteo).map(([k,v])=>`${v} ${k}`).join(" · ")}
+  </p>`;
+
+  const rank=document.getElementById("ranking");
+  rank.innerHTML=html;
+  rank.style.display="block";
 
   crearGrafico(res);
 }
 
 let chart;
-function crearGrafico(res) {
-  if (chart) chart.destroy();
-  const ctx = document.getElementById("chart").getContext("2d");
-  document.getElementById("graficoBox").style.display = "block";
+function crearGrafico(res){
+  if(chart)chart.destroy();
+  document.getElementById("graficoBox").style.display="block";
 
-  chart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: res.map(r => r.l),
-      datasets: [
-        {
-          label: "Votos +",
-          data: res.map(r => r.p),
-          backgroundColor: "#22c55e"
-        },
-        {
-          label: "Votos -",
-          data: res.map(r => -r.n),
-          backgroundColor: "#ef4444"
-        }
+  chart=new Chart(document.getElementById("chart"),{
+    type:"bar",
+    data:{
+      labels:res.map(r=>r.l),
+      datasets:[
+        {label:"Votos +",data:res.map(r=>r.p),backgroundColor:"#22c55e"},
+        {label:"Votos -",data:res.map(r=>-r.n),backgroundColor:"#ef4444"}
       ]
     },
-    options: {
-      animation: {
-        duration: 800,
-        easing: "easeOutQuart"
-      },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${Math.abs(ctx.parsed.y)}`
-          }
-        }
-      },
-      scales: {
-        y: {
-          ticks: {
-            callback: v => Math.abs(v)
-          }
-        }
-      }
+    options:{
+      plugins:{tooltip:{callbacks:{label:c=>Math.abs(c.parsed.y)}}},
+      scales:{y:{ticks:{callback:v=>Math.abs(v)}}}
     }
   });
 }
 
-function exportar(id, name) {
-  const el = document.getElementById(id);
-  html2canvas(el).then(canvas => {
-    const a = document.createElement("a");
-    a.href = canvas.toDataURL();
-    a.download = `${name}.png`;
+function exportar(id,name){
+  html2canvas(document.getElementById(id)).then(c=>{
+    const a=document.createElement("a");
+    a.href=c.toDataURL();
+    a.download=name+".png";
     a.click();
   });
 }
 
-function exportarCanvas() {
-  const a = document.createElement("a");
-  a.href = document.getElementById("chart").toDataURL();
-  a.download = "grafico_sociometrico.png";
+function exportarCanvas(){
+  const a=document.createElement("a");
+  a.href=document.getElementById("chart").toDataURL();
+  a.download="grafico_sociometrico.png";
   a.click();
 }
 </script>
