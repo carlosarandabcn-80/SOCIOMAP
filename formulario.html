@@ -41,15 +41,8 @@
     }
 
     .checkbox-row{
-      display:flex;
-      align-items:center;
-      gap:10px;
       margin-top:10px;
-    }
-
-    .checkbox-row input[type="text"]{
-      flex:1;
-      margin:0;
+      text-align:left;
     }
 
     .btn{
@@ -70,13 +63,6 @@
     }
 
     .btn-primary:hover{background:#2563eb;}
-
-    .btn-disabled{
-      background:#475569;
-      color:#cbd5e1;
-      cursor:not-allowed;
-      opacity:.6;
-    }
 
     table{
       width:100%;
@@ -138,7 +124,7 @@
       margin-top:12px;
     }
 
-    /* 🎨 COLORES POR ROL */
+    /* COLORES POR ROL */
     .fila-lider { background-color: #22c55e20; }
     .fila-rechazado { background-color: #ef444420; }
     .fila-aislado { background-color: #94a3b820; }
@@ -159,11 +145,16 @@
   <label>Número de participantes</label>
   <select id="num"></select>
 
+  <!-- CHECKBOX CON TEXTO CLARO -->
   <div class="checkbox-row">
-    <input type="checkbox" id="custom">
-    <label for="custom">Usar nombres personalizados</label>
-    <input id="names" type="text" placeholder="Ana, Juan, Lucía..." style="display:none;">
+    <label style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="custom">
+      Usar nombres personalizados
+    </label>
   </div>
+
+  <!-- INPUT NOMBRES (DEBAJO) -->
+  <input id="names" type="text" placeholder="Ana, Juan, Lucía..." style="display:none;margin-top:8px;">
 
   <!-- CREAR TABLA -->
   <button class="btn btn-primary" onclick="crearTabla()">Crear tabla</button>
@@ -189,15 +180,17 @@
     <p style="font-size:13px;color:#64748b;">Pasa el cursor sobre las barras para explorar valores.</p>
   </div>
 
-  <!-- EXPORTAR -->
+  <!-- EXPORTACIÓN -->
   <div class="export-row" id="exportBtns">
     <button class="btn" onclick="exportar('tablaVotos','tabla_sociometrica')">Exportar tabla</button>
     <button class="btn" onclick="exportar('ranking','ranking_roles')">Exportar ranking</button>
     <button class="btn" onclick="exportarCanvas()">Exportar gráfico</button>
   </div>
 
-  <!-- NUEVO BOTÓN: SOCIOGRAMA -->
-  <button onclick="window.location.href='Sociograma_web.html'" class="btn btn-primary" style="margin-top:24px;font-size:16px;padding:12px 22px;border-radius:10px;">
+  <!-- SOCIOGRAMA -->
+  <button onclick="window.location.href='Sociograma_web.html'"
+    class="btn btn-primary"
+    style="margin-top:24px;font-size:16px;padding:12px 22px;border-radius:10px;">
     ➕ Crear Sociograma
   </button>
 
@@ -296,16 +289,15 @@ function procesar(){
   let html=`<h3>Ranking y roles sociométricos</h3>
   <table><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
   res.forEach(r=>{
-    let clase = '';
-    switch(r.rol){
-      case "Líder": clase = "fila-lider"; break;
-      case "Rechazado": clase = "fila-rechazado"; break;
-      case "Aislado": clase = "fila-aislado"; break;
-      case "Ambivalente": clase = "fila-ambivalente"; break;
-      case "Integrado": clase = "fila-integrado"; break;
-    }
-    html += `<tr class="${clase}"><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
+    let clase='';
+    if(r.rol==="Líder")clase="fila-lider";
+    if(r.rol==="Rechazado")clase="fila-rechazado";
+    if(r.rol==="Aislado")clase="fila-aislado";
+    if(r.rol==="Ambivalente")clase="fila-ambivalente";
+    if(r.rol==="Integrado")clase="fila-integrado";
+    html+=`<tr class="${clase}"><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
   });
+
   html+=`</table>
   <p style="margin-top:10px;font-size:14px;">
   <strong>Resumen:</strong> ${Object.entries(conteo).map(([k,v])=>`${v} ${k}`).join(" · ")}
