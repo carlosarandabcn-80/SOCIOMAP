@@ -1,337 +1,242 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Formulario Sociométrico — SOCIOMAP</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Sociograma Interactivo Académico</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
   <style>
     body {
-      background: #0f172a;
-      color: #e2e8f0;
-      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 20px;
+      font-family: "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #0f172a;
       text-align: center;
     }
 
     .container {
-      max-width: 1000px;
-      margin: auto;
-      background: rgba(255,255,255,0.05);
-      padding: 28px;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #ffffff;
       border-radius: 14px;
     }
 
-    .logo {
-      height: 64px;
-      background: white;
-      border-radius: 12px;
-      padding: 4px 12px;
-      margin-bottom: 16px;
+    h1 {
+      margin-bottom: 4px;
     }
 
-    h1 { margin-bottom: 6px; }
-    p { margin-top: 0; color: #cbd5e1; }
-
-    label { display: block; margin-top: 12px; }
-
-    input, select {
-      width: 100%;
-      padding: 8px;
-      margin: 6px 0;
-      border-radius: 8px;
+    p {
+      margin-top: 0;
+      color: #475569;
       font-size: 14px;
-      box-sizing: border-box;
     }
 
-    .checkbox-row {
+    svg {
+      width: 100%;
+      height: 600px;
+      border-radius: 12px;
+    }
+
+    .legend {
       display: flex;
       justify-content: center;
+      gap: 24px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      font-size: 14px;
+    }
+
+    .legend span {
+      display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 12px;
+      gap: 6px;
+    }
+
+    .legend i {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .node-label {
+      font-size: 13px;
+      font-weight: bold;
+      fill: #0f172a;
+      pointer-events: none;
+    }
+
+    .node-stats {
+      font-size: 11px;
+      fill: #475569;
+      pointer-events: none;
     }
 
     .btn {
-      padding: 8px 14px;
-      border-radius: 8px;
+      margin-top: 18px;
+      padding: 12px 22px;
+      border-radius: 10px;
       border: none;
-      background: #e2e8f0;
-      color: #0f172a;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .btn-primary {
       background: #3b82f6;
       color: white;
-      margin-top: 12px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
-    .btn-primary:hover { background: #2563eb; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    th, td {
-      border: 1px solid #475569;
-      padding: 6px;
-      text-align: center;
-    }
-
-    th { background: #1e293b; }
-
-    .checkOK { color: #22c55e; font-weight: bold; }
-
-    .ranking-box {
-      margin-top: 24px;
-      background: white;
-      color: black;
-      border-radius: 12px;
-      padding: 16px;
-      display: none;
-    }
-
-    .grafico-box {
-      background: white;
-      padding: 18px;
-      border-radius: 12px;
-      margin-top: 22px;
-      display: none;
-    }
-
-    .export-row {
-      display: none;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 18px;
-      flex-wrap: wrap;
-    }
-
-    .export-row .btn {
-      font-size: 13px;
-      padding: 7px 14px;
+    .btn:hover {
+      background: #2563eb;
     }
 
     footer {
-      margin-top: 20px;
-      color: #94a3b8;
-      font-size: 14px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #64748b;
     }
-
-    .fila-líder { background: #facc1520; }
-    .fila-rechazado { background: #ef444420; }
-    .fila-aislado { background: #94a3b820; }
-    .fila-ambivalente { background: #eab30820; }
-    .fila-integrado { background: #3b82f620; }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <img src="logo.png" class="logo" alt="SOCIOMAP">
-    <h1>Formulario Sociométrico</h1>
-    <p>Introduce la tabla sociométrica (3 elecciones + y 3 rechazos − por persona).</p>
 
-    <label>Nombre del grupo</label>
-    <input id="grupo" type="text" placeholder="Ej.: Taller A1">
+<div class="container">
+  <h1>Sociograma Interactivo Académico</h1>
+  <p>Relaciones sociométricas representadas gráficamente</p>
 
-    <label>Número de participantes</label>
-    <select id="num"></select>
+  <svg id="graph"></svg>
 
-    <div class="checkbox-row">
-      <input type="checkbox" id="custom">
-      <label for="custom" style="margin:0;">Usar nombres personalizados</label>
-    </div>
-
-    <input id="names" type="text" placeholder="Ana, Juan, Lucía..." style="display:none;margin-top:8px;">
-    <button class="btn btn-primary" onclick="crearTabla()">Crear tabla</button>
-
-    <div id="tabla"></div>
-
-    <div id="rankingControl" style="margin-top:18px;display:none;">
-      <button class="btn btn-primary" onclick="procesar()">Crear ranking</button>
-    </div>
-
-    <p id="infoText" style="font-size:13px;color:#94a3b8;margin-top:10px;">
-      Completa correctamente la tabla sociométrica para generar el ranking
-    </p>
-
-    <div id="ranking" class="ranking-box"></div>
-
-    <div class="grafico-box" id="graficoBox">
-      <h3>📊 Gráfico de barras sociométrico (interactivo)</h3>
-      <canvas id="chart"></canvas>
-    </div>
-
-    <div class="export-row" id="exportBtns">
-      <button class="btn" onclick="exportar('tablaVotos','tabla_sociometrica')">Exportar tabla</button>
-      <button class="btn" onclick="exportar('ranking','ranking_roles')">Exportar ranking</button>
-      <button class="btn" onclick="exportarCanvas()">Exportar gráfico</button>
-    </div>
-
-    <button onclick="window.location.href='Sociograma_web.html'" class="btn btn-primary" style="margin-top:24px;font-size:16px;padding:12px 22px;border-radius:10px;">
-      ➕ Crear Sociograma
-    </button>
-
-    <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
+  <div class="legend">
+    <span><i style="background:#22c55e;"></i> Relación positiva</span>
+    <span><i style="background:#ef4444;"></i> Relación negativa</span>
+    <span><i style="background:#facc15;"></i> Líder sociométrico</span>
+    <span><i style="background:#60a5fa;"></i> Tamaño ∝ votos positivos</span>
   </div>
 
-  <script>
-    const num = document.getElementById("num");
-    for (let i = 7; i <= 40; i++) num.innerHTML += `<option>${i}</option>`;
+  <!-- 🔥 BOTÓN AÑADIDO (ÚNICO CAMBIO) -->
+  <button class="btn" onclick="window.location.href='MapaCalor_web.html'">
+    🔥 Crear Mapa de Calor
+  </button>
 
-    document.getElementById("custom").onchange = e => {
-      document.getElementById("names").style.display = e.target.checked ? "block" : "none";
-    };
+  <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
+</div>
 
-    function crearTabla() {
-      const n = num.value;
-      const custom = document.getElementById("custom").checked;
-      let names = custom
-        ? document.getElementById("names").value.split(",").map(x => x.trim())
-        : Array.from({ length: n }, (_, i) => "P" + (i + 1));
+<script>
+const data = JSON.parse(localStorage.getItem("sociogramaData"));
 
-      if (names.length !== +n) { alert("Número de nombres incorrecto"); return; }
+if (!data || !data.nodes || !data.links) {
+  d3.select("#graph")
+    .append("text")
+    .attr("x", "50%")
+    .attr("y", "50%")
+    .attr("text-anchor", "middle")
+    .attr("fill", "red")
+    .attr("font-size", 18)
+    .text("No hay datos sociométricos. Vuelve al formulario.");
+  throw new Error("No data");
+}
 
-      let h = `<table id="tablaVotos"><thead><tr><th>De\\A</th>`;
-      names.forEach(x => h += `<th>${x}</th>`);
-      h += `<th>✔</th></tr></thead><tbody>`;
+const svg = d3.select("#graph");
+const width = svg.node().clientWidth;
+const height = svg.node().clientHeight;
 
-      names.forEach((r, i) => {
-        h += `<tr><th>${r}</th>`;
-        names.forEach((_, j) => {
-          h += i === j ? `<td></td>` : `<td><select class="cell"><option>0</option><option>+</option><option>-</option></select></td>`;
-        });
-        h += `<td class="checkOK" id="c${i}"></td></tr>`;
-      });
+svg.append("defs")
+  .selectAll("marker")
+  .data(["pos", "neg"])
+  .enter()
+  .append("marker")
+  .attr("id", d => "arrow-" + d)
+  .attr("viewBox", "0 -5 10 10")
+  .attr("refX", 24)
+  .attr("refY", 0)
+  .attr("markerWidth", 6)
+  .attr("markerHeight", 6)
+  .attr("orient", "auto")
+  .append("path")
+  .attr("d", "M0,-5L10,0L0,5")
+  .attr("fill", d => d === "pos" ? "#22c55e" : "#ef4444");
 
-      h += `</tbody></table>`;
-      document.getElementById("tabla").innerHTML = h;
+const nodeMap = new Map(data.nodes.map(n => [n.name, n]));
+data.links.forEach(l => {
+  l.source = nodeMap.get(l.source);
+  l.target = nodeMap.get(l.target);
+});
 
-      document.querySelectorAll(".cell").forEach(c => c.onchange = validar);
+const simulation = d3.forceSimulation(data.nodes)
+  .force("link", d3.forceLink(data.links).id(d => d.name).distance(140))
+  .force("charge", d3.forceManyBody().strength(-350))
+  .force("center", d3.forceCenter(width / 2, height / 2))
+  .force("collision", d3.forceCollide().radius(d => 22 + d.votos));
 
-      document.getElementById("rankingControl").style.display = "none";
-      document.getElementById("ranking").style.display = "none";
-      document.getElementById("graficoBox").style.display = "none";
-      document.getElementById("exportBtns").style.display = "none";
-      document.getElementById("infoText").style.display = "block";
-    }
+const link = svg.append("g")
+  .selectAll("path")
+  .data(data.links)
+  .enter()
+  .append("path")
+  .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+  .attr("stroke-width", 2)
+  .attr("fill", "none")
+  .attr("stroke-dasharray", d => d.type === "-" ? "4,2" : "0")
+  .attr("marker-end", d => d.type === "+" ? "url(#arrow-pos)" : "url(#arrow-neg)");
 
-    function validar() {
-      let ok = true;
-      document.querySelectorAll("#tablaVotos tbody tr").forEach((tr, i) => {
-        let p = 0, n = 0;
-        tr.querySelectorAll("select").forEach(s => {
-          if (s.value === "+") p++;
-          if (s.value === "-") n++;
-        });
-        document.getElementById("c" + i).textContent = (p === 3 && n === 3) ? "✔" : "";
-        if (p !== 3 || n !== 3) ok = false;
-      });
+const node = svg.append("g")
+  .selectAll("g")
+  .data(data.nodes)
+  .enter()
+  .append("g")
+  .call(d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended)
+  );
 
-      document.getElementById("rankingControl").style.display = ok ? "block" : "none";
-      document.getElementById("infoText").style.display = ok ? "none" : "block";
-    }
+node.append("circle")
+  .attr("r", d => 12 + d.votos)
+  .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
+  .attr("stroke", "#0f172a")
+  .attr("stroke-width", 2);
 
-    function determinarRol(p, n) {
-      if (p > 3 && n <= 1) return "Líder";
-      if (n > 3) return "Rechazado";
-      if (p === 0) return "Aislado";
-      if (p >= 2 && n >= 2) return "Ambivalente";
-      if (p >= 2 && n <= 1) return "Integrado";
-      return "Sin rol";
-    }
+node.append("text")
+  .attr("class", "node-label")
+  .attr("text-anchor", "middle")
+  .attr("dy", 4)
+  .text(d => d.name);
 
-    function procesar() {
-      const labels = [...document.querySelectorAll("#tablaVotos thead th")].slice(1, -1).map(th => th.textContent);
-      const stats = Object.fromEntries(labels.map(l => [l, { p: 0, n: 0 }]));
-      const nodes = labels.map(l => ({ name: l }));
+node.append("text")
+  .attr("class", "node-stats")
+  .attr("text-anchor", "middle")
+  .attr("dy", 22)
+  .text(d => `+${d.p} / −${d.n}`);
 
-      const cells = document.querySelectorAll(".cell");
-      const links = [];
+simulation.on("tick", () => {
+  link.attr("d", d => {
+    const dx = d.target.x - d.source.x;
+    const dy = d.target.y - d.source.y;
+    const dr = Math.sqrt(dx * dx + dy * dy);
+    return `M${d.source.x},${d.source.y}
+            A${dr},${dr} 0 0,1
+            ${d.target.x},${d.target.y}`;
+  });
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
 
-      cells.forEach((c, i) => {
-        const fila = Math.floor(i / labels.length);
-        const col = i % labels.length;
-        if (c.value === "+" || c.value === "-") {
-          stats[labels[col]][c.value === "+" ? "p" : "n"]++;
-          links.push({ source: labels[fila], target: labels[col], type: c.value });
-        }
-      });
+function dragstarted(event, d) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x;
+  d.fy = d.y;
+}
 
-      const resultado = nodes.map(n => {
-        const p = stats[n.name].p, nneg = stats[n.name].n;
-        return {
-          name: n.name,
-          p,
-          n: nneg,
-          votos: p,
-          rol: determinarRol(p, nneg)
-        };
-      });
+function dragged(event, d) {
+  d.fx = event.x;
+  d.fy = event.y;
+}
 
-      localStorage.setItem("sociogramaData", JSON.stringify({
-        nodes: resultado,
-        links: links
-      }));
+function dragended(event, d) {
+  if (!event.active) simulation.alphaTarget(0);
+  d.fx = null;
+  d.fy = null;
+}
+</script>
 
-      mostrarRanking(resultado);
-      crearGrafico(resultado);
-      document.getElementById("exportBtns").style.display = "flex";
-    }
-
-    function mostrarRanking(data) {
-      let html = `<h3>Ranking y roles sociométricos</h3>
-      <table><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
-      data.sort((a, b) => b.p - a.p).forEach(r => {
-        html += `<tr class="fila-${r.rol.toLowerCase()}">
-          <td>${r.name}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td>
-        </tr>`;
-      });
-      html += `</table>`;
-      document.getElementById("ranking").innerHTML = html;
-      document.getElementById("ranking").style.display = "block";
-    }
-
-    let chart;
-    function crearGrafico(data) {
-      if (chart) chart.destroy();
-      document.getElementById("graficoBox").style.display = "block";
-
-      chart = new Chart(document.getElementById("chart"), {
-        type: "bar",
-        data: {
-          labels: data.map(r => r.name),
-          datasets: [
-            { label: "Votos +", data: data.map(r => r.p), backgroundColor: "#22c55e" },
-            { label: "Votos -", data: data.map(r => -r.n), backgroundColor: "#ef4444" }
-          ]
-        }
-      });
-    }
-
-    function exportar(id, name) {
-      html2canvas(document.getElementById(id)).then(c => {
-        const a = document.createElement("a");
-        a.href = c.toDataURL();
-        a.download = name + ".png";
-        a.click();
-      });
-    }
-
-    function exportarCanvas() {
-      const a = document.createElement("a");
-      a.href = document.getElementById("chart").toDataURL();
-      a.download = "grafico_sociometrico.png";
-      a.click();
-    }
-  </script>
 </body>
 </html>
 
