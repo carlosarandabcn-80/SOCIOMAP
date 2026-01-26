@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Sociograma — SOCIOMAP</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
@@ -101,8 +101,8 @@
     const grupo = sessionStorage.getItem("socio_grupo") || "";
 
     if (!labels || !matrix || labels.length === 0) {
-      document.getElementById("sociograma").innerHTML = '<div class="error">⚠️ No hay datos válidos para generar el sociograma.<br>Por favor completa primero el formulario.</div>';
-      throw new Error("No hay datos en sessionStorage");
+      document.getElementById("sociograma").innerHTML = '<div class="error">⚠️ No hay datos sociométricos válidos.<br>Debes completar primero el formulario sociométrico.</div>';
+      throw new Error("No hay datos válidos");
     }
 
     const fecha = new Date().toLocaleDateString("es-ES", {
