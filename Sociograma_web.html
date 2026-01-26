@@ -4,52 +4,51 @@
   <meta charset="UTF-8">
   <title>Sociograma Interactivo Académico</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
+
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: "Segoe UI", sans-serif;
       background: #0f172a;
-      color: #fff;
+      color: #0f172a;
       text-align: center;
     }
 
     .container {
       max-width: 1200px;
-      margin: auto;
+      margin: 40px auto;
       padding: 20px;
-      background: #fff;
+      background: #ffffff;
       border-radius: 14px;
-      margin-top: 40px;
     }
 
     h1 {
-      color: #0f172a;
       margin-bottom: 4px;
     }
 
     p {
-      color: #475569;
       margin-top: 0;
+      color: #475569;
       font-size: 14px;
     }
 
     svg {
       width: 100%;
       height: 600px;
+      border-radius: 12px;
     }
 
     .legend {
       display: flex;
       justify-content: center;
-      gap: 30px;
-      margin-top: 10px;
+      gap: 24px;
+      margin-top: 14px;
       flex-wrap: wrap;
       font-size: 14px;
-      color: #0f172a;
     }
 
     .legend span {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 6px;
     }
@@ -61,131 +60,182 @@
       display: inline-block;
     }
 
-    .logo {
-      margin-top: 20px;
-      height: 56px;
-    }
-
-    footer {
-      color: #475569;
-      font-size: 13px;
-      margin-top: 6px;
-      margin-bottom: 20px;
-    }
-
     .node-label {
       font-size: 13px;
-      fill: #000;
+      font-weight: bold;
+      fill: #0f172a;
       pointer-events: none;
     }
 
     .node-stats {
       font-size: 11px;
-      fill: #334155;
+      fill: #475569;
       pointer-events: none;
+    }
+
+    .btn {
+      margin-top: 18px;
+      padding: 12px 22px;
+      border-radius: 10px;
+      border: none;
+      background: #3b82f6;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #2563eb;
+    }
+
+    footer {
+      margin-top: 24px;
+      font-size: 13px;
+      color: #64748b;
     }
   </style>
 </head>
+
 <body>
 
-  <div class="container">
-    <h1>Sociograma Interactivo Académico</h1>
-    <p>Relaciones sociométricas representadas gráficamente</p>
-    <svg id="graph"></svg>
+<div class="container">
+  <h1>Sociograma Interactivo Académico</h1>
+  <p>Relaciones sociométricas representadas gráficamente</p>
 
-    <div class="legend">
-      <span><i style="background:#22c55e;"></i> Relación positiva</span>
-      <span><i style="background:#ef4444;"></i> Relación negativa</span>
-      <span><i style="background:#facc15;"></i> Líder sociométrico</span>
-      <span><i style="background:#60a5fa;"></i> Tamaño ∝ votos recibidos</span>
-    </div>
+  <svg id="graph"></svg>
 
-    <img src="logo.png" alt="SOCIOMAP" class="logo">
-    <footer>© SOCIOMAP · by Aranda Tools · 2026</footer>
+  <div class="legend">
+    <span><i style="background:#22c55e;"></i> Relación positiva</span>
+    <span><i style="background:#ef4444;"></i> Relación negativa</span>
+    <span><i style="background:#facc15;"></i> Líder sociométrico</span>
+    <span><i style="background:#60a5fa;"></i> Tamaño ∝ votos positivos</span>
   </div>
 
-  <script>
-    // Datos simulados (esto se sustituirá por lectura desde localStorage)
-    const data = JSON.parse(localStorage.getItem("sociogramaData"));
+  <!-- ✅ BOTÓN FUNCIONAL AÑADIDO -->
+  <button class="btn" onclick="window.location.href='MapaCalor_web.html'">
+    🔥 Crear Mapa de Calor
+  </button>
 
-    if (!data || !data.nodes || !data.links) {
-      document.getElementById("graph").innerHTML = "<text x='50%' y='50%' fill='red' font-size='18' text-anchor='middle'>No hay datos válidos. Completa primero el formulario sociométrico.</text>";
-      throw new Error("No data");
-    }
+  <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
+</div>
 
-    const svg = d3.select("#graph"),
-          width = svg.node().clientWidth,
-          height = svg.node().clientHeight;
+<script>
+const data = JSON.parse(localStorage.getItem("sociogramaData"));
 
-    // Define arrow markers
-    svg.append("defs").selectAll("marker")
-      .data(["pos", "neg"])
-      .enter()
-      .append("marker")
-        .attr("id", d => `arrow-${d}`)
-        .attr("viewBox", "0 -5 10 10")
-        .attr("refX", 26)
-        .attr("refY", 0)
-        .attr("markerWidth", 6)
-        .attr("markerHeight", 6)
-        .attr("orient", "auto")
-      .append("path")
-        .attr("d", "M0,-5L10,0L0,5")
-        .attr("fill", d => d === "pos" ? "#22c55e" : "#ef4444");
+if (!data || !data.nodes || !data.links) {
+  d3.select("#graph")
+    .append("text")
+    .attr("x", "50%")
+    .attr("y", "50%")
+    .attr("text-anchor", "middle")
+    .attr("fill", "red")
+    .attr("font-size", 18)
+    .text("No hay datos sociométricos. Vuelve al formulario.");
+  throw new Error("No data");
+}
 
-    // Circular layout
-    const radius = 220;
-    const angleStep = (2 * Math.PI) / data.nodes.length;
-    data.nodes.forEach((d, i) => {
-      d.x = width / 2 + radius * Math.cos(i * angleStep);
-      d.y = height / 2 + radius * Math.sin(i * angleStep);
-    });
+const svg = d3.select("#graph");
+const width = svg.node().clientWidth;
+const height = svg.node().clientHeight;
 
-    // Links (curved)
-    svg.selectAll(".link")
-      .data(data.links)
-      .enter()
-      .append("path")
-      .attr("d", d => {
-        const dx = d.target.x - d.source.x,
-              dy = d.target.y - d.source.y,
-              dr = Math.sqrt(dx * dx + dy * dy);
-        return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
-      })
-      .attr("fill", "none")
-      .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
-      .attr("stroke-width", 1.8)
-      .attr("marker-end", d => `url(#arrow-${d.type === "+" ? "pos" : "neg"})`)
-      .attr("stroke-dasharray", d => d.type === "-" ? "4,2" : "0");
+svg.append("defs")
+  .selectAll("marker")
+  .data(["pos", "neg"])
+  .enter()
+  .append("marker")
+  .attr("id", d => "arrow-" + d)
+  .attr("viewBox", "0 -5 10 10")
+  .attr("refX", 24)
+  .attr("refY", 0)
+  .attr("markerWidth", 6)
+  .attr("markerHeight", 6)
+  .attr("orient", "auto")
+  .append("path")
+  .attr("d", "M0,-5L10,0L0,5")
+  .attr("fill", d => d === "pos" ? "#22c55e" : "#ef4444");
 
-    // Nodes
-    const node = svg.selectAll(".node")
-      .data(data.nodes)
-      .enter()
-      .append("g")
-      .attr("transform", d => `translate(${d.x},${d.y})`);
+const nodeMap = new Map(data.nodes.map(n => [n.name, n]));
+data.links.forEach(l => {
+  l.source = nodeMap.get(l.source);
+  l.target = nodeMap.get(l.target);
+});
 
-    node.append("circle")
-      .attr("r", d => 12 + d.votos)
-      .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
-      .attr("stroke", "#0f172a")
-      .attr("stroke-width", 2)
-      .style("filter", d => d.rol === "Líder" ? "drop-shadow(1px 1px 2px #00000066)" : null);
+const simulation = d3.forceSimulation(data.nodes)
+  .force("link", d3.forceLink(data.links).id(d => d.name).distance(140))
+  .force("charge", d3.forceManyBody().strength(-350))
+  .force("center", d3.forceCenter(width / 2, height / 2))
+  .force("collision", d3.forceCollide().radius(d => 22 + d.votos));
 
-    // Nombres
-    node.append("text")
-      .text(d => d.name)
-      .attr("class", "node-label")
-      .attr("text-anchor", "middle")
-      .attr("dy", 4);
+const link = svg.append("g")
+  .selectAll("path")
+  .data(data.links)
+  .enter()
+  .append("path")
+  .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+  .attr("stroke-width", 2)
+  .attr("fill", "none")
+  .attr("stroke-dasharray", d => d.type === "-" ? "4,2" : "0")
+  .attr("marker-end", d => d.type === "+" ? "url(#arrow-pos)" : "url(#arrow-neg)");
 
-    // Votos abajo
-    node.append("text")
-      .text(d => `+${d.p}/−${d.n}`)
-      .attr("class", "node-stats")
-      .attr("text-anchor", "middle")
-      .attr("dy", 22);
-  </script>
+const node = svg.append("g")
+  .selectAll("g")
+  .data(data.nodes)
+  .enter()
+  .append("g")
+  .call(d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended)
+  );
+
+node.append("circle")
+  .attr("r", d => 12 + d.votos)
+  .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
+  .attr("stroke", "#0f172a")
+  .attr("stroke-width", 2);
+
+node.append("text")
+  .attr("class", "node-label")
+  .attr("text-anchor", "middle")
+  .attr("dy", 4)
+  .text(d => d.name);
+
+node.append("text")
+  .attr("class", "node-stats")
+  .attr("text-anchor", "middle")
+  .attr("dy", 22)
+  .text(d => `+${d.p} / −${d.n}`);
+
+simulation.on("tick", () => {
+  link.attr("d", d => {
+    const dx = d.target.x - d.source.x;
+    const dy = d.target.y - d.source.y;
+    const dr = Math.sqrt(dx * dx + dy * dy);
+    return `M${d.source.x},${d.source.y}
+            A${dr},${dr} 0 0,1
+            ${d.target.x},${d.target.y}`;
+  });
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
+
+function dragstarted(event, d) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x;
+  d.fy = d.y;
+}
+
+function dragged(event, d) {
+  d.fx = event.x;
+  d.fy = event.y;
+}
+
+function dragended(event, d) {
+  if (!event.active) simulation.alphaTarget(0);
+  d.fx = null;
+  d.fy = null;
+}
+</script>
+
 </body>
 </html>
-
