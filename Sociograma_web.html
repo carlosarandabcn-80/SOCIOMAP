@@ -1,173 +1,259 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Sociograma — SOCIOMAP</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <style>
-    body {
-      background: #0f172a;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 32px;
-      text-align: center;
-    }
-    h1 {
-      font-size: 36px;
-      margin-bottom: 10px;
-    }
-    .grupo-nombre {
-      font-size: 18px;
-      margin-bottom: 20px;
-      color: #cbd5e1;
-    }
-    #sociograma {
-      margin: auto;
-      max-width: 1000px;
-      background: #f8fafc;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      padding: 16px;
-    }
-    svg {
-      width: 100%;
-      height: 800px;
-      border: 2px dashed #e2e8f0;
-      border-radius: 12px;
-      background: #fff;
-    }
-    .tooltip {
-      position: absolute;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Sociograma — SOCIOMAP</title>
+
+<!-- D3 -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<style>
+  body {
+    margin: 0;
+    padding: 32px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(180deg,#0f172a,#0b1222);
+    color: #ffffff;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 34px;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 17px;
+    color: #cbd5e1;
+    margin-bottom: 28px;
+  }
+
+  #container {
+    max-width: 1200px;
+    margin: auto;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px 20px 28px;
+    box-shadow: 0 10px 32px rgba(0,0,0,.35);
+  }
+
+  svg {
+    width: 100%;
+    height: 760px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 2px dashed #e2e8f0;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 18px;
+    font-size: 14px;
+    color: #0f172a;
+    flex-wrap: wrap;
+  }
+
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+
+  footer {
+    margin-top: 22px;
+    text-align: center;
+    color: #0f172a;
+    font-size: 14px;
+  }
+
+  footer img {
+    height: 48px;
+    display: block;
+    margin: 0 auto 6px;
+  }
+
+  .error {
+    padding: 48px 20px;
+    font-size: 18px;
+    color: #b91c1c;
+  }
+</style>
 </head>
+
 <body>
 
-  <h1>Sociograma Interactivo Académico</h1>
-  <div class="grupo-nombre" id="grupo-nombre"></div>
+<h1>Sociograma Interactivo Académico</h1>
+<div class="subtitle" id="infoGrupo"></div>
+
+<div id="container">
   <div id="sociograma"></div>
-  <div class="tooltip" id="tooltip"></div>
 
-  <script>
-    const fallbackLabels = ["Ana", "Luis", "Sofía", "Pedro"];
-    const fallbackMatrix = [
-      ["0", "+", "-", "+"],
-      ["-", "0", "+", "-"],
-      ["+", "-", "0", "+"],
-      ["-", "+", "-", "0"]
-    ];
+  <div class="legend">
+    <span><div class="dot" style="background:#22c55e"></div> Relación positiva</span>
+    <span><div class="dot" style="background:#ef4444"></div> Relación negativa</span>
+    <span><div class="dot" style="background:#facc15"></div> Líder sociométrico</span>
+    <span><div class="dot" style="background:#60a5fa"></div> Tamaño ∝ votos recibidos</span>
+  </div>
 
-    const labels = JSON.parse(sessionStorage.getItem("socio_labels") || JSON.stringify(fallbackLabels));
-    const matrix = JSON.parse(sessionStorage.getItem("socio_matrix") || JSON.stringify(fallbackMatrix));
-    const grupo = sessionStorage.getItem("socio_grupo") || "DEMO";
+  <footer>
+    <img src="logo.png" alt="SOCIOMAP">
+    SOCIOMAP · by Aranda Tools · 2026
+  </footer>
+</div>
 
-    const fechaObj = new Date();
-    const fechaFormateada = fechaObj.toLocaleDateString("es-ES", {
-      year:'numeric', month:'long', day:'numeric'
-    });
-    document.getElementById("grupo-nombre").textContent = `Grupo: ${grupo} — ${fechaFormateada}`;
+<script>
+/* ======================================================
+   CARGA DE DATOS DESDE FORMULARIO / TABLA
+====================================================== */
 
-    const width = document.getElementById("sociograma").clientWidth;
-    const height = 800;
+const labels = JSON.parse(sessionStorage.getItem("socio_labels") || "null");
+const matrix = JSON.parse(sessionStorage.getItem("socio_matrix") || "null");
+const grupo = sessionStorage.getItem("socio_grupo") || "";
 
-    const nodes = labels.map((name, i) => {
-      let p=0, n=0;
-      matrix.forEach(row => { if(row[i]==="+") p++; if(row[i]==="-") n++; });
-      return {id:i,name, votosPos:p, votosNeg:n};
-    });
-    const liderIndex = nodes.reduce((a,c,i,arr) => c.votosPos > arr[a].votosPos ? i : a, 0);
+if (!labels || !matrix || labels.length === 0) {
+  document.getElementById("sociograma").innerHTML =
+    `<div class="error">
+      No hay datos sociométricos válidos.<br>
+      Debes completar primero el formulario sociométrico.
+     </div>`;
+  throw new Error("Datos sociométricos inexistentes");
+}
 
-    const links = [];
-    matrix.forEach((row,i)=> row.forEach((v,j) => {
-      if(v==="+"||v==="-") links.push({source:i,target:j,type:v});
-    }));
+const fecha = new Date().toLocaleDateString("es-ES", {
+  day: "numeric",
+  month: "long",
+  year: "numeric"
+});
 
-    const svg = d3.select("#sociograma").append("svg");
-    const defs = svg.append("defs");
+document.getElementById("infoGrupo").textContent =
+  `Grupo: ${grupo || "Sin nombre"} — ${fecha}`;
 
-    defs.append("filter").attr("id","glow").html(`
-      <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    `);
+/* ======================================================
+   PROCESAMIENTO SOCIOMÉTRICO
+====================================================== */
 
-    const sim = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).id(d=>d.id).distance(160))
-      .force("charge", d3.forceManyBody().strength(-400))
-      .force("center", d3.forceCenter(width/2, height/2));
+const nodes = labels.map((name, i) => {
+  let pos = 0, neg = 0;
+  matrix.forEach(row => {
+    if (row[i] === "+") pos++;
+    if (row[i] === "-") neg++;
+  });
+  return { id: i, name, pos, neg };
+});
 
-    const linkElems = svg.append("g").selectAll("line")
-      .data(links).enter().append("line")
-      .attr("stroke", d=> d.type==="+" ? "#16a34a" : "#dc2626")
-      .attr("stroke-width", 2)
-      .attr("stroke-dasharray", d => d.type === "+" ? "0" : "5,5");
+const leader = nodes.reduce((a, b) => b.pos > a.pos ? b : a);
 
-    const nodeElems = svg.append("g").selectAll("g")
-      .data(nodes).enter().append("g")
-      .call(d3.drag().on("start",dragStart).on("drag",drag).on("end",dragEnd));
-
-    const scaleColor = d3.scaleLinear()
-      .domain([0, d3.max(nodes, d => d.votosPos)])
-      .range(["#60a5fa", "#2563eb"]);
-
-    const tooltip = document.getElementById("tooltip");
-
-    nodeElems.append("circle")
-      .attr("r", d => 30 + d.votosPos * 2)
-      .attr("fill", d => d.id === liderIndex ? "#facc15" : scaleColor(d.votosPos))
-      .attr("stroke", "#334155")
-      .attr("stroke-width", 2)
-      .attr("filter", d => d.id === liderIndex ? "url(#glow)" : null)
-      .on("mouseover", (event,d) => {
-        tooltip.style.opacity = 1;
-        tooltip.innerHTML = `<strong>${d.name}</strong><br>+ ${d.votosPos} / − ${d.votosNeg}`;
-      })
-      .on("mousemove", event => {
-        tooltip.style.left = (event.pageX + 15) + "px";
-        tooltip.style.top = (event.pageY - 20) + "px";
-      })
-      .on("mouseout", () => {
-        tooltip.style.opacity = 0;
-      });
-
-    nodeElems.append("text")
-      .text(d => d.name)
-      .attr("font-size", "13px")
-      .attr("fill", "#0f172a")
-      .attr("text-anchor", "middle")
-      .attr("dy", -8)
-      .style("font-weight", "bold");
-
-    sim.on("tick", () => {
-      linkElems
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
-
-      nodeElems.attr("transform", d => `translate(${d.x},${d.y})`);
-    });
-
-    function dragStart(event,d){ 
-      if(!event.active) sim.alphaTarget(0.3).restart();
-      d.fx = d.x; d.fy = d.y;
+const links = [];
+matrix.forEach((row, i) => {
+  row.forEach((v, j) => {
+    if (v === "+" || v === "-") {
+      links.push({ source: i, target: j, type: v });
     }
-    function drag(event,d){ d.fx = event.x; d.fy = event.y; }
-    function dragEnd(event,d){ 
-      if(!event.active) sim.alphaTarget(0);
-      d.fx = null; d.fy = null; 
-    }
-  </script>
+  });
+});
+
+/* ======================================================
+   D3 — DIBUJO DEL SOCIOGRAMA
+====================================================== */
+
+const width = document.getElementById("container").clientWidth;
+const height = 760;
+
+const svg = d3.select("#sociograma")
+  .append("svg")
+  .attr("viewBox", `0 0 ${width} ${height}`);
+
+svg.append("defs")
+  .append("filter")
+  .attr("id", "glow")
+  .html(`
+    <feGaussianBlur stdDeviation="4" result="blur"/>
+    <feMerge>
+      <feMergeNode in="blur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  `);
+
+const simulation = d3.forceSimulation(nodes)
+  .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+  .force("charge", d3.forceManyBody().strength(-420))
+  .force("center", d3.forceCenter(width / 2, height / 2));
+
+const link = svg.append("g")
+  .selectAll("line")
+  .data(links)
+  .enter()
+  .append("line")
+  .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+  .attr("stroke-width", 2)
+  .attr("stroke-dasharray", d => d.type === "-" ? "6,4" : "0");
+
+const node = svg.append("g")
+  .selectAll("g")
+  .data(nodes)
+  .enter()
+  .append("g")
+  .call(
+    d3.drag()
+      .on("start", dragStart)
+      .on("drag", dragged)
+      .on("end", dragEnd)
+  );
+
+node.append("circle")
+  .attr("r", d => 26 + d.pos * 3)
+  .attr("fill", d => d.id === leader.id ? "#facc15" : "#60a5fa")
+  .attr("stroke", "#334155")
+  .attr("stroke-width", 2)
+  .attr("filter", d => d.id === leader.id ? "url(#glow)" : null);
+
+node.append("text")
+  .text(d => d.name)
+  .attr("text-anchor", "middle")
+  .attr("dy", ".35em")
+  .attr("font-size", "13px")
+  .attr("font-weight", "bold")
+  .attr("fill", "#0f172a");
+
+simulation.on("tick", () => {
+  link
+    .attr("x1", d => d.source.x)
+    .attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x)
+    .attr("y2", d => d.target.y);
+
+  node.attr("transform", d => `translate(${d.x}, ${d.y})`);
+});
+
+/* ======================================================
+   DRAG
+====================================================== */
+
+function dragStart(event, d) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x;
+  d.fy = d.y;
+}
+
+function dragged(event, d) {
+  d.fx = event.x;
+  d.fy = event.y;
+}
+
+function dragEnd(event, d) {
+  if (!event.active) simulation.alphaTarget(0);
+  d.fx = null;
+  d.fy = null;
+}
+</script>
+
 </body>
 </html>
