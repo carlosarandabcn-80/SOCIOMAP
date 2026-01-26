@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Mapa de Calor Sociométrico</title>
+
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: "Segoe UI", sans-serif;
       background: #0f172a;
       color: #0f172a;
       text-align: center;
@@ -34,6 +35,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
+      table-layout: fixed;
     }
 
     th, td {
@@ -51,13 +53,24 @@
       z-index: 2;
     }
 
-    td {
-      transition: background 0.3s;
+    .heat-pos {
+      background: #bbf7d0; /* verde */
+      font-weight: bold;
     }
 
-    .heat-pos { background: #bbf7d0; }    /* verde claro */
-    .heat-neg { background: #fecaca; }    /* rojo claro */
-    .heat-zero { background: #f8fafc; }   /* gris muy claro */
+    .heat-neg {
+      background: #fecaca; /* rojo */
+      font-weight: bold;
+    }
+
+    .heat-zero {
+      background: #f8fafc; /* neutro */
+      color: #94a3b8;
+    }
+
+    .diag {
+      background: #e2e8f0;
+    }
 
     .legend {
       display: flex;
@@ -83,12 +96,13 @@
 
     .btn {
       margin-top: 24px;
-      padding: 10px 18px;
+      padding: 12px 22px;
       background: #3b82f6;
       color: white;
       border: none;
       border-radius: 10px;
       font-size: 15px;
+      font-weight: bold;
       cursor: pointer;
     }
 
@@ -103,11 +117,12 @@
     }
   </style>
 </head>
+
 <body>
 
 <div class="container">
   <h1>Mapa de Calor Sociométrico</h1>
-  <p>Relaciones entre los participantes: emisor → receptor</p>
+  <p>Relaciones sociométricas (emisor → receptor)</p>
 
   <div id="heatmap"></div>
 
@@ -117,59 +132,89 @@
     <span><i style="background:#f8fafc; border:1px solid #94a3b8;"></i> Sin relación</span>
   </div>
 
-  <button class="btn" onclick="window.location.href='Sociograma_web.html'">🔙 Volver al Sociograma</button>
+  <button class="btn" onclick="window.location.href='Sociograma_web.html'">
+    🔙 Volver al Sociograma
+  </button>
 
   <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
 </div>
 
 <script>
-  const data = JSON.parse(localStorage.getItem("sociogramaData"));
-  if (!data || !data.nodes || !data.links) {
-    document.getElementById("heatmap").innerHTML = "<p style='color:red'>No hay datos válidos. Completa primero el formulario sociométrico.</p>";
-    throw new Error("Datos no encontrados");
-  }
+/* =========================
+   CARGA DE DATOS
+========================= */
 
-  const names = data.nodes.map(n => n.name);
-  const matrix = [];
+const data = JSON.parse(localStorage.getItem("sociogramaData"));
 
-  // Inicializar matriz NxN con "0"
-  for (let i = 0; i < names.length; i++) {
-    matrix[i] = [];
-    for (let j = 0; j < names.length; j++) {
-      matrix[i][j] = "0";
-    }
-  }
+if (!data || !data.nodes || !data.links) {
+  document.getElementById("heatmap").innerHTML =
+    "<p style='color:red;font-weight:bold;'>No hay datos sociométricos. Vuelve al formulario.</p>";
+  throw new Error("Datos no encontrados");
+}
 
-  // Rellenar la matriz según los links
-  data.links.forEach(link => {
-    const i = names.indexOf(link.source.name);
-    const j = names.indexOf(link.target.name);
+/* =========================
+   NOMBRES Y MATRIZ
+========================= */
+
+const names = data.nodes.map(n => n.name);
+const size = names.length;
+
+// Crear matriz NxN inicializada a "0"
+const matrix = Array.from({ length: size }, () =>
+  Array.from({ length: size }, () => "0")
+);
+
+/* =========================
+   RELLENAR MATRIZ (ROBUSTO)
+========================= */
+
+data.links.forEach(link => {
+  const sourceName =
+    typeof link.source === "string" ? link.source : link.source.name;
+  const targetName =
+    typeof link.target === "string" ? link.target : link.target.name;
+
+  const i = names.indexOf(sourceName);
+  const j = names.indexOf(targetName);
+
+  if (i !== -1 && j !== -1) {
     matrix[i][j] = link.type;
-  });
+  }
+});
 
-  // Generar la tabla HTML
-  let html = "<table><thead><tr><th>De \\ A</th>";
-  names.forEach(name => {
-    html += `<th>${name}</th>`;
-  });
-  html += "</tr></thead><tbody>";
+/* =========================
+   CONSTRUIR TABLA HTML
+========================= */
 
-  matrix.forEach((row, i) => {
-    html += `<tr><th>${names[i]}</th>`;
-    row.forEach((val, j) => {
-      if (i === j) {
-        html += `<td style="background:#e2e8f0;"></td>`;
-      } else {
-        let cls = val === "+" ? "heat-pos" : val === "-" ? "heat-neg" : "heat-zero";
-        html += `<td class="${cls}">${val}</td>`;
-      }
-    });
-    html += "</tr>";
-  });
+let html = "<table><thead><tr><th>De \\ A</th>";
 
-  html += "</tbody></table>";
-  document.getElementById("heatmap").innerHTML = html;
+names.forEach(name => {
+  html += `<th>${name}</th>`;
+});
+
+html += "</tr></thead><tbody>";
+
+matrix.forEach((row, i) => {
+  html += `<tr><th>${names[i]}</th>`;
+  row.forEach((val, j) => {
+    if (i === j) {
+      html += `<td class="diag"></td>`;
+    } else if (val === "+") {
+      html += `<td class="heat-pos">+</td>`;
+    } else if (val === "-") {
+      html += `<td class="heat-neg">−</td>`;
+    } else {
+      html += `<td class="heat-zero">0</td>`;
+    }
+  });
+  html += "</tr>";
+});
+
+html += "</tbody></table>";
+
+document.getElementById("heatmap").innerHTML = html;
 </script>
 
 </body>
 </html>
+
