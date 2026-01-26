@@ -67,11 +67,6 @@
       display: block;
       margin: 0 auto 6px;
     }
-    .error {
-      padding: 40px;
-      color: #ef4444;
-      font-size: 18px;
-    }
   </style>
 </head>
 <body>
@@ -96,13 +91,22 @@
   </div>
 
   <script>
-    const labels = JSON.parse(sessionStorage.getItem("socio_labels") || "null");
-    const matrix = JSON.parse(sessionStorage.getItem("socio_matrix") || "null");
-    const grupo = sessionStorage.getItem("socio_grupo") || "";
+    let labels = JSON.parse(sessionStorage.getItem("socio_labels") || "null");
+    let matrix = JSON.parse(sessionStorage.getItem("socio_matrix") || "null");
+    let grupo = sessionStorage.getItem("socio_grupo") || "DEMO";
+
+    let modoDemo = false;
 
     if (!labels || !matrix || labels.length === 0) {
-      document.getElementById("sociograma").innerHTML = '<div class="error">⚠️ No hay datos sociométricos válidos.<br>Debes completar primero el formulario sociométrico.</div>';
-      throw new Error("No hay datos válidos");
+      // Cargar ejemplo DEMO si no hay datos válidos
+      labels = ["Ana", "Luis", "Sofía", "Pedro"];
+      matrix = [
+        ["0", "+", "-", "+"],
+        ["-", "0", "+", "-"],
+        ["+", "-", "0", "+"],
+        ["-", "+", "-", "0"]
+      ];
+      modoDemo = true;
     }
 
     const fecha = new Date().toLocaleDateString("es-ES", {
@@ -110,7 +114,8 @@
       month: "long",
       day: "numeric"
     });
-    document.getElementById("grupoInfo").textContent = `Grupo: ${grupo || "Sin nombre"} — ${fecha}`;
+
+    document.getElementById("grupoInfo").textContent = `Grupo: ${grupo} — ${fecha}${modoDemo ? " (Modo DEMO)" : ""}`;
 
     const nodes = labels.map((name, i) => {
       let positivos = 0, negativos = 0;
@@ -219,3 +224,5 @@
   </script>
 </body>
 </html>
+
+
