@@ -9,7 +9,6 @@
       margin: 0;
       font-family: "Segoe UI", sans-serif;
       background: #0f172a;
-      color: #0f172a;
       text-align: center;
     }
 
@@ -36,7 +35,7 @@
 
     svg {
       width: 100%;
-      height: 600px;
+      height: 620px;
       border-radius: 12px;
     }
 
@@ -88,7 +87,7 @@
       background: white;
       border-radius: 12px;
       padding: 4px 10px;
-      margin-top: 18px;
+      margin-top: 24px;
     }
   </style>
 </head>
@@ -101,8 +100,8 @@
     <svg id="graph"></svg>
 
     <div class="legend">
-      <span><i style="background:#22c55e;"></i> Vínculo positivo</span>
-      <span><i style="background:#ef4444;"></i> Vínculo negativo</span>
+      <span><i style="background:#22c55e;"></i> Relación positiva</span>
+      <span><i style="background:#ef4444;"></i> Relación negativa</span>
       <span><i style="background:#facc15;"></i> Líder sociométrico</span>
       <span><i style="background:#60a5fa;"></i> Tamaño ∝ votos positivos</span>
     </div>
@@ -121,8 +120,8 @@
     if (!data || !data.nodes || !data.links) {
       d3.select("#graph")
         .append("text")
-        .attr("x", "50%")
-        .attr("y", "50%")
+        .attr("x", 300)
+        .attr("y", 300)
         .attr("text-anchor", "middle")
         .attr("fill", "red")
         .attr("font-size", 18)
@@ -150,6 +149,7 @@
       .attr("d", "M0,-5L10,0L0,5")
       .attr("fill", d => d === "pos" ? "#22c55e" : "#ef4444");
 
+    // Convertir nombres en objetos para links
     const nodeMap = new Map(data.nodes.map(n => [n.name, n]));
     data.links.forEach(l => {
       l.source = nodeMap.get(l.source);
@@ -160,7 +160,7 @@
       .force("link", d3.forceLink(data.links).id(d => d.name).distance(140))
       .force("charge", d3.forceManyBody().strength(-350))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(d => 22 + d.votos));
+      .force("collision", d3.forceCollide().radius(d => 24 + d.p));
 
     const link = svg.append("g")
       .selectAll("path")
@@ -185,7 +185,7 @@
       );
 
     node.append("circle")
-      .attr("r", d => 12 + d.votos)
+      .attr("r", d => 12 + d.p)
       .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
       .attr("stroke", "#0f172a")
       .attr("stroke-width", 2);
@@ -233,3 +233,4 @@
   </script>
 </body>
 </html>
+
