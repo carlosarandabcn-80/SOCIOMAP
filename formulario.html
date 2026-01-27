@@ -1,98 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Formulario Sociométrico — SOCIOMAP</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <style>
-  body {
-    background: #0f172a;
-    color: #e2e8f0;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 0;
-    padding: 20px;
-  }
-  .container {
-    max-width: 1000px;
-    margin:auto;
-    background: rgba(255,255,255,0.05);
-    padding: 28px;
-    border-radius: 14px;
-  }
-  input, select {
-    width:100%;
-    padding:8px;
-    font-size:14px;
-    border-radius:8px;
-    margin:6px 0;
-  }
-  .btn {
-    padding:10px 16px;
-    border-radius:8px;
-    border:none;
-    font-weight:bold;
-    cursor:pointer;
-    font-size:14px;
-    margin-top:10px;
-  }
-  .btn-primary {
-    background:#3b82f6;
-    color:white;
-  }
-  .btn-disabled {
-    background:#475569;
-    color:#cbd5e1;
-    cursor:not-allowed;
-    opacity:0.6;
-  }
-  table {
-    width:100%;
-    border-collapse:collapse;
-    margin-top:18px;
-  }
-  th, td {
-    border:1px solid #475569;
-    padding:6px;
-  }
-  th {
-    background:#1e293b;
-    color:white;
-  }
-  .checkOK {
-    color:#22c55e;
-    font-weight:bold;
-  }
-  .ranking-box, .grafico-box {
-    background:white;
-    color:black;
-    border-radius:12px;
-    padding:16px;
-    margin-top:20px;
-    display:none;
-  }
-  .export-row { margin-top:18px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
-  .export-row .btn { font-size:13px; padding:7px 14px;}
-  .fila-lider { background:#22c55e20; }
-  .fila-rechazado { background:#ef444420; }
-  .fila-aislado { background:#94a3b820; }
-  .fila-ambivalente { background:#eab30820; }
-  .fila-integrado { background:#3b82f620; }
-
-  img.logo {
-    height:64px;
-    margin-top:24px;
-    background:white;
-    border-radius:12px;
-    padding:4px 12px;
-  }
-  footer {margin-top:12px; color:#94a3b8; font-size:14px;}
+  body{background:#0f172a;color:#e2e8f0;font-family:Arial,sans-serif;text-align:center;padding:20px;}
+  .container{max-width:1000px;margin:auto;background:rgba(255,255,255,0.05);padding:28px;border-radius:14px;}
+  input,select{width:100%;padding:8px;margin:6px 0;border-radius:8px;font-size:14px;}
+  .checkbox-row{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px;}
+  table{width:100%;border-collapse:collapse;margin-top:20px;}
+  th,td{border:1px solid #475569;padding:6px;text-align:center;}
+  th{background:#1e293b;color:white;}
+  .checkOK{color:#22c55e;font-weight:bold;}
+  .btn{padding:8px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;margin-top:10px;}
+  .btn-primary{background:#3b82f6;color:white;}
+  .btn-disabled{background:#475569;color:#cbd5e1;cursor:not-allowed;opacity:0.6;}
+  .ranking-box, .grafico-box{background:white;color:black;border-radius:12px;padding:16px;margin-top:22px;display:none;}
+  .export-row{display:flex;justify-content:center;gap:12px;margin-top:18px;flex-wrap:wrap;}
+  .export-row .btn{font-size:13px;padding:7px 14px;}
+  img.logo{height:64px;background:white;border-radius:12px;padding:4px 12px;margin-top:20px;}
+  footer{margin-top:14px;color:#94a3b8;font-size:14px;}
 </style>
-
 </head>
 <body>
 
@@ -105,13 +38,10 @@
   <input id="grupo" placeholder="Ej.: 3ºA, Equipo Verde...">
 
   <label>Número de participantes:</label>
-  <select id="num">
-    <option value="">-- Elige --</option>
-  </select>
+  <select id="num"><option value="">-- Elige --</option></select>
 
-  <div style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
-    <input type="checkbox" id="custom">
-    <label for="custom">Usar nombres personalizados</label>
+  <div class="checkbox-row">
+    <input type="checkbox" id="custom"><label for="custom">Usar nombres personalizados</label>
   </div>
 
   <input id="names" placeholder="Ana, Juan, Pedro..." style="display:none;">
@@ -142,41 +72,42 @@
 </div>
 
 <script>
-
+// llenar selects
 const sel=document.getElementById("num");
 for(let i=7;i<=40;i++) sel.innerHTML+=`<option value="${i}">${i}</option>`;
 
 document.getElementById("custom").onchange = () => {
-  document.getElementById("names").style.display = document.getElementById("custom").checked ? "block" : "none";
-}
+  document.getElementById("names").style.display =
+    document.getElementById("custom").checked ? "block" : "none";
+};
 
 function habilitarBotones(){
-  ["btnCrearRanking","btnExportTabla","btnExportRanking","btnCrearSociograma"].forEach(id => {
+  ["btnCrearRanking","btnExportTabla","btnExportRanking","btnCrearSociograma"].forEach(id=>{
     const e=document.getElementById(id);
-    e.disabled=false;
-    e.classList.remove("btn-disabled");
+    e.disabled=false; e.classList.remove("btn-disabled");
   });
 }
 
-// crear tabla sociométrica
+// GENERAR TABLA
 function crearTabla(){
-  const n=document.getElementById("num").value;
+  const n=parseInt(document.getElementById("num").value);
   const grupo=document.getElementById("grupo").value.trim();
-  if(!n) return alert("Debes elegir participantes.");
-  if(!grupo) return alert("Debes indicar nombre del grupo.");
+  if(!n) return alert("Selecciona número participantes.");
+  if(!grupo) return alert("Escribe nombre del grupo.");
 
   localStorage.setItem("grupoNombre",grupo);
 
   let names=[];
   if(document.getElementById("custom").checked){
     names=document.getElementById("names").value.split(",").map(x=>x.trim()).filter(x=>x);
-    if(names.length!=n) return alert("Debes poner exactamente "+n+" nombres.");
+    if(names.length!==n) return alert("Proporciona exactamente "+n+" nombres.");
   } else {
     for(let i=1;i<=n;i++) names.push("P"+i);
   }
 
+  // construir tabla
   let html=`<table id="tablaVotos"><thead><tr><th>De\\A</th>`;
-  names.forEach(n=>html+=`<th>${n}</th>`);
+  names.forEach(nm=>html+=`<th>${nm}</th>`);
   html+=`<th>✔</th></tr></thead><tbody>`;
 
   names.forEach((from,i)=>{
@@ -190,11 +121,10 @@ function crearTabla(){
 
   html+=`</tbody></table>`;
   document.getElementById("tabla").innerHTML=html;
-
   document.querySelectorAll(".cell").forEach(c=>c.onchange=validarTabla);
 }
 
-// validar tabla sociométrica
+// validar tabla sociometrica
 function validarTabla(){
   let ok=true;
   document.querySelectorAll("#tablaVotos tbody tr").forEach((tr,i)=>{
@@ -203,22 +133,20 @@ function validarTabla(){
       if(s.value==="+") p++;
       if(s.value==="-") n++;
     });
-    document.getElementById("c"+i).textContent=(p===3 && n===3)?"✔":"";
-    if(p!==3 || n!==3) ok=false;
+    document.getElementById("c"+i).textContent=(p===3&&n===3)?"✔":"";
+    if(p!==3||n!==3) ok=false;
   });
   if(ok) habilitarBotones();
 }
 
-// crear ranking
+// procesar ranking y grafico
 function procesar(){
-  const labels=[...document.querySelectorAll("#tablaVotos thead th")].slice(1,-1).map(th=>th.textContent);
+  const labels=[...document.querySelectorAll("#tablaVotos thead th")].slice(1,-1)
+                 .map(th=>th.textContent);
 
-  // contar stats
-  let stats={};
-  labels.forEach(l=>stats[l]={p:0,n:0});
-
-  document.querySelectorAll(".cell").forEach((c,idx)=>{
-    const j=idx%labels.length;
+  let stats=Object.fromEntries(labels.map(l=>[l,{p:0,n:0}]));
+  document.querySelectorAll(".cell").forEach((c,i)=>{
+    const j=i%labels.length;
     if(c.value==="+") stats[labels[j]].p++;
     if(c.value==="-") stats[labels[j]].n++;
   });
@@ -234,19 +162,20 @@ function procesar(){
     return {l,p,n,rol};
   }).sort((a,b)=>b.p-a.p);
 
-  // tabla ranking
-  let html=`<table><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
+  // mostrar ranking
+  let rh=`<table><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
   resultados.forEach(r=>{
-    html+=`<tr class="fila-${r.rol.toLowerCase()}"><td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
+    rh+=`<tr class="fila-${r.rol.toLowerCase()}">
+           <td>${r.l}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
   });
-  html+=`</table>`;
-  document.getElementById("ranking").innerHTML=html;
+  rh+=`</table>`;
+  document.getElementById("ranking").innerHTML=rh;
   document.getElementById("ranking").style.display="block";
 
-  // gráfico
+  // grafico de barras
   if(window.chart) window.chart.destroy();
   document.getElementById("graficoBox").style.display="block";
-  window.chart=new Chart(document.getElementById("chart"), {
+  window.chart=new Chart(document.getElementById("chart"),{
     type:"bar",
     data:{
       labels:resultados.map(r=>r.l),
@@ -257,14 +186,12 @@ function procesar(){
     }
   });
 
-  // guardar para sociograma
-  localStorage.setItem("sociogramaData", JSON.stringify({
-    nodes: resultados.map(r=>({
-      name:r.l, votos:r.p, p:r.p, n:r.n, rol:r.rol
-    })),
-    links: resultados.flatMap((r,idx)=>
-      [...document.querySelectorAll(`#tablaVotos tbody tr:nth-child(${idx+1}) select`)]
-        .map((sel,j)=>sel.value!=="0" ? {source:r.l,target:labels[j],type:sel.value} : null)
+  // guardar sociogramaData
+  localStorage.setItem("sociogramaData",JSON.stringify({
+    nodes: resultados.map(r=>({name:r.l,p:r.p,n:r.n,rol:r.rol})),
+    links: resultados.flatMap((r,i)=>
+      [...document.querySelectorAll(`#tablaVotos tbody tr:nth-child(${i+1}) select`)]
+        .map((sel,j)=>sel.value!=="0"?{source:r.l,target:labels[j],type:sel.value}:null)
         .filter(x=>x)
     )
   }));
