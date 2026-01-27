@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Sociograma Interactivo</title>
+
   <script src="https://d3js.org/d3.v7.min.js"></script>
+
   <style>
     body {
       margin: 0;
@@ -35,7 +37,7 @@
 
     svg {
       width: 100%;
-      height: 620px;
+      height: 650px;
       border-radius: 12px;
     }
 
@@ -87,13 +89,14 @@
       background: white;
       border-radius: 12px;
       padding: 4px 10px;
-      margin-top: 24px;
+      margin-top: 18px;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
+
     <h1>Sociograma Interactivo</h1>
     <p id="infoGrupoFecha"></p>
 
@@ -108,31 +111,42 @@
 
     <img src="logo.png" class="logo" alt="SOCIOMAP">
     <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
+
   </div>
 
   <script>
-    const data = JSON.parse(localStorage.getItem("sociogramaData"));
+    // ---- Obtener datos y validar ---
+    let stored = localStorage.getItem("sociogramaData");
+    let data;
+    try {
+      data = stored ? JSON.parse(stored) : null;
+    } catch (err) {
+      data = null;
+    }
+
     const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
     const hoy = new Date();
-    const fecha = hoy.toLocaleDateString("es-ES", { day: 'numeric', month: 'long', year: 'numeric' });
+    const fecha = hoy.toLocaleDateString("es-ES", { day:'numeric', month:'long', year:'numeric' });
     document.getElementById("infoGrupoFecha").textContent = `${grupo} — ${fecha}`;
 
-    if (!data || !data.nodes || !data.links) {
+    if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.links)) {
       d3.select("#graph")
         .append("text")
-        .attr("x", 300)
-        .attr("y", 300)
+        .attr("x", "50%").attr("y", "50%")
         .attr("text-anchor", "middle")
         .attr("fill", "red")
         .attr("font-size", 18)
         .text("No hay datos sociométricos. Vuelve al formulario.");
-      throw new Error("No hay datos");
+      throw new Error("No hay datos sociométricos válidos.");
     }
 
+    // --- Configuración D3 ---
     const svg = d3.select("#graph");
+    svg.selectAll("*").remove(); // limpiar
     const width = svg.node().clientWidth;
     const height = svg.node().clientHeight;
 
+    // agregar marcadores
     svg.append("defs")
       .selectAll("marker")
       .data(["pos", "neg"])
@@ -149,7 +163,7 @@
       .attr("d", "M0,-5L10,0L0,5")
       .attr("fill", d => d === "pos" ? "#22c55e" : "#ef4444");
 
-    // Convertir nombres en objetos para links
+    // Mapear nodos y preparar links
     const nodeMap = new Map(data.nodes.map(n => [n.name, n]));
     data.links.forEach(l => {
       l.source = nodeMap.get(l.source);
@@ -159,8 +173,8 @@
     const simulation = d3.forceSimulation(data.nodes)
       .force("link", d3.forceLink(data.links).id(d => d.name).distance(140))
       .force("charge", d3.forceManyBody().strength(-350))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(d => 24 + d.p));
+      .force("center", d3.forceCenter(width/2, height/2))
+      .force("collision", d3.forceCollide().radius(d => 15 + d.p));
 
     const link = svg.append("g")
       .selectAll("path")
@@ -169,9 +183,9 @@
       .append("path")
       .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
       .attr("stroke-width", 2)
-      .attr("fill", "none")
-      .attr("stroke-dasharray", d => d.type === "-" ? "4,2" : "0")
-      .attr("marker-end", d => d.type === "+" ? "url(#arrow-pos)" : "url(#arrow-neg)");
+      .attr("fill","none")
+      .attr("stroke-dasharray", d=>d.type==="-"?"4,2":"0")
+      .attr("marker-end", d => d.type==="+" ? "url(#arrow-pos)" : "url(#arrow-neg)");
 
     const node = svg.append("g")
       .selectAll("g")
@@ -185,52 +199,49 @@
       );
 
     node.append("circle")
-      .attr("r", d => 12 + d.p)
-      .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
-      .attr("stroke", "#0f172a")
-      .attr("stroke-width", 2);
+      .attr("r", d=>12 + d.p)
+      .attr("fill", d=> d.rol==="Líder" ? "#facc15" : "#60a5fa")
+      .attr("stroke","#0f172a")
+      .attr("stroke-width",2);
 
     node.append("text")
-      .attr("class", "node-label")
-      .attr("text-anchor", "middle")
+      .attr("class","node-label")
+      .attr("text-anchor","middle")
       .attr("dy", 4)
       .text(d => d.name);
 
     node.append("text")
-      .attr("class", "node-stats")
-      .attr("text-anchor", "middle")
-      .attr("dy", 22)
+      .attr("class","node-stats")
+      .attr("text-anchor","middle")
+      .attr("dy", 20)
       .text(d => `+${d.p} / −${d.n}`);
 
-    simulation.on("tick", () => {
+    simulation.on("tick", ()=>{
       link.attr("d", d => {
-        const dx = d.target.x - d.source.x;
-        const dy = d.target.y - d.source.y;
-        const dr = Math.sqrt(dx * dx + dy * dy);
-        return `M${d.source.x},${d.source.y}
-                A${dr},${dr} 0 0,1
-                ${d.target.x},${d.target.y}`;
+        const dx=d.target.x - d.source.x;
+        const dy=d.target.y - d.source.y;
+        const dr=Math.sqrt(dx*dx + dy*dy);
+        return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
       });
-      node.attr("transform", d => `translate(${d.x},${d.y})`);
+
+      node.attr("transform", d=>`translate(${d.x},${d.y})`);
     });
 
-    function dragstarted(event, d) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
+    function dragstarted(event,d){
+      if(!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx=d.x;
+      d.fy=d.y;
+    }
+    function dragged(event,d){
+      d.fx=event.x;
+      d.fy=event.y;
+    }
+    function dragended(event,d){
+      if(!event.active) simulation.alphaTarget(0);
+      d.fx=null; d.fy=null;
     }
 
-    function dragged(event, d) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragended(event, d) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
   </script>
+
 </body>
 </html>
-
