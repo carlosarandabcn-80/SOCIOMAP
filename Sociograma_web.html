@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Sociograma Interactivo Académico</title>
+  <title>Sociograma Interactivo</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-
   <style>
     body {
       margin: 0;
@@ -23,13 +22,16 @@
     }
 
     h1 {
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      font-size: 28px;
+      color: #0f172a;
     }
 
     p {
       margin-top: 0;
-      color: #475569;
-      font-size: 14px;
+      color: #334155;
+      font-size: 15px;
+      font-weight: 500;
     }
 
     svg {
@@ -42,9 +44,11 @@
       display: flex;
       justify-content: center;
       gap: 24px;
-      margin-top: 14px;
+      margin-top: 18px;
       flex-wrap: wrap;
       font-size: 14px;
+      font-weight: 500;
+      color: #1e293b;
     }
 
     .legend span {
@@ -54,8 +58,8 @@
     }
 
     .legend i {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
       display: inline-block;
     }
@@ -73,169 +77,159 @@
       pointer-events: none;
     }
 
-    .btn {
-      margin-top: 18px;
-      padding: 12px 22px;
-      border-radius: 10px;
-      border: none;
-      background: #3b82f6;
-      color: white;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .btn:hover {
-      background: #2563eb;
-    }
-
     footer {
-      margin-top: 24px;
+      margin-top: 30px;
       font-size: 13px;
       color: #64748b;
+    }
+
+    img.logo {
+      height: 60px;
+      background: white;
+      border-radius: 12px;
+      padding: 4px 10px;
+      margin-top: 18px;
     }
   </style>
 </head>
 
 <body>
+  <div class="container">
+    <h1>Sociograma Interactivo</h1>
+    <p id="infoGrupoFecha"></p>
 
-<div class="container">
-  <h1>Sociograma Interactivo Académico</h1>
-  <p>Relaciones sociométricas representadas gráficamente</p>
+    <svg id="graph"></svg>
 
-  <svg id="graph"></svg>
+    <div class="legend">
+      <span><i style="background:#22c55e;"></i> Vínculo positivo</span>
+      <span><i style="background:#ef4444;"></i> Vínculo negativo</span>
+      <span><i style="background:#facc15;"></i> Líder sociométrico</span>
+      <span><i style="background:#60a5fa;"></i> Tamaño ∝ votos positivos</span>
+    </div>
 
-  <div class="legend">
-    <span><i style="background:#22c55e;"></i> Relación positiva</span>
-    <span><i style="background:#ef4444;"></i> Relación negativa</span>
-    <span><i style="background:#facc15;"></i> Líder sociométrico</span>
-    <span><i style="background:#60a5fa;"></i> Tamaño ∝ votos positivos</span>
+    <img src="logo.png" class="logo" alt="SOCIOMAP">
+    <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
   </div>
 
-  <!-- ✅ BOTÓN FUNCIONAL AÑADIDO -->
-  <button class="btn" onclick="window.location.href='MapaCalor_web.html'">
-    🔥 Crear Mapa de Calor
-  </button>
+  <script>
+    const data = JSON.parse(localStorage.getItem("sociogramaData"));
+    const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
+    const hoy = new Date();
+    const fecha = hoy.toLocaleDateString("es-ES", { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById("infoGrupoFecha").textContent = `${grupo} — ${fecha}`;
 
-  <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
-</div>
+    if (!data || !data.nodes || !data.links) {
+      d3.select("#graph")
+        .append("text")
+        .attr("x", "50%")
+        .attr("y", "50%")
+        .attr("text-anchor", "middle")
+        .attr("fill", "red")
+        .attr("font-size", 18)
+        .text("No hay datos sociométricos. Vuelve al formulario.");
+      throw new Error("No hay datos");
+    }
 
-<script>
-const data = JSON.parse(localStorage.getItem("sociogramaData"));
+    const svg = d3.select("#graph");
+    const width = svg.node().clientWidth;
+    const height = svg.node().clientHeight;
 
-if (!data || !data.nodes || !data.links) {
-  d3.select("#graph")
-    .append("text")
-    .attr("x", "50%")
-    .attr("y", "50%")
-    .attr("text-anchor", "middle")
-    .attr("fill", "red")
-    .attr("font-size", 18)
-    .text("No hay datos sociométricos. Vuelve al formulario.");
-  throw new Error("No data");
-}
+    svg.append("defs")
+      .selectAll("marker")
+      .data(["pos", "neg"])
+      .enter()
+      .append("marker")
+      .attr("id", d => "arrow-" + d)
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 24)
+      .attr("refY", 0)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr("fill", d => d === "pos" ? "#22c55e" : "#ef4444");
 
-const svg = d3.select("#graph");
-const width = svg.node().clientWidth;
-const height = svg.node().clientHeight;
+    const nodeMap = new Map(data.nodes.map(n => [n.name, n]));
+    data.links.forEach(l => {
+      l.source = nodeMap.get(l.source);
+      l.target = nodeMap.get(l.target);
+    });
 
-svg.append("defs")
-  .selectAll("marker")
-  .data(["pos", "neg"])
-  .enter()
-  .append("marker")
-  .attr("id", d => "arrow-" + d)
-  .attr("viewBox", "0 -5 10 10")
-  .attr("refX", 24)
-  .attr("refY", 0)
-  .attr("markerWidth", 6)
-  .attr("markerHeight", 6)
-  .attr("orient", "auto")
-  .append("path")
-  .attr("d", "M0,-5L10,0L0,5")
-  .attr("fill", d => d === "pos" ? "#22c55e" : "#ef4444");
+    const simulation = d3.forceSimulation(data.nodes)
+      .force("link", d3.forceLink(data.links).id(d => d.name).distance(140))
+      .force("charge", d3.forceManyBody().strength(-350))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius(d => 22 + d.votos));
 
-const nodeMap = new Map(data.nodes.map(n => [n.name, n]));
-data.links.forEach(l => {
-  l.source = nodeMap.get(l.source);
-  l.target = nodeMap.get(l.target);
-});
+    const link = svg.append("g")
+      .selectAll("path")
+      .data(data.links)
+      .enter()
+      .append("path")
+      .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+      .attr("stroke-width", 2)
+      .attr("fill", "none")
+      .attr("stroke-dasharray", d => d.type === "-" ? "4,2" : "0")
+      .attr("marker-end", d => d.type === "+" ? "url(#arrow-pos)" : "url(#arrow-neg)");
 
-const simulation = d3.forceSimulation(data.nodes)
-  .force("link", d3.forceLink(data.links).id(d => d.name).distance(140))
-  .force("charge", d3.forceManyBody().strength(-350))
-  .force("center", d3.forceCenter(width / 2, height / 2))
-  .force("collision", d3.forceCollide().radius(d => 22 + d.votos));
+    const node = svg.append("g")
+      .selectAll("g")
+      .data(data.nodes)
+      .enter()
+      .append("g")
+      .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended)
+      );
 
-const link = svg.append("g")
-  .selectAll("path")
-  .data(data.links)
-  .enter()
-  .append("path")
-  .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
-  .attr("stroke-width", 2)
-  .attr("fill", "none")
-  .attr("stroke-dasharray", d => d.type === "-" ? "4,2" : "0")
-  .attr("marker-end", d => d.type === "+" ? "url(#arrow-pos)" : "url(#arrow-neg)");
+    node.append("circle")
+      .attr("r", d => 12 + d.votos)
+      .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
+      .attr("stroke", "#0f172a")
+      .attr("stroke-width", 2);
 
-const node = svg.append("g")
-  .selectAll("g")
-  .data(data.nodes)
-  .enter()
-  .append("g")
-  .call(d3.drag()
-    .on("start", dragstarted)
-    .on("drag", dragged)
-    .on("end", dragended)
-  );
+    node.append("text")
+      .attr("class", "node-label")
+      .attr("text-anchor", "middle")
+      .attr("dy", 4)
+      .text(d => d.name);
 
-node.append("circle")
-  .attr("r", d => 12 + d.votos)
-  .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
-  .attr("stroke", "#0f172a")
-  .attr("stroke-width", 2);
+    node.append("text")
+      .attr("class", "node-stats")
+      .attr("text-anchor", "middle")
+      .attr("dy", 22)
+      .text(d => `+${d.p} / −${d.n}`);
 
-node.append("text")
-  .attr("class", "node-label")
-  .attr("text-anchor", "middle")
-  .attr("dy", 4)
-  .text(d => d.name);
+    simulation.on("tick", () => {
+      link.attr("d", d => {
+        const dx = d.target.x - d.source.x;
+        const dy = d.target.y - d.source.y;
+        const dr = Math.sqrt(dx * dx + dy * dy);
+        return `M${d.source.x},${d.source.y}
+                A${dr},${dr} 0 0,1
+                ${d.target.x},${d.target.y}`;
+      });
+      node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
 
-node.append("text")
-  .attr("class", "node-stats")
-  .attr("text-anchor", "middle")
-  .attr("dy", 22)
-  .text(d => `+${d.p} / −${d.n}`);
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
 
-simulation.on("tick", () => {
-  link.attr("d", d => {
-    const dx = d.target.x - d.source.x;
-    const dy = d.target.y - d.source.y;
-    const dr = Math.sqrt(dx * dx + dy * dy);
-    return `M${d.source.x},${d.source.y}
-            A${dr},${dr} 0 0,1
-            ${d.target.x},${d.target.y}`;
-  });
-  node.attr("transform", d => `translate(${d.x},${d.y})`);
-});
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
 
-function dragstarted(event, d) {
-  if (!event.active) simulation.alphaTarget(0.3).restart();
-  d.fx = d.x;
-  d.fy = d.y;
-}
-
-function dragged(event, d) {
-  d.fx = event.x;
-  d.fy = event.y;
-}
-
-function dragended(event, d) {
-  if (!event.active) simulation.alphaTarget(0);
-  d.fx = null;
-  d.fy = null;
-}
-</script>
-
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+  </script>
 </body>
 </html>
