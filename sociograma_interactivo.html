@@ -1,278 +1,252 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Sociograma — SOCIOMAP</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sociograma Interactivo — SOCIOMAP</title>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
-<style>
-*{box-sizing:border-box}
+  <style>
+    * { box-sizing: border-box; }
 
-body{
-  margin:0;
-  background:#0f172a;
-  font-family:'Inter',sans-serif;
-  color:#e5e7eb;
-}
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      text-align: center;
+    }
 
-.container{
-  max-width:1200px;
-  margin:auto;
-  padding:32px 16px;
-  text-align:center;
-}
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
 
-h1{
-  font-size:32px;
-  margin-bottom:6px;
-}
+    h1 {
+      font-size: 32px;
+      margin-bottom: 4px;
+    }
 
-.sub{
-  color:#94a3b8;
-  font-size:15px;
-  margin-bottom:28px;
-}
+    .sub {
+      font-size: 15px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
 
-#sociograma{
-  background:white;
-  height:700px;
-  border-radius:18px;
-  box-shadow:0 12px 40px rgba(0,0,0,.35);
-  overflow:hidden;
-}
+    #sociograma {
+      background: white;
+      height: 680px;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+    }
 
-.legend{
-  margin-top:26px;
-  display:flex;
-  justify-content:center;
-  gap:20px;
-  flex-wrap:wrap;
-  font-size:14px;
-  color:#cbd5f5;
-}
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      font-size: 14px;
+    }
 
-.legend span{
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #cbd5f5;
+    }
 
-.legend i{
-  width:14px;
-  height:14px;
-  border-radius:50%;
-}
+    .legend i {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
 
-footer{
-  margin-top:36px;
-  font-size:13px;
-  color:#64748b;
-}
+    footer {
+      margin-top: 36px;
+      font-size: 13px;
+      color: #64748b;
+    }
 
-/* TOOLTIP */
-.tooltip{
-  position:absolute;
-  background:#0f172a;
-  color:white;
-  padding:8px 12px;
-  border-radius:10px;
-  font-size:13px;
-  pointer-events:none;
-  box-shadow:0 6px 20px rgba(0,0,0,.4);
-  opacity:0;
-  transition:.2s;
-}
-</style>
+    .tooltip {
+      position: absolute;
+      background: #0f172a;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      pointer-events: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,.4);
+      opacity: 0;
+      transition: 0.2s ease;
+    }
+  </style>
 </head>
-
 <body>
-<div class="container">
-  <h1>Sociograma Interactivo</h1>
-  <div class="sub" id="grupo"></div>
+  <div class="container">
+    <h1>Sociograma Interactivo</h1>
+    <div class="sub" id="grupo"></div>
 
-  <div id="sociograma"></div>
+    <div id="sociograma"></div>
 
-  <div class="legend">
-    <span><i style="background:#22c55e"></i>Vínculo positivo</span>
-    <span><i style="background:#ef4444"></i>Vínculo negativo</span>
-    <span><i style="background:#facc15"></i>Líder sociométrico</span>
-    <span><i style="background:#60a5fa"></i>Tamaño ∝ votos +</span>
+    <div class="legend">
+      <span><i style="background:#22c55e;"></i>Vínculo positivo</span>
+      <span><i style="background:#ef4444;"></i>Vínculo negativo</span>
+      <span><i style="background:#facc15;"></i>Líder sociométrico</span>
+      <span><i style="background:#60a5fa;"></i>Tamaño ∝ votos recibidos (+)</span>
+    </div>
+
+    <footer>© SOCIOMAP · Aranda Tools 2026</footer>
   </div>
 
-  <footer>© SOCIOMAP · Aranda Tools 2026</footer>
-</div>
+  <div class="tooltip" id="tooltip"></div>
 
-<div class="tooltip" id="tooltip"></div>
+  <script>
+    const data = JSON.parse(localStorage.getItem("sociogramaData") || "null");
+    const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
 
-<script>
-/* ================= DATOS ================= */
-const data = JSON.parse(localStorage.getItem("sociogramaData")||"null");
-const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
+    if (!data) {
+      document.body.innerHTML = "<p style='color:red;padding:24px;'>❌ No hay datos sociométricos disponibles.</p>";
+      throw new Error("Faltan datos");
+    }
 
-if(!data){ document.body.innerHTML="❌ Sin datos sociométricos"; throw"";}
+    document.getElementById("grupo").textContent = `${grupo} — ${new Date().toLocaleDateString("es-ES", {
+      day: "numeric", month: "long", year: "numeric"
+    })}`;
 
-document.getElementById("grupo").textContent =
-  `${grupo} — ${new Date().toLocaleDateString("es-ES",{day:'numeric',month:'long',year:'numeric'})}`;
+    const W = document.getElementById("sociograma").clientWidth;
+    const H = 680;
 
-const nodes = data.nodes.map((n,i)=>({
-  id:i,
-  name:n.name,
-  p:n.p,
-  n:n.n,
-  r:18+n.p*2
-}));
+    const svg = d3.select("#sociograma").append("svg")
+      .attr("width", W)
+      .attr("height", H);
 
-const index = Object.fromEntries(nodes.map(n=>[n.name,n.id]));
-const links = data.links.map(l=>({
-  source:index[l.source],
-  target:index[l.target],
-  type:l.type
-}));
+    const container = svg.append("g");
 
-const leader = nodes.reduce((a,c)=>c.p>a.p?c:a,nodes[0]).id;
+    const nodes = data.nodes.map((n, i) => ({
+      id: i,
+      name: n.name,
+      p: n.p,
+      n: n.n,
+      r: 18 + n.p * 2
+    }));
 
-/* ================= SVG ================= */
-const W = document.getElementById("sociograma").clientWidth;
-const H = 700;
+    const indexMap = Object.fromEntries(nodes.map(n => [n.name, n.id]));
 
-const svg = d3.select("#sociograma").append("svg")
-  .attr("width",W)
-  .attr("height",H);
+    const links = data.links.map(l => ({
+      source: indexMap[l.source],
+      target: indexMap[l.target],
+      type: l.type
+    }));
 
-const g = svg.append("g");
+    const leader = nodes.reduce((a, b) => b.p > a.p ? b : a, nodes[0]).id;
 
-/* ================= FLECHAS ================= */
-svg.append("defs").selectAll("marker")
-.data(["+","-"])
-.enter().append("marker")
-  .attr("id",d=>"arrow"+d)
-  .attr("viewBox","0 -5 10 10")
-  .attr("refY",0)
-  .attr("markerWidth",6)
-  .attr("markerHeight",6)
-  .attr("orient","auto")
-.append("path")
-  .attr("d","M0,-5L10,0L0,5")
-  .attr("fill",d=>d==="+"?"#22c55e":"#ef4444");
+    svg.append("defs").selectAll("marker")
+      .data(["+","-"])
+      .enter().append("marker")
+        .attr("id", d => "arrow" + d)
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 10)
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+      .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", d => d === "+" ? "#22c55e" : "#ef4444");
 
-/* ================= SIMULACIÓN ================= */
-const sim = d3.forceSimulation(nodes)
-  .force("link",d3.forceLink(links).id(d=>d.id).distance(160))
-  .force("charge",d3.forceManyBody().strength(-520))
-  .force("center",d3.forceCenter(W/2,H/2))
-  .force("collision",d3.forceCollide().radius(d=>d.r+26));
+    const sim = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.id).distance(160))
+      .force("charge", d3.forceManyBody().strength(-540))
+      .force("center", d3.forceCenter(W / 2, H / 2))
+      .force("collision", d3.forceCollide().radius(d => d.r + 6));
 
-/* ================= LINKS ================= */
-const link = g.append("g")
-  .selectAll("path")
-  .data(links)
-  .enter().append("path")
-  .attr("stroke",d=>d.type==="+"?"#22c55e":"#ef4444")
-  .attr("stroke-width",2)
-  .attr("fill","none")
-  .attr("stroke-dasharray",d=>d.type==="-"?"6,4":"0")
-  .attr("marker-end",d=>`url(#arrow${d.type})`)
-  .attr("opacity",0.85);
+    const link = container.append("g")
+      .selectAll("path")
+      .data(links)
+      .enter().append("path")
+        .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+        .attr("stroke-width", 2)
+        .attr("fill", "none")
+        .attr("stroke-dasharray", d => d.type === "-" ? "6,4" : "0")
+        .attr("marker-end", d => `url(#arrow${d.type})`)
+        .attr("opacity", 0.85);
 
-/* ================= NODOS ================= */
-const node = g.append("g")
-  .selectAll("g")
-  .data(nodes)
-  .enter().append("g")
-  .call(d3.drag()
-    .on("start",dragStart)
-    .on("drag",drag)
-    .on("end",dragEnd)
-  );
+    const node = container.append("g")
+      .selectAll("g")
+      .data(nodes)
+      .enter().append("g")
+        .call(d3.drag()
+          .on("start", dragstart)
+          .on("drag", dragged)
+          .on("end", dragend)
+        );
 
-/* CÍRCULO */
-node.append("circle")
-  .attr("r",0)
-  .attr("fill",d=>d.id===leader?"#facc15":"#60a5fa")
-  .attr("stroke","#0f172a")
-  .attr("stroke-width",2)
-  .transition()
-  .duration(800)
-  .ease(d3.easeBackOut)
-  .attr("r",d=>d.r);
+    node.append("circle")
+      .attr("r", 0)
+      .attr("fill", d => d.id === leader ? "#facc15" : "#60a5fa")
+      .attr("stroke", "#0f172a")
+      .attr("stroke-width", 2)
+      .transition()
+      .duration(800)
+      .ease(d3.easeBackOut)
+      .attr("r", d => d.r);
 
-/* ETIQUETAS */
-const label = node.append("g");
+    const tooltip = document.getElementById("tooltip");
 
-label.append("rect")
-  .attr("x",-36)
-  .attr("y",-46)
-  .attr("width",72)
-  .attr("height",36)
-  .attr("rx",8)
-  .attr("fill","white")
-  .attr("opacity",0.95)
-  .attr("stroke","#cbd5e1");
+    node.on("mouseenter", (event, d) => {
+      tooltip.innerHTML = `<b>${d.name}</b><br>👍 ${d.p} · 👎 ${d.n}`;
+      tooltip.style.opacity = 1;
+      link.attr("opacity", l =>
+        l.source.id === d.id || l.target.id === d.id ? 1 : 0.1
+      );
+    }).on("mousemove", event => {
+      tooltip.style.left = event.pageX + 14 + "px";
+      tooltip.style.top = event.pageY + 14 + "px";
+    }).on("mouseleave", () => {
+      tooltip.style.opacity = 0;
+      link.attr("opacity", 0.85);
+    });
 
-label.append("text")
-  .attr("y",-30)
-  .attr("text-anchor","middle")
-  .attr("fill","#0f172a")
-  .attr("font-size","13px")
-  .attr("font-weight","600")
-  .text(d=>d.name);
+    sim.on("tick", () => {
+      link.attr("d", d => {
+        const dx = d.target.x - d.source.x;
+        const dy = d.target.y - d.source.y;
+        const angle = Math.atan2(dy, dx);
+        const targetR = nodes[d.target.id].r;
+        const sx = d.source.x;
+        const sy = d.source.y;
+        const tx = d.target.x - Math.cos(angle) * (targetR + 2);
+        const ty = d.target.y - Math.sin(angle) * (targetR + 2);
+        return `M${sx},${sy} L${tx},${ty}`;
+      });
+      node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
 
-label.append("text")
-  .attr("y",-14)
-  .attr("text-anchor","middle")
-  .attr("fill","#334155")
-  .attr("font-size","11px")
-  .text(d=>`+${d.p} / −${d.n}`);
+    svg.call(d3.zoom().scaleExtent([0.6, 2]).on("zoom", e => {
+      container.attr("transform", e.transform);
+    }));
 
-/* ================= TOOLTIP ================= */
-const tip=document.getElementById("tooltip");
+    function dragstart(event, d) {
+      if (!event.active) sim.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
 
-node.on("mouseenter",(e,d)=>{
-  tip.innerHTML=`<b>${d.name}</b><br>👍 ${d.p} · 👎 ${d.n}`;
-  tip.style.opacity=1;
-  link.attr("opacity",l=>(l.source.id===d.id||l.target.id===d.id)?1:0.1);
-})
-.on("mousemove",e=>{
-  tip.style.left=e.pageX+14+"px";
-  tip.style.top=e.pageY+14+"px";
-})
-.on("mouseleave",()=>{
-  tip.style.opacity=0;
-  link.attr("opacity",0.85);
-});
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
 
-/* ================= TICK ================= */
-sim.on("tick",()=>{
-  link.attr("d",d=>{
-    const dx=d.target.x-d.source.x;
-    const dy=d.target.y-d.source.y;
-    const dr=Math.sqrt(dx*dx+dy*dy);
-    const rT=nodes[d.target.id].r+4;
-    const t=dr-rT;
-    const nx=d.source.x+dx*(t/dr);
-    const ny=d.source.y+dy*(t/dr);
-    return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${nx},${ny}`;
-  });
-  node.attr("transform",d=>`translate(${d.x},${d.y})`);
-});
-
-/* ================= ZOOM ================= */
-svg.call(d3.zoom().scaleExtent([0.6,1.8]).on("zoom",e=>{
-  g.attr("transform",e.transform);
-}));
-
-function dragStart(e,d){
-  if(!e.active)sim.alphaTarget(0.3).restart();
-  d.fx=d.x; d.fy=d.y;
-}
-function drag(e,d){ d.fx=e.x; d.fy=e.y; }
-function dragEnd(e,d){
-  if(!e.active)sim.alphaTarget(0);
-  d.fx=null; d.fy=null;
-}
-</script>
+    function dragend(event, d) {
+      if (!event.active) sim.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+  </script>
 </body>
 </html>
