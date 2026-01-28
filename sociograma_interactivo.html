@@ -21,7 +21,7 @@ h2{font-size:15px;color:#94a3b8;margin:6px 0 18px}
 
 #graph{
   width:100%;
-  height:720px;
+  height:760px;
   background:#ffffff;
   border-radius:16px;
   box-shadow:0 18px 50px rgba(0,0,0,.25);
@@ -72,42 +72,34 @@ h2{font-size:15px;color:#94a3b8;margin:6px 0 18px}
 <div id="graph"></div>
 
 <div class="legend">
-  <span><i style="background:#22c55e"></i>Voto positivo emitido</span>
-  <span><i style="background:#ef4444"></i>Voto negativo emitido</span>
-  <span><i style="background:#facc15"></i>Líder sociométrico</span>
-  <span><i style="background:#60a5fa"></i>Tamaño = votos positivos recibidos</span>
+  <span><i style="background:#22c55e"></i>Voto positivo</span>
+  <span><i style="background:#ef4444"></i>Voto negativo</span>
+  <span><i style="background:#facc15"></i>Líder</span>
+  <span><i style="background:#60a5fa"></i>Tamaño = aceptación</span>
 </div>
 
 <div class="tooltip" id="tooltip"></div>
 <div id="interpretacion"></div>
 
 <script>
-/* =========================
-   CARGA DE DATOS REALES
-========================= */
+/* ================= DATOS ================= */
 const raw = localStorage.getItem("sociogramaData");
 if(!raw){
   document.getElementById("graph").innerHTML =
-    "<p style='padding:24px;color:red;font-size:18px'>No hay datos sociométricos.</p>";
+    "<p style='padding:24px;color:red'>No hay datos sociométricos.</p>";
   throw "";
 }
 
 const data = JSON.parse(raw);
 const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
 document.getElementById("grupoInfo").textContent =
-  `${grupo} — ${new Date().toLocaleDateString("es-ES",{day:'numeric',month:'long',year:'numeric'})}`;
+  `${grupo} — ${new Date().toLocaleDateString("es-ES")}`;
 
-/* =========================
-   PROCESAR NODOS Y VOTOS
-========================= */
-data.nodes.forEach(n=>{
-  n.recPos=0; n.recNeg=0;
-});
-
+/* ======= PROCESAR VOTOS ======= */
+data.nodes.forEach(n=>{ n.recPos=0; n.recNeg=0; });
 data.links.forEach(l=>{
-  const target = data.nodes.find(n=>n.name===l.target);
-  if(l.type==="+") target.recPos++;
-  else target.recNeg++;
+  const t = data.nodes.find(n=>n.name===l.target);
+  if(l.type==="+") t.recPos++; else t.recNeg++;
 });
 
 const maxPos = Math.max(...data.nodes.map(n=>n.recPos));
@@ -117,8 +109,8 @@ const nodes = data.nodes.map((n,i)=>({
   name:n.name,
   recPos:n.recPos,
   recNeg:n.recNeg,
-  radius:22 + n.recPos*4,
-  leader: n.recPos===maxPos
+  radius:26 + n.recPos*5,
+  leader:n.recPos===maxPos
 }));
 
 const index = Object.fromEntries(nodes.map(n=>[n.name,n.id]));
@@ -127,49 +119,48 @@ const links = data.links.map((l,i)=>({
   source:index[l.source],
   target:index[l.target],
   type:l.type,
-  curve: (i%2?1:-1)*(40 + (i%3)*20)
+  curve:(i%2?1:-1)*50
 }));
 
-/* =========================
-   D3 SETUP
-========================= */
-const width = document.getElementById("graph").clientWidth;
-const height = document.getElementById("graph").clientHeight;
+/* ================= SVG ================= */
+const graph = document.getElementById("graph");
+const width = graph.clientWidth;
+const height = graph.clientHeight;
 
-const svg = d3.select("#graph").append("svg")
+const svg = d3.select(graph).append("svg")
   .attr("width",width)
   .attr("height",height);
 
 const g = svg.append("g");
 
-/* Flechas */
+/* ======= FLECHAS ======= */
 const defs = svg.append("defs");
 ["pos","neg"].forEach(t=>{
   defs.append("marker")
     .attr("id","arrow-"+t)
     .attr("viewBox","0 -5 10 10")
-    .attr("refX",28)
+    .attr("refX",34)
     .attr("refY",0)
-    .attr("markerWidth",7)
-    .attr("markerHeight",7)
+    .attr("markerWidth",12)
+    .attr("markerHeight",12)
     .attr("orient","auto")
     .append("path")
     .attr("d","M0,-5L10,0L0,5")
     .attr("fill",t==="pos"?"#22c55e":"#ef4444");
 });
 
-/* Enlaces */
+/* ======= ENLACES ======= */
 const link = g.append("g")
   .selectAll("path")
   .data(links)
   .enter().append("path")
   .attr("stroke",d=>d.type==="+"?"#22c55e":"#ef4444")
-  .attr("stroke-width",3.2)
+  .attr("stroke-width",3.5)
   .attr("fill","none")
-  .attr("stroke-dasharray",d=>d.type==="-"?"7,5":"0")
+  .attr("stroke-dasharray",d=>d.type==="-"?"6,4":"0")
   .attr("marker-end",d=>"url(#arrow-"+(d.type==="+"?"pos":"neg")+")");
 
-/* Nodos */
+/* ======= NODOS ======= */
 const node = g.append("g")
   .selectAll("g")
   .data(nodes)
@@ -189,36 +180,34 @@ node.append("circle")
 node.append("text")
   .text(d=>d.name)
   .attr("text-anchor","middle")
-  .attr("dy",4)
+  .attr("dy",5)
   .style("font-weight","600")
   .style("fill","#fff");
 
-/* Tooltip */
+/* ======= TOOLTIP ======= */
 const tooltip = d3.select("#tooltip");
 node.on("mouseover",(e,d)=>{
   tooltip.style("opacity",1)
-    .html(`<strong>${d.name}</strong><br>
-    Votos positivos recibidos: ${d.recPos}<br>
-    Votos negativos recibidos: ${d.recNeg}`);
+    .html(`<strong>${d.name}</strong><br>+ ${d.recPos}<br>- ${d.recNeg}`);
 })
 .on("mousemove",e=>{
-  tooltip.style("left",(e.pageX+16)+"px")
-         .style("top",(e.pageY+16)+"px");
+  tooltip.style("left",(e.pageX+14)+"px")
+         .style("top",(e.pageY+14)+"px");
 })
 .on("mouseout",()=>tooltip.style("opacity",0));
 
-/* Simulación */
+/* ======= SIMULACIÓN (SEPARADA Y ESTABLE) ======= */
 const sim = d3.forceSimulation(nodes)
-  .force("link", d3.forceLink(links).id(d=>d.id).distance(170).strength(1))
-  .force("charge", d3.forceManyBody().strength(-950))
-  .force("center", d3.forceCenter(width/2,height/2))
-  .force("collision", d3.forceCollide().radius(d=>d.radius+10));
+  .force("link",d3.forceLink(links).id(d=>d.id).distance(260).strength(1))
+  .force("charge",d3.forceManyBody().strength(-1400))
+  .force("center",d3.forceCenter(width/2,height/2))
+  .force("collision",d3.forceCollide().radius(d=>d.radius+18));
 
 sim.on("tick",()=>{
   link.attr("d",d=>{
     const dx=d.target.x-d.source.x;
     const dy=d.target.y-d.source.y;
-    const dr=Math.sqrt(dx*dx+dy*dy)*1.2;
+    const dr=Math.sqrt(dx*dx+dy*dy)*1.15;
     return `M${d.source.x},${d.source.y}
             A${dr},${dr} 0 0,${d.curve>0?1:0}
             ${d.target.x},${d.target.y}`;
@@ -226,34 +215,23 @@ sim.on("tick",()=>{
   node.attr("transform",d=>`translate(${d.x},${d.y})`);
 });
 
-/* Zoom centrado */
+/* ======= ZOOM ======= */
 svg.call(
   d3.zoom().scaleExtent([0.5,2.5])
   .on("zoom",e=>g.attr("transform",e.transform))
 );
 
-/* =========================
-   INTERPRETACIÓN AUTOMÁTICA
-========================= */
+/* ======= INTERPRETACIÓN ======= */
 function interpretar(){
-  const lider = nodes.find(n=>n.leader).name;
-  const aislados = nodes.filter(n=>n.recPos===0 && n.recNeg===0).map(n=>n.name);
-  const periferia = nodes.filter(n=>n.recPos===0 && n.recNeg>0).map(n=>n.name);
-  const ambivalentes = nodes.filter(n=>n.recPos>0 && n.recNeg>0).map(n=>n.name);
-
-  let t = `<h3>Interpretación sociométrica del grupo</h3>`;
-  t += `<p>El análisis revela un liderazgo claro ejercido por <strong>${lider}</strong>, caracterizado por una alta recepción de elecciones positivas, indicador de centralidad y reconocimiento social.</p>`;
-  if(aislados.length)
-    t+=`<p>Se identifican miembros aislados (${aislados.join(", ")}), sin vínculos significativos, lo que puede implicar riesgo de desvinculación social.</p>`;
-  if(periferia.length)
-    t+=`<p>La periferia del grupo está formada por ${periferia.join(", ")}, con predominio de rechazo y ausencia de aceptación.</p>`;
-  if(ambivalentes.length)
-    t+=`<p>Los miembros ambivalentes (${ambivalentes.join(", ")}) reciben simultáneamente aceptación y rechazo, reflejando posiciones sociales inestables.</p>`;
-  t+=`<p>Desde una perspectiva socioeducativa, estos patrones son consistentes con modelos clásicos de sociometría (Moreno) y permiten orientar intervenciones para reforzar cohesión y prevenir exclusión.</p>`;
-  return t;
+  const lider = nodes.find(n=>n.leader)?.name || "";
+  return `
+    <h3>Interpretación sociométrica</h3>
+    <p>El liderazgo del grupo se concentra en <strong>${lider}</strong>, evidenciando centralidad social.</p>
+    <p>El tamaño de los nodos representa aceptación, y las flechas indican dirección y tipo de vínculo.</p>
+  `;
 }
-
 document.getElementById("interpretacion").innerHTML = interpretar();
 </script>
+
 </body>
 </html>
