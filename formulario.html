@@ -10,45 +10,45 @@
 
 <style>
   body {
-    margin: 0; padding: 20px;
-    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
     background: #0f172a;
     color: #e2e8f0;
+    font-family: Arial, sans-serif;
     text-align: center;
   }
-
   .container {
     max-width: 1000px;
     margin: auto;
-    padding: 24px;
     background: rgba(255,255,255,0.05);
+    padding: 24px;
     border-radius: 14px;
   }
-
-  input, select { width:100%; padding:8px; margin:6px 0; border-radius:8px; font-size:14px;}
-  table{ width:100%; border-collapse:collapse; margin-top:20px;}
-  th,td{ border:1px solid #475569; padding:6px; text-align:center;}
-  th{ background:#1e293b; color:white;}
-  .btn{ padding:10px 16px; border:none; border-radius:8px; font-size:14px; font-weight:bold; cursor:pointer; margin-top:10px;}
-  .btn-primary{ background:#3b82f6; color:white;}
-  .btn-disabled{ background:#475569; color:#cbd5e1; opacity:0.6; cursor:not-allowed;}
-  .ranking-box, .grafico-box{ display:none; background:white; color:black; border-radius:12px; padding:16px; margin-top:20px;}
-  .export-row{ display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:18px;}
-  .export-row .btn{ font-size:13px; padding:8px 14px;}
-  footer{margin-top:18px;color:#94a3b8;font-size:14px;}
-
-  .role-lider{ background:#22c55e20;}
-  .role-rechazado{ background:#ef444420;}
-  .role-aislado{ background:#94a3b820;}
-  .role-ambivalente{ background:#eab30820;}
-  .role-integrado{ background:#60a5fa20;}
-
-  img.logo {height:64px; margin-top:28px;}
+  input, select {
+    width: 100%;
+    padding: 8px;
+    margin: 6px 0;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .checkbox-row { display: flex; justify-content: center; gap: 8px; margin: 12px 0; }
+  table { width: 100%; border-collapse: collapse; margin-top:20px; }
+  th, td { border: 1px solid #475569; padding: 6px; text-align: center; }
+  th { background: #1e293b; color: white; }
+  .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top:12px; }
+  .btn-primary { background: #3b82f6; color: white; }
+  .btn-disabled { background: #475569; color: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
+  .ranking-box, .grafico-box { display:none; background: white; color: black; border-radius: 12px; padding: 16px; margin-top:20px;}
+  .export-row { display: flex; justify-content:center; gap: 12px; flex-wrap: wrap; margin-top:18px; }
+  .export-row .btn { font-size: 13px; padding: 7px 14px; }
+  img.logo { height: 64px; margin-top:24px; }
+  footer { margin-top:16px; color: #94a3b8; font-size: 14px; }
 </style>
 </head>
 <body>
 
 <div class="container">
+
   <h1>Formulario Sociométrico</h1>
   <p>Completa la tabla con + / − / 0. Cada fila debe tener 3 positivos y 3 negativos.</p>
 
@@ -58,7 +58,7 @@
   <label>Número de participantes:</label>
   <select id="num"><option value="">-- Elige --</option></select>
 
-  <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:12px;">
+  <div class="checkbox-row">
     <input type="checkbox" id="custom">
     <label for="custom">Usar nombres personalizados</label>
   </div>
@@ -78,74 +78,69 @@
 
   <div id="ranking" class="ranking-box"></div>
 
+  <!-- Gráfico de barras interactivo -->
   <div id="graficoBox" class="grafico-box">
     <h3>📊 Gráfico de Barras Sociométrico</h3>
-    <canvas id="chart"></canvas>
+    <canvas id="chart" style="max-height:360px;"></canvas>
   </div>
 
-  <button class="btn btn-primary btn-disabled" id="btnCrearSociograma" disabled onclick="location.href='sociograma_interactivo.html'">
-    CREAR SOCIOGRAMA
-  </button>
+  <button class="btn btn-primary btn-disabled" id="btnCrearSociograma" disabled onclick="location.href='sociograma_interactivo.html'">CREAR SOCIOGRAMA</button>
 
-  <div style="margin-top:24px;">
+  <div>
     <img src="logo.png" class="logo" alt="SOCIOMAP">
   </div>
 
   <footer>© SOCIOMAP · ARANDA TOOLS 2026</footer>
+
 </div>
 
 <script>
-// LLENAR NÚMEROS
-const sel=document.getElementById("num");
-for(let i=7; i<=40; i++) sel.innerHTML += `<option value="${i}">${i}</option>`;
 
-// mostrar input de nombres personalizados
+// — Rellenar desplegable de participantes —
+const sel = document.getElementById("num");
+for(let i = 7; i <= 40; i++) sel.innerHTML += `<option value="${i}">${i}</option>`;
+
+// Mostrar/ocultar nombres personalizados
 document.getElementById("custom").onchange = () => {
-  document.getElementById("names").style.display = 
-    document.getElementById("custom").checked ? "block" : "none";
+  document.getElementById("names").style.display = document.getElementById("custom").checked ? "block" : "none";
 };
 
 function habilitarBotones(){
-  ["btnCrearRanking","btnExportTabla","btnExportRanking","btnCrearSociograma"].forEach(id => {
-    const e=document.getElementById(id);
-    e.disabled=false;
-    e.classList.remove("btn-disabled");
-  });
+  ["btnCrearRanking","btnExportTabla","btnExportRanking","btnCrearSociograma"]
+    .forEach(id => { let e = document.getElementById(id); e.disabled = false; e.classList.remove("btn-disabled"); });
 }
 
 function crearTabla(){
-  const n=parseInt(document.getElementById("num").value);
-  const grupo=document.getElementById("grupo").value.trim();
+  const n = parseInt(document.getElementById("num").value);
+  const g = document.getElementById("grupo").value.trim();
   if(!n) return alert("Selecciona número de participantes.");
-  if(!grupo) return alert("Escribe nombre del grupo.");
+  if(!g) return alert("Escribe nombre del grupo.");
 
-  localStorage.setItem("grupoNombre",grupo);
+  localStorage.setItem("grupoNombre", g);
 
-  let names=[];
+  let names = [];
   if(document.getElementById("custom").checked){
-    names=document.getElementById("names").value.split(",").map(x=>x.trim()).filter(x=>x);
-    if(names.length!==n) return alert("Debes indicar exactamente "+n+" nombres.");
+    names = document.getElementById("names").value.split(",").map(x=>x.trim()).filter(x=>x);
+    if(names.length !== n) return alert("Proporciona exactamente "+n+" nombres.");
   } else {
     for(let i=1;i<=n;i++) names.push("P"+i);
   }
 
-  let html=`<table id="tablaVotos"><thead><tr><th>De\\A</th>`;
-  names.forEach(nm=>html+=`<th>${nm}</th>`);
-  html+=`<th>✔</th></tr></thead><tbody>`;
+  let html = `<table id="tablaVotos"><thead><tr><th>De\\A</th>`;
+  names.forEach(nm => html += `<th>${nm}</th>`);
+  html += `<th>✔</th></tr></thead><tbody>`;
 
   names.forEach((from,i)=>{
-    html+=`<tr><th>${from}</th>`;
+    html += `<tr><th>${from}</th>`;
     names.forEach((_,j)=>{
-      html+= (i===j)
-        ? `<td style="background:#1e293b;"></td>`
-        : `<td><select class="cell"><option>0</option><option>+</option><option>-</option></select></td>`;
+      html += (i===j) ? `<td style="background:#1e293b;"></td>` : `<td><select class="cell"><option>0</option><option>+</option><option>-</option></select></td>`;
     });
-    html+=`<td id="c${i}"></td></tr>`;
+    html += `<td id="c${i}"></td></tr>`;
   });
-  html+=`</tbody></table>`;
-  document.getElementById("tabla").innerHTML=html;
+  html += `</tbody></table>`;
+  document.getElementById("tabla").innerHTML = html;
 
-  document.querySelectorAll(".cell").forEach(c=>c.onchange=validarTabla);
+  document.querySelectorAll(".cell").forEach(c => c.onchange = validarTabla);
 }
 
 function validarTabla(){
@@ -156,74 +151,64 @@ function validarTabla(){
       if(s.value==="+") p++;
       if(s.value==="-") n++;
     });
-    document.getElementById("c"+i).textContent=(p===3 && n===3)?"✔":"";
+    document.getElementById("c"+i).textContent = (p===3 && n===3) ? "✔" : "";
     if(p!==3 || n!==3) ok=false;
   });
   if(ok) habilitarBotones();
 }
 
 function procesar(){
-  const headers=[...document.querySelectorAll("#tablaVotos thead th")].slice(1,-1).map(th=>th.textContent);
-  let stats=Object.fromEntries(headers.map(h=>[h,{p:0,n:0}]));
+  const headers = [...document.querySelectorAll("#tablaVotos thead th")].slice(1,-1).map(th=>th.textContent);
+  let stats = Object.fromEntries(headers.map(h=>[h,{p:0,n:0}]));
 
   document.querySelectorAll(".cell").forEach((c,i)=>{
-    const idx = i % headers.length;
-    if(c.value==="+") stats[headers[idx]].p++;
-    if(c.value==="-") stats[headers[idx]].n++;
+    const j = i % headers.length;
+    if(c.value==="+") stats[headers[j]].p++;
+    if(c.value==="-") stats[headers[j]].n++;
   });
 
-  const results = headers.map(h=>({
-    name:h,p:stats[h].p,n:stats[h].n,
-    rol: determinarRol(stats[h].p, stats[h].n)
-  }));
-
-  // COLORES SEGÚN ROL
-  let rh=`<table id="rankingTable"><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
-  results.forEach(r=>{
-    let cls="";
-    if(r.rol==="Líder") cls="role-lider";
-    if(r.rol==="Rechazado") cls="role-rechazado";
-    if(r.rol==="Aislado") cls="role-aislado";
-    if(r.rol==="Ambivalente") cls="role-ambivalente";
-    if(r.rol==="Integrado") cls="role-integrado";
-    rh+=`<tr class="${cls}"><td>${r.name}</td><td>${r.p}</td><td>${r.n}</td><td>${r.rol}</td></tr>`;
+  const results = headers.map(h => {
+    const {p,n} = stats[h];
+    return {name:h, p, n};
   });
-  rh+=`</table>`;
-  document.getElementById("ranking").innerHTML=rh;
-  document.getElementById("ranking").style.display="block";
 
-  // GRAFICO
-  document.getElementById("graficoBox").style.display="block";
+  // Mostrar el ranking simple
+  let rh = `<table id="rankingTable"><tr><th>Nombre</th><th>+</th><th>-</th></tr>`;
+  results.forEach(r => rh += `<tr><td>${r.name}</td><td>${r.p}</td><td>${r.n}</td></tr>`);
+  rh += `</table>`;
+  document.getElementById("ranking").innerHTML = rh;
+  document.getElementById("ranking").style.display = "block";
+
+  // Mostrar el gráfico
+  document.getElementById("graficoBox").style.display = "block";
   if(window.chart) window.chart.destroy();
-  window.chart=new Chart(document.getElementById("chart"),{
-    type:"bar",
-    data:{
-      labels: results.map(r=>r.name),
-      datasets:[
-        {label:"Votos +",data:results.map(r=>r.p),backgroundColor:"#22c55e"},
-        {label:"Votos -",data:results.map(r=>r.n),backgroundColor:"#ef4444"}
+  window.chart = new Chart(document.getElementById("chart"), {
+    type: "bar",
+    data: {
+      labels: results.map(r => r.name),
+      datasets: [
+        { label: "Votos +", data: results.map(r => r.p), backgroundColor:"#22c55e" },
+        { label: "Votos -", data: results.map(r => r.n), backgroundColor:"#ef4444" }
       ]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero:true
+        }
+      }
     }
   });
 
-  // sociogramaData
-  localStorage.setItem("sociogramaData",JSON.stringify({
-    nodes: results.map(r=>({name:r.name,p:r.p,n:r.n,rol:r.rol})),
-    links: results.flatMap((r,i)=>
+  // Guardar datos para sociograma
+  localStorage.setItem("sociogramaData", JSON.stringify({
+    nodes: results.map(r => ({ name: r.name, p: r.p, n: r.n })),
+    links: results.flatMap((r,i) =>
       [...document.querySelectorAll(`#tablaVotos tbody tr:nth-child(${i+1}) select`)]
-      .map((sel,j)=>sel.value!=="0"?{source:r.name,target:headers[j],type:sel.value}:null)
-      .filter(x=>x)
+        .map((sel,j) => sel.value!=="0" ? { source:r.name, target: headers[j], type:sel.value} : null)
+        .filter(x=>x)
     )
   }));
-}
-
-function determinarRol(p,n){
-  if(p>3 && n<=1) return "Líder";
-  if(n>3) return "Rechazado";
-  if(p===0) return "Aislado";
-  if(p>=2 && n>=2) return "Ambivalente";
-  if(p>=2 && n<=1) return "Integrado";
-  return "Sin rol";
 }
 
 function exportar(id,name){
@@ -234,10 +219,11 @@ function exportar(id,name){
     a.click();
   });
 }
-</script>
 
+</script>
 </body>
 </html>
+
 
 
 
