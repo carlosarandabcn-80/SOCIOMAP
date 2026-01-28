@@ -133,17 +133,17 @@ const svg = d3.select(graph).append("svg")
 
 const g = svg.append("g");
 
-/* ===== FLECHAS (VISIBLES Y PROPORCIONADAS) ===== */
+/* ===== FLECHAS (AHORA SÍ VISIBLES) ===== */
 const defs = svg.append("defs");
 ["pos","neg"].forEach(t=>{
   defs.append("marker")
     .attr("id","arrow-"+t)
     .attr("viewBox","0 -5 10 10")
-    .attr("refX",34)                  // 🔹 CLAVE: desplaza la punta
+    .attr("refX",42)                 // sale completamente del nodo
     .attr("refY",0)
-    .attr("markerWidth",4)
-    .attr("markerHeight",4)
-    .attr("markerUnits","strokeWidth") // 🔹 CLAVE: escala correctamente
+    .attr("markerWidth",6)
+    .attr("markerHeight",6)
+    .attr("markerUnits","userSpaceOnUse") // CLAVE
     .attr("orient","auto")
     .append("path")
     .attr("d","M0,-5L10,0L0,5")
@@ -225,7 +225,7 @@ svg.call(
 /* ===== TEXTO ===== */
 document.getElementById("interpretacion").innerHTML = `
   <h3>Interpretación sociométrica</h3>
-  <p>Las flechas indican el sentido de las votaciones. El tamaño del nodo refleja aceptación.</p>
+  <p>Las flechas indican claramente el sentido de las votaciones.</p>
 `;
 </script>
 
