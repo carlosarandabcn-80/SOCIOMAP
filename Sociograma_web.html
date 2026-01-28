@@ -4,116 +4,285 @@
 <meta charset="UTF-8">
 <title>Sociograma Interactivo</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
 <style>
-  body{margin:0;font-family:Arial,sans-serif;background:#0f172a;text-align:center;color:#0f172a;}
-  .container{max-width:1200px;margin:40px auto;padding:20px;background:white;border-radius:14px;}
-  h1{color:#0f172a;margin-bottom:6px;font-size:28px;}
-  p{color:#334155;font-size:15px;margin:0;}
-  svg{width:100%;height:650px;}
-  .legend{display:flex;justify-content:center;gap:24px;margin-top:18px;flex-wrap:wrap;font-size:14px;}
-  .legend span{display:flex;align-items:center;gap:6px;}
-  .legend i{width:16px;height:16px;border-radius:50%;display:inline-block;}
-  .node-label{font-size:13px;font-weight:bold;fill:#0f172a;pointer-events:none;}
-  .node-stats{font-size:11px;fill:#475569;pointer-events:none;}
-  img.logo{height:60px;margin-top:18px;background:white;border-radius:12px;padding:4px 10px;}
-  footer{margin-top:30px;font-size:13px;color:#64748b;}
+  body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: #0f172a;
+    color: #0f172a;
+    text-align: center;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 14px;
+  }
+
+  h1 {
+    margin-bottom: 6px;
+    font-size: 28px;
+    color: #0f172a;
+  }
+
+  p {
+    margin-top: 0;
+    color: #334155;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  #graph {
+    width: 100%;
+    height: 650px;
+    border-radius: 12px;
+    cursor: grab;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+  }
+
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend i {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+
+  .node-label {
+    font-size: 13px;
+    font-weight: bold;
+    pointer-events: none;
+  }
+
+  .node-stats {
+    font-size: 11px;
+    pointer-events: none;
+  }
+
+  .btn {
+    margin-top: 18px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background: #3b82f6;
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .btn:hover {
+    background: #2563eb;
+  }
+
+  footer {
+    margin-top: 30px;
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  img.logo {
+    height: 60px;
+    background: white;
+    border-radius: 12px;
+    padding: 4px 10px;
+    margin-top: 18px;
+  }
 </style>
 </head>
-<body>
 
+<body>
 <div class="container">
+
   <h1>Sociograma Interactivo</h1>
   <p id="infoGrupoFecha"></p>
-  <svg id="graph"></svg>
+
+  <div id="graph"></div>
 
   <div class="legend">
-    <span><i style="background:#22c55e;"></i> Relación positiva</span>
-    <span><i style="background:#ef4444;"></i> Relación negativa</span>
+    <span><i style="background:#22c55e;"></i> Vínculo positivo</span>
+    <span><i style="background:#ef4444;"></i> Vínculo negativo</span>
     <span><i style="background:#facc15;"></i> Líder sociométrico</span>
     <span><i style="background:#60a5fa;"></i> Tamaño ∝ votos positivos</span>
   </div>
 
-  <img src="logo.png" class="logo">
+  <div>
+    <button class="btn" onclick="exportToPNG()">Exportar PNG</button>
+    <button class="btn" onclick="exportToPDF()">Exportar PDF</button>
+  </div>
+
+  <img src="logo.png" class="logo" alt="SOCIOMAP">
   <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
+
 </div>
 
 <script>
-const raw = localStorage.getItem("sociogramaData");
-if(!raw){document.getElementById("graph").innerHTML="Sin datos sociométricos";throw 0;}
-const data = JSON.parse(raw);
+  // Cargar datos desde localStorage
+  let raw = localStorage.getItem("sociogramaData");
+  let data;
 
-const grupo = localStorage.getItem("grupoNombre")||"Grupo sin nombre";
-const hoy=new Date();
-document.getElementById("infoGrupoFecha").textContent = `${grupo} — ${hoy.toLocaleDateString()}`;
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch {
+    data = null;
+  }
 
-const svg=d3.select("#graph"); svg.selectAll("*").remove();
-const width=svg.node().clientWidth, height=svg.node().clientHeight;
+  const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
+  const fecha = new Date().toLocaleDateString("es-ES", {day:'numeric',month:'long',year:'numeric'});
+  document.getElementById("infoGrupoFecha").textContent = `${grupo} — ${fecha}`;
 
-// markers
-svg.append("defs").selectAll("marker").data(["pos","neg"])
-.enter().append("marker")
-.attr("id",d=>"arrow-"+d)
-.attr("viewBox","0 -5 10 10")
-.attr("refX",24).attr("refY",0)
-.attr("markerWidth",6).attr("markerHeight",6)
-.attr("orient","auto")
-.append("path")
-.attr("d","M0,-5L10,0L0,5")
-.attr("fill",d=>d==="pos"?"#22c55e":"#ef4444");
+  if (!data || !Array.isArray(data.nodes)) {
+    document.getElementById("graph").innerHTML = "<p style='color:red;font-size:18px;'>No hay datos sociométricos válidos.</p>";
+    throw new Error("No sociograma data");
+  }
 
-const nodeMap=new Map(data.nodes.map(n=>[n.name,n]));
-data.links.forEach(l=>{l.source=nodeMap.get(l.source);l.target=nodeMap.get(l.target);});
-
-const simulation=d3.forceSimulation(data.nodes)
-.force("link",d3.forceLink(data.links).id(d=>d.name).distance(140))
-.force("charge",d3.forceManyBody().strength(-400))
-.force("center",d3.forceCenter(width/2,height/2))
-.force("collision",d3.forceCollide().radius(d=>15+d.p));
-
-const link=svg.append("g").selectAll("path")
-.data(data.links).enter().append("path")
-.attr("stroke",d=>d.type==="+"?"#22c55e":"#ef4444")
-.attr("stroke-width",2)
-.attr("fill","none")
-.attr("marker-end",d=>d.type==="+"?"url(#arrow-pos)":"url(#arrow-neg)");
-
-const node=svg.append("g").selectAll("g")
-.data(data.nodes).enter().append("g")
-.call(d3.drag().on("start",dragstarted).on("drag",dragged).on("end",dragended));
-
-node.append("circle")
-.attr("r",d=>12+d.p)
-.attr("fill",d=>d.rol==="Líder"?"#facc15":"#60a5fa")
-.attr("stroke","#0f172a").attr("stroke-width",2);
-
-node.append("text")
-.attr("class","node-label").attr("text-anchor","middle").attr("dy",4)
-.text(d=>d.name);
-
-node.append("text")
-.attr("class","node-stats").attr("text-anchor","middle").attr("dy",20)
-.text(d=>`+${d.p} / −${d.n}`);
-
-simulation.on("tick",()=>{
-  link.attr("d",d=>{
-    const dx=d.target.x-d.source.x, dy=d.target.y-d.source.y;
-    const dr=Math.sqrt(dx*dx+dy*dy);
-    return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+  // Preparar nodos y links
+  const nodeMap = new Map(data.nodes.map(n=>[n.name,n]));
+  data.links.forEach(l => {
+    l.source = nodeMap.get(l.source);
+    l.target = nodeMap.get(l.target);
   });
-  node.attr("transform",d=>`translate(${d.x},${d.y})`);
-});
 
-function dragstarted(event,d){
-  if(!event.active) simulation.alphaTarget(0.3).restart();
-  d.fx=d.x; d.fy=d.y;
-}
-function dragged(event,d){d.fx=event.x; d.fy=event.y;}
-function dragended(event,d){
-  if(!event.active) simulation.alphaTarget(0); d.fx=null; d.fy=null;
-}
+  // Crear SVG
+  const svg = d3.select("#graph")
+                .append("svg")
+                .attr("width","100%")
+                .attr("height","650px");
+
+  // Contenedor para zoom
+  const container = svg.append("g");
+
+  // Definir marcadores
+  svg.append("defs")
+    .selectAll("marker")
+    .data(["pos","neg"])
+    .enter().append("marker")
+      .attr("id", d=>"arrow-"+d)
+      .attr("viewBox","0 -5 10 10")
+      .attr("refX",24)
+      .attr("refY",0)
+      .attr("markerWidth",6)
+      .attr("markerHeight",6)
+      .attr("orient","auto")
+    .append("path")
+      .attr("d","M0,-5L10,0L0,5")
+      .attr("fill", d=> d==="pos" ? "#22c55e" : "#ef4444");
+
+  // Fuerzas D3
+  const simulation = d3.forceSimulation(data.nodes)
+    .force("link", d3.forceLink(data.links).id(d=>d.name).distance(120))
+    .force("charge", d3.forceManyBody().strength(-400))
+    .force("center", d3.forceCenter(svg.node().clientWidth/2, svg.node().clientHeight/2))
+    .force("collision", d3.forceCollide().radius(d=>15 + d.p));
+
+  // Dibujar links
+  const link = container.append("g")
+    .selectAll("path")
+    .data(data.links)
+    .enter().append("path")
+      .attr("stroke", d => d.type==="+" ? "#22c55e" : "#ef4444")
+      .attr("stroke-width", 2)
+      .attr("fill", "none")
+      .attr("stroke-dasharray", d=>d.type==="-"?"4,2":"0")
+      .attr("marker-end", d=> "url(#arrow-"+(d.type==="+"?"pos":"neg")+")");
+
+  // Dibujar nodos
+  const node = container.append("g")
+    .selectAll("g")
+    .data(data.nodes)
+    .enter().append("g")
+      .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended)
+      );
+
+  node.append("circle")
+    .attr("r", d=>12 + d.p)
+    .attr("fill", d=> d.rol==="Líder" ? "#facc15" : "#60a5fa")
+    .attr("stroke","#0f172a")
+    .attr("stroke-width",2);
+
+  node.append("text")
+    .attr("class","node-label")
+    .attr("text-anchor","middle")
+    .attr("dy",4)
+    .text(d=>d.name);
+
+  node.append("text")
+    .attr("class","node-stats")
+    .attr("text-anchor","middle")
+    .attr("dy",18)
+    .text(d=>`+${d.p} / −${d.n}`);
+
+  simulation.on("tick", () => {
+    link.attr("d", d => {
+      const dx = d.target.x - d.source.x;
+      const dy = d.target.y - d.source.y;
+      const dr = Math.sqrt(dx*dx + dy*dy);
+      return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1${d.target.x},${d.target.y}`;
+    });
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+
+  function dragstarted(event,d){
+    if(!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x; d.fy = d.y;
+  }
+  function dragged(event,d){
+    d.fx = event.x; d.fy = event.y;
+  }
+  function dragended(event,d){
+    if(!event.active) simulation.alphaTarget(0);
+    d.fx = null; d.fy = null;
+  }
+
+  // Zoom behavior
+  svg.call(d3.zoom().on("zoom", (event) => {
+    container.attr("transform", event.transform);
+  }));
+
+  // Export functions
+  function exportToPNG(){
+    html2canvas(document.querySelector("#graph svg")).then(canvas=>{
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "sociograma.png";
+      a.click();
+    });
+  }
+
+  function exportToPDF(){
+    html2canvas(document.querySelector("#graph svg")).then(canvas=>{
+      const img = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation:"landscape" });
+      const width = pdf.internal.pageSize.getWidth();
+      const height = (canvas.height * width) / canvas.width;
+      pdf.addImage(img, "PNG", 0, 0, width, height);
+      pdf.save("sociograma.pdf");
+    });
+  }
+
 </script>
-
 </body>
 </html>
-
-
