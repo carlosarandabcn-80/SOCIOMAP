@@ -82,7 +82,7 @@ h2{font-size:15px;color:#94a3b8;margin:6px 0 18px}
 <div id="interpretacion"></div>
 
 <script>
-/* ================= DATOS ================= */
+/* ========= DATOS ========= */
 const raw = localStorage.getItem("sociogramaData");
 if(!raw){
   document.getElementById("graph").innerHTML =
@@ -95,7 +95,7 @@ const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
 document.getElementById("grupoInfo").textContent =
   `${grupo} — ${new Date().toLocaleDateString("es-ES")}`;
 
-/* ======= PROCESAR VOTOS ======= */
+/* ===== PROCESAR VOTOS ===== */
 data.nodes.forEach(n=>{ n.recPos=0; n.recNeg=0; });
 data.links.forEach(l=>{
   const t = data.nodes.find(n=>n.name===l.target);
@@ -109,7 +109,7 @@ const nodes = data.nodes.map((n,i)=>({
   name:n.name,
   recPos:n.recPos,
   recNeg:n.recNeg,
-  radius:26 + n.recPos*5,
+  radius:26 + n.recPos*4,
   leader:n.recPos===maxPos
 }));
 
@@ -119,10 +119,10 @@ const links = data.links.map((l,i)=>({
   source:index[l.source],
   target:index[l.target],
   type:l.type,
-  curve:(i%2?1:-1)*50
+  curve:(i%2?1:-1)*45
 }));
 
-/* ================= SVG ================= */
+/* ========= SVG ========= */
 const graph = document.getElementById("graph");
 const width = graph.clientWidth;
 const height = graph.clientHeight;
@@ -133,34 +133,34 @@ const svg = d3.select(graph).append("svg")
 
 const g = svg.append("g");
 
-/* ======= FLECHAS ======= */
+/* ===== FLECHAS (MÁS PEQUEÑAS) ===== */
 const defs = svg.append("defs");
 ["pos","neg"].forEach(t=>{
   defs.append("marker")
     .attr("id","arrow-"+t)
     .attr("viewBox","0 -5 10 10")
-    .attr("refX",34)
+    .attr("refX",30)
     .attr("refY",0)
-    .attr("markerWidth",12)
-    .attr("markerHeight",12)
+    .attr("markerWidth",6)
+    .attr("markerHeight",6)
     .attr("orient","auto")
     .append("path")
     .attr("d","M0,-5L10,0L0,5")
     .attr("fill",t==="pos"?"#22c55e":"#ef4444");
 });
 
-/* ======= ENLACES ======= */
+/* ===== ENLACES (MÁS FINOS) ===== */
 const link = g.append("g")
   .selectAll("path")
   .data(links)
   .enter().append("path")
   .attr("stroke",d=>d.type==="+"?"#22c55e":"#ef4444")
-  .attr("stroke-width",3.5)
+  .attr("stroke-width",2)
   .attr("fill","none")
   .attr("stroke-dasharray",d=>d.type==="-"?"6,4":"0")
   .attr("marker-end",d=>"url(#arrow-"+(d.type==="+"?"pos":"neg")+")");
 
-/* ======= NODOS ======= */
+/* ===== NODOS ===== */
 const node = g.append("g")
   .selectAll("g")
   .data(nodes)
@@ -184,7 +184,7 @@ node.append("text")
   .style("font-weight","600")
   .style("fill","#fff");
 
-/* ======= TOOLTIP ======= */
+/* ===== TOOLTIP ===== */
 const tooltip = d3.select("#tooltip");
 node.on("mouseover",(e,d)=>{
   tooltip.style("opacity",1)
@@ -196,7 +196,7 @@ node.on("mouseover",(e,d)=>{
 })
 .on("mouseout",()=>tooltip.style("opacity",0));
 
-/* ======= SIMULACIÓN (SEPARADA Y ESTABLE) ======= */
+/* ===== SIMULACIÓN (CLARA Y ESTABLE) ===== */
 const sim = d3.forceSimulation(nodes)
   .force("link",d3.forceLink(links).id(d=>d.id).distance(260).strength(1))
   .force("charge",d3.forceManyBody().strength(-1400))
@@ -215,22 +215,18 @@ sim.on("tick",()=>{
   node.attr("transform",d=>`translate(${d.x},${d.y})`);
 });
 
-/* ======= ZOOM ======= */
+/* ===== ZOOM ===== */
 svg.call(
   d3.zoom().scaleExtent([0.5,2.5])
   .on("zoom",e=>g.attr("transform",e.transform))
 );
 
-/* ======= INTERPRETACIÓN ======= */
-function interpretar(){
-  const lider = nodes.find(n=>n.leader)?.name || "";
-  return `
-    <h3>Interpretación sociométrica</h3>
-    <p>El liderazgo del grupo se concentra en <strong>${lider}</strong>, evidenciando centralidad social.</p>
-    <p>El tamaño de los nodos representa aceptación, y las flechas indican dirección y tipo de vínculo.</p>
-  `;
-}
-document.getElementById("interpretacion").innerHTML = interpretar();
+/* ===== INTERPRETACIÓN ===== */
+document.getElementById("interpretacion").innerHTML = `
+  <h3>Interpretación sociométrica</h3>
+  <p>El tamaño de los nodos indica aceptación social. Las flechas muestran dirección y tipo de vínculo.</p>
+  <p>El líder sociométrico aparece destacado en color amarillo.</p>
+`;
 </script>
 
 </body>
