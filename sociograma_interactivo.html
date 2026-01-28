@@ -15,7 +15,6 @@
     color: #0f172a;
     text-align: center;
   }
-
   .container {
     max-width: 1200px;
     margin: 40px auto;
@@ -23,90 +22,16 @@
     background: #ffffff;
     border-radius: 14px;
   }
-
-  h1 {
-    margin-bottom: 6px;
-    font-size: 28px;
-    color: #0f172a;
-  }
-
-  p {
-    margin-top: 0;
-    color: #334155;
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  #graph {
-    width: 100%;
-    height: 650px;
-    border-radius: 12px;
-    cursor: grab;
-  }
-
-  .legend {
-    display: flex;
-    justify-content: center;
-    gap: 24px;
-    margin-top: 18px;
-    flex-wrap: wrap;
-    font-size: 14px;
-    font-weight: 500;
-    color: #1e293b;
-  }
-
-  .legend span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .legend i {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-  }
-
-  .node-label {
-    font-size: 13px;
-    font-weight: bold;
-    pointer-events: none;
-  }
-
-  .node-stats {
-    font-size: 11px;
-    pointer-events: none;
-  }
-
-  .btn {
-    margin-top: 18px;
-    padding: 10px 18px;
-    border-radius: 8px;
-    border: none;
-    background: #3b82f6;
-    color: white;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  .btn:hover {
-    background: #2563eb;
-  }
-
-  footer {
-    margin-top: 30px;
-    font-size: 13px;
-    color: #64748b;
-  }
-
-  img.logo {
-    height: 60px;
-    background: white;
-    border-radius: 12px;
-    padding: 4px 10px;
-    margin-top: 18px;
-  }
+  h1 { margin-bottom: 6px; font-size: 28px; color: #0f172a; }
+  p { margin-top: 0; color: #334155; font-size: 15px; font-weight: 500; }
+  #graph { width: 100%; height: 650px; border-radius: 12px; cursor: grab; }
+  .legend { display: flex; justify-content: center; gap: 24px; margin-top: 18px; flex-wrap: wrap; font-size: 14px; font-weight: 500; color: #1e293b; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 16px; height: 16px; border-radius: 50%; }
+  .btn { margin-top: 18px; padding: 10px 18px; border-radius: 8px; border: none; background: #3b82f6; color: white; font-size: 15px; font-weight: bold; cursor: pointer; }
+  .btn:hover { background: #2563eb; }
+  footer { margin-top: 30px; font-size: 13px; color: #64748b; }
+  img.logo { height: 60px; background: white; border-radius: 12px; padding: 4px 10px; margin-top: 18px; }
 </style>
 </head>
 
@@ -115,8 +40,10 @@
 
   <h1>Sociograma Interactivo</h1>
   <p id="infoGrupoFecha"></p>
-
+  
   <div id="graph"></div>
+
+  <button class="btn" onclick="location.href='index.html'">← Volver al formulario</button>
 
   <div class="legend">
     <span><i style="background:#22c55e;"></i> Vínculo positivo</span>
@@ -136,7 +63,6 @@
 </div>
 
 <script>
-  // Cargar datos desde localStorage
   let raw = localStorage.getItem("sociogramaData");
   let data;
 
@@ -147,36 +73,33 @@
   }
 
   const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
-  const fecha = new Date().toLocaleDateString("es-ES", {day:'numeric',month:'long',year:'numeric'});
+  const fecha = new Date().toLocaleDateString("es-ES", { day:'numeric', month:'long', year:'numeric' });
   document.getElementById("infoGrupoFecha").textContent = `${grupo} — ${fecha}`;
 
-  if (!data || !Array.isArray(data.nodes)) {
-    document.getElementById("graph").innerHTML = "<p style='color:red;font-size:18px;'>No hay datos sociométricos válidos.</p>";
+  if (!data || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+    document.getElementById("graph").innerHTML = 
+      "<p style='color:red;font-size:20px;'>⚠️ No hay datos sociométricos para mostrar. <br>Genera el gráfico desde el formulario primero.</p>";
     throw new Error("No sociograma data");
   }
 
-  // Preparar nodos y links
-  const nodeMap = new Map(data.nodes.map(n=>[n.name,n]));
+  const nodeMap = new Map(data.nodes.map(n => [n.name, n]));
   data.links.forEach(l => {
     l.source = nodeMap.get(l.source);
     l.target = nodeMap.get(l.target);
   });
 
-  // Crear SVG
   const svg = d3.select("#graph")
                 .append("svg")
                 .attr("width","100%")
                 .attr("height","650px");
 
-  // Contenedor para zoom
   const container = svg.append("g");
 
-  // Definir marcadores
   svg.append("defs")
     .selectAll("marker")
     .data(["pos","neg"])
     .enter().append("marker")
-      .attr("id", d=>"arrow-"+d)
+      .attr("id", d => "arrow-"+d)
       .attr("viewBox","0 -5 10 10")
       .attr("refX",24)
       .attr("refY",0)
@@ -185,16 +108,14 @@
       .attr("orient","auto")
     .append("path")
       .attr("d","M0,-5L10,0L0,5")
-      .attr("fill", d=> d==="pos" ? "#22c55e" : "#ef4444");
+      .attr("fill", d => d==="pos" ? "#22c55e" : "#ef4444");
 
-  // Fuerzas D3
   const simulation = d3.forceSimulation(data.nodes)
-    .force("link", d3.forceLink(data.links).id(d=>d.name).distance(120))
+    .force("link", d3.forceLink(data.links).id(d => d.name).distance(120))
     .force("charge", d3.forceManyBody().strength(-400))
     .force("center", d3.forceCenter(svg.node().clientWidth/2, svg.node().clientHeight/2))
-    .force("collision", d3.forceCollide().radius(d=>15 + d.p));
+    .force("collision", d3.forceCollide().radius(d => 15 + d.p));
 
-  // Dibujar links
   const link = container.append("g")
     .selectAll("path")
     .data(data.links)
@@ -202,10 +123,9 @@
       .attr("stroke", d => d.type==="+" ? "#22c55e" : "#ef4444")
       .attr("stroke-width", 2)
       .attr("fill", "none")
-      .attr("stroke-dasharray", d=>d.type==="-"?"4,2":"0")
-      .attr("marker-end", d=> "url(#arrow-"+(d.type==="+"?"pos":"neg")+")");
+      .attr("stroke-dasharray", d => d.type==="-"?"4,2":"0")
+      .attr("marker-end", d => "url(#arrow-" + (d.type==="+"?"pos":"neg") + ")");
 
-  // Dibujar nodos
   const node = container.append("g")
     .selectAll("g")
     .data(data.nodes)
@@ -217,8 +137,8 @@
       );
 
   node.append("circle")
-    .attr("r", d=>12 + d.p)
-    .attr("fill", d=> d.rol==="Líder" ? "#facc15" : "#60a5fa")
+    .attr("r", d => 12 + d.p)
+    .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
     .attr("stroke","#0f172a")
     .attr("stroke-width",2);
 
@@ -226,13 +146,13 @@
     .attr("class","node-label")
     .attr("text-anchor","middle")
     .attr("dy",4)
-    .text(d=>d.name);
+    .text(d => d.name);
 
   node.append("text")
     .attr("class","node-stats")
     .attr("text-anchor","middle")
     .attr("dy",18)
-    .text(d=>`+${d.p} / −${d.n}`);
+    .text(d => `+${d.p} / −${d.n}`);
 
   simulation.on("tick", () => {
     link.attr("d", d => {
@@ -243,6 +163,10 @@
     });
     node.attr("transform", d => `translate(${d.x},${d.y})`);
   });
+
+  svg.call(d3.zoom().on("zoom", (event) => {
+    container.attr("transform", event.transform);
+  }));
 
   function dragstarted(event,d){
     if(!event.active) simulation.alphaTarget(0.3).restart();
@@ -256,25 +180,18 @@
     d.fx = null; d.fy = null;
   }
 
-  // Zoom behavior
-  svg.call(d3.zoom().on("zoom", (event) => {
-    container.attr("transform", event.transform);
-  }));
-
-  // Export functions
   function exportToPNG(){
-    html2canvas(document.querySelector("#graph svg")).then(canvas=>{
-      const a = document.createElement("a");
-      a.href = canvas.toDataURL("image/png");
-      a.download = "sociograma.png";
-      a.click();
+    html2canvas(document.querySelector("#graph svg")).then(canvas => {
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "sociograma.png";
+      link.click();
     });
   }
 
   function exportToPDF(){
-    html2canvas(document.querySelector("#graph svg")).then(canvas=>{
+    html2canvas(document.querySelector("#graph svg")).then(canvas => {
       const img = canvas.toDataURL("image/png");
-      const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation:"landscape" });
       const width = pdf.internal.pageSize.getWidth();
       const height = (canvas.height * width) / canvas.width;
