@@ -5,14 +5,10 @@
   <title>Sociograma — SOCIOMAP</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -88,10 +84,19 @@
     circle:hover {
       stroke: #0ea5e9;
       stroke-width: 3;
-      r: 42 !important;
     }
 
-    text {
+    .label-name {
+      fill: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    .label-votes {
+      fill: #0f172a;
+      font-size: 12px;
+      font-weight: 500;
       pointer-events: none;
     }
   </style>
@@ -148,7 +153,7 @@ const svg = d3.select("#sociograma").append("svg")
   .attr("width", width)
   .attr("height", height);
 
-// Arrow definitions
+// Flechas (arrowheads)
 svg.append("defs").selectAll("marker")
   .data(["pos", "neg"])
   .enter().append("marker")
@@ -198,20 +203,19 @@ node.append("circle")
   .duration(800)
   .attr("r", d => 18 + d.votosPos * 2);
 
+// Nombre del participante
 node.append("text")
-  .text(d => d.name)
+  .attr("class", "label-name")
   .attr("text-anchor", "middle")
-  .attr("dy", 5)
-  .attr("fill", "#fff")
-  .style("font-size", "13px")
-  .style("font-weight", "600");
+  .attr("dy", 4)
+  .text(d => d.name);
 
+// Etiqueta de votos
 node.append("text")
-  .text(d => `+${d.votosPos} / −${d.votosNeg}`)
+  .attr("class", "label-votes")
   .attr("text-anchor", "middle")
-  .attr("dy", 24)
-  .attr("fill", "#0f172a")
-  .style("font-size", "11px");
+  .attr("dy", 26)
+  .text(d => `+${d.votosPos} / −${d.votosNeg}`);
 
 simulation.on("tick", () => {
   link.attr("d", d => {
