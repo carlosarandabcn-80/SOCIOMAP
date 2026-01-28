@@ -4,246 +4,252 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sociograma Interactivo</title>
-  <script src="https://unpkg.com/force-graph"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
+      background-color: #0b132b;
+      font-family: 'Segoe UI', sans-serif;
+      color: #111;
       margin: 0;
-      font-family: 'Inter', sans-serif;
-      background-color: #0c1222;
+      padding: 2rem;
+    }
+    h1, h2 {
       color: #fff;
-    }
-
-    h1 {
       text-align: center;
-      margin-top: 30px;
-      font-size: 24px;
-      font-weight: 600;
+      margin: 0;
     }
-
-    h2 {
-      text-align: center;
-      font-weight: 400;
-      font-size: 14px;
-      color: #ccc;
-      margin-bottom: 10px;
-    }
-
-    #graph {
-      width: 100%;
+    #sociograma {
+      background: white;
       height: 700px;
-      margin: auto;
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      position: relative;
+      margin-top: 2rem;
     }
-
     .legend {
       display: flex;
       justify-content: center;
-      align-items: center;
-      gap: 20px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-      font-size: 14px;
+      gap: 2rem;
+      margin-top: 1rem;
+      color: #fff;
+      font-size: 0.9rem;
     }
-
     .legend div {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 0.5rem;
     }
-
-    .dot {
+    .circle {
       width: 12px;
       height: 12px;
       border-radius: 50%;
       display: inline-block;
     }
-
-    .green { background-color: #2ecc71; }
-    .red { background-color: #e74c3c; }
-    .blue { background-color: #3498db; }
-    .yellow { background-color: #f1c40f; }
+    .green { background: #2ecc71; }
+    .red { background: #e74c3c; }
+    .yellow { background: #f1c40f; }
+    .blue { background: #3498db; }
 
     .tooltip {
       position: absolute;
-      padding: 8px 12px;
-      background: rgba(0, 0, 0, 0.85);
+      background-color: #0b132b;
       color: #fff;
-      font-size: 13px;
-      border-radius: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
       pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       z-index: 10;
       display: none;
     }
 
-    .interpretacion {
+    #interpretacion {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-top: 2rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.15);
       max-width: 800px;
-      margin: 40px auto;
-      padding: 24px;
-      background: #fff;
-      color: #000;
-      border-radius: 10px;
-      line-height: 1.6;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .interpretacion h3 {
-      font-size: 18px;
-      margin-bottom: 12px;
+    #interpretacion h2 {
+      color: #0b132b;
+      font-size: 20px;
+      margin-bottom: 1rem;
+    }
+
+    #interpretacion p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #222;
     }
   </style>
 </head>
 <body>
   <h1>Sociograma Interactivo</h1>
-  <h2 id="grupoNombre"></h2>
-
-  <div id="graph"></div>
-
+  <h2 id="grupoInfo">Grupo</h2>
+  <div id="sociograma"></div>
   <div class="legend">
-    <div><span class="dot green"></span> Voto positivo emitido</div>
-    <div><span class="dot red"></span> Voto negativo emitido</div>
-    <div><span class="dot yellow"></span> Líder sociométrico</div>
-    <div><span class="dot blue"></span> Tamaño = votos positivos recibidos</div>
+    <div><span class="circle green"></span>Voto positivo emitido</div>
+    <div><span class="circle red"></span>Voto negativo recibido</div>
+    <div><span class="circle yellow"></span>Líder sociométrico</div>
+    <div><span class="circle blue"></span>Tamaño = votos positivos recibidos</div>
+  </div>
+  <div id="interpretacion">
+    <h2>Interpretación sociométrica del grupo</h2>
+    <p id="textoInterpretacion">Cargando análisis...</p>
   </div>
 
-  <div class="tooltip" id="tooltip"></div>
-
-  <div class="interpretacion" id="interpretacion"></div>
-
   <script>
-    const rawData = JSON.parse(localStorage.getItem('sociogramaData'));
-    const grupo = localStorage.getItem('grupoNombre') || 'Grupo sin nombre';
+    const data = JSON.parse(localStorage.getItem('sociogramaData'));
+    const grupo = localStorage.getItem('grupoNombre') || 'Sin nombre';
 
-    document.getElementById("grupoNombre").textContent = grupo + " — " + new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+    const W = 900;
+    const H = 650;
 
-    const participantes = rawData.participantes;
-    const matriz = rawData.matriz;
+    document.getElementById("grupoInfo").innerText = grupo;
 
-    const nodes = participantes.map((p, i) => ({
-      id: `P${i + 1}`,
-      index: i,
-      name: `P${i + 1}`,
-      votosPositivosRecibidos: 0,
-      votosNegativosRecibidos: 0
-    }));
-
+    const nodes = [];
     const links = [];
 
-    for (let from = 0; from < matriz.length; from++) {
-      for (let to = 0; to < matriz[from].length; to++) {
-        const valor = matriz[from][to];
-        if (valor === 1 || valor === -1) {
-          const type = valor === 1 ? 'positivo' : 'negativo';
-          links.push({
-            source: `P${from + 1}`,
-            target: `P${to + 1}`,
-            type
-          });
-          if (valor === 1) {
-            nodes[to].votosPositivosRecibidos++;
-          } else {
-            nodes[to].votosNegativosRecibidos++;
-          }
-        }
-      }
-    }
+    const votosRecibidosPos = Array(data.length).fill(0);
+    const votosRecibidosNeg = Array(data.length).fill(0);
 
-    // Detectar líder sociométrico
-    const maxVotos = Math.max(...nodes.map(n => n.votosPositivosRecibidos));
-    nodes.forEach(n => {
-      n.esLider = n.votosPositivosRecibidos === maxVotos && maxVotos > 0;
+    data.forEach((row, sourceIndex) => {
+      row.forEach((voto, targetIndex) => {
+        if (voto === 1) {
+          links.push({ source: sourceIndex, target: targetIndex, tipo: 'positivo' });
+          votosRecibidosPos[targetIndex]++;
+        } else if (voto === -1) {
+          links.push({ source: targetIndex, target: sourceIndex, tipo: 'negativo' });
+          votosRecibidosNeg[sourceIndex]++;
+        }
+      });
     });
 
-    // Tooltip
-    const tooltip = document.getElementById("tooltip");
-    function showTooltip(x, y, content) {
-      tooltip.style.left = x + 10 + "px";
-      tooltip.style.top = y + 10 + "px";
-      tooltip.innerHTML = content;
-      tooltip.style.display = "block";
-    }
+    data.forEach((_, i) => {
+      nodes.push({
+        id: i,
+        nombre: `P${i + 1}`,
+        recPos: votosRecibidosPos[i],
+        recNeg: votosRecibidosNeg[i],
+        r: 25 + votosRecibidosPos[i] * 4
+      });
+    });
 
-    function hideTooltip() {
-      tooltip.style.display = "none";
-    }
+    const maxPos = Math.max(...votosRecibidosPos);
+    const liderIndex = votosRecibidosPos.indexOf(maxPos);
 
-    const graph = ForceGraph()(document.getElementById('graph'))
-      .graphData({ nodes, links })
-      .nodeLabel(node => `${node.name}`)
-      .nodeCanvasObject((node, ctx, globalScale) => {
-        const label = `${node.name} +${node.votosPositivosRecibidos} / -${node.votosNegativosRecibidos}`;
-        const fontSize = 12 / globalScale;
-        const radius = 20 + node.votosPositivosRecibidos * 4;
+    const svg = d3.select("#sociograma").append("svg")
+      .attr("width", W)
+      .attr("height", H);
 
-        node.__radius = radius;
+    const tooltip = d3.select("body").append("div")
+      .attr("class", "tooltip");
 
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-        ctx.fillStyle = node.esLider ? '#f1c40f' : '#3498db';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#1a1a1a';
-        ctx.stroke();
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).distance(200).strength(1).id(d => d.id))
+      .force("charge", d3.forceManyBody().strength(-600))
+      .force("center", d3.forceCenter(W / 2, H / 2));
 
-        ctx.font = `${fontSize}px Inter`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#fff';
-        ctx.fillText(label, node.x, node.y);
+    const link = svg.append("g")
+      .selectAll("line")
+      .data(links)
+      .join("line")
+      .attr("stroke-width", 2)
+      .attr("stroke", d => d.tipo === "positivo" ? "#2ecc71" : "#e74c3c")
+      .attr("stroke-dasharray", d => d.tipo === "negativo" ? "5,5" : "0");
+
+    const arrow = svg.append("defs").selectAll("marker")
+      .data(["positivo", "negativo"])
+      .join("marker")
+      .attr("id", d => `arrow-${d}`)
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 20)
+      .attr("refY", 0)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr("fill", d => d === "positivo" ? "#2ecc71" : "#e74c3c");
+
+    link.attr("marker-end", d => `url(#arrow-${d.tipo})`);
+
+    const node = svg.append("g")
+      .selectAll("circle")
+      .data(nodes)
+      .join("circle")
+      .attr("r", d => d.r)
+      .attr("fill", (d, i) => i === liderIndex ? "#f1c40f" : "#3498db")
+      .attr("stroke", "#222")
+      .attr("stroke-width", 2)
+      .on("mouseover", function(e, d) {
+        tooltip.style("display", "block")
+               .html(`<strong>${d.nombre}</strong><br>Votos positivos recibidos: ${d.recPos}<br>Votos negativos recibidos: ${d.recNeg}`);
       })
-      .linkColor(link => link.type === 'positivo' ? '#2ecc71' : '#e74c3c')
-      .linkDirectionalArrowColor(link => link.type === 'positivo' ? '#2ecc71' : '#e74c3c')
-      .linkDirectionalArrowLength(6)
-      .linkDirectionalArrowRelPos(1)
-      .linkCurvature(0.25)
-      .nodePointerAreaPaint((node, color, ctx) => {
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.__radius + 4, 0, 2 * Math.PI, false);
-        ctx.fillStyle = color;
-        ctx.fill();
+      .on("mousemove", function(e) {
+        tooltip.style("left", (e.pageX + 15) + "px")
+               .style("top", (e.pageY - 30) + "px");
       })
-      .onNodeHover((node, prevNode) => {
-        if (node) {
-          const html = `<strong>${node.name}</strong><br>Votos positivos recibidos: ${node.votosPositivosRecibidos}<br>Votos negativos recibidos: ${node.votosNegativosRecibidos}`;
-          showTooltip(node.x, node.y, html);
-        } else {
-          hideTooltip();
-        }
-      })
-      .d3Force('charge').strength(-200);
+      .on("mouseout", () => tooltip.style("display", "none"));
 
-    // Interpretación IA automática
+    const label = svg.append("g")
+      .selectAll("text")
+      .data(nodes)
+      .join("text")
+      .text(d => `${d.nombre} +${d.recPos} / -${d.recNeg}`)
+      .attr("font-size", "12px")
+      .attr("text-anchor", "middle")
+      .attr("fill", "#fff");
+
+    simulation.on("tick", () => {
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      node
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
+
+      label
+        .attr("x", d => d.x)
+        .attr("y", d => d.y + 4);
+    });
+
+    // Interpretación automática
     function generarInterpretacion() {
-      const lideres = nodes.filter(n => n.esLider).map(n => n.name);
-      const perifericos = nodes.filter(n => n.votosPositivosRecibidos === 0);
-      const rechazados = nodes.filter(n => n.votosNegativosRecibidos >= 3);
-      const ambivalentes = nodes.filter(n =>
-        n.votosPositivosRecibidos >= 2 && n.votosNegativosRecibidos >= 2
-      );
+      const totalNodos = nodes.length;
+      const lider = nodes[liderIndex].nombre;
+      const perifericos = nodes.filter(n => n.recPos === 0).map(n => n.nombre);
+      const rechazados = nodes.filter(n => n.recNeg >= 4 && n.recPos <= 1).map(n => n.nombre);
+      const ambivalentes = nodes.filter(n => n.recPos >= 2 && n.recNeg >= 2).map(n => n.nombre);
 
-      let texto = `<h3>Interpretación sociométrica del grupo</h3>`;
-      texto += `<p>El análisis del sociograma muestra cómo los vínculos sociales del grupo se estructuran en torno a ciertos nodos clave.`;
-
-      if (lideres.length > 0) {
-        texto += ` El liderazgo sociométrico se encuentra representado por ${lideres.join(', ')}, quienes recibieron el mayor número de elecciones positivas, destacándose como figuras centrales con capacidad de influencia.`;
-      }
+      let texto = `El análisis del sociograma revela una estructura relacional donde se identifica como líder sociométrico a <strong>${lider}</strong>, quien ha recibido el mayor número de votos positivos por parte de sus compañeros.`;
 
       if (perifericos.length > 0) {
-        texto += ` Por otro lado, se identifican miembros periféricos como ${perifericos.map(n => n.name).join(', ')}, que no recibieron votos positivos, lo que podría reflejar una situación de aislamiento o baja integración social.`;
+        texto += ` Se observa también la presencia de miembros periféricos como ${perifericos.join(", ")}, quienes no han recibido votos positivos.`;
       }
 
       if (rechazados.length > 0) {
-        texto += ` Algunos participantes como ${rechazados.map(n => n.name).join(', ')} recibieron múltiples rechazos, siendo potencialmente objeto de rechazo grupal.`;
+        texto += ` Figuras como ${rechazados.join(", ")} presentan una tendencia al rechazo dentro del grupo, lo cual puede indicar dificultades de integración.`;
       }
 
       if (ambivalentes.length > 0) {
-        texto += ` También se observa la presencia de participantes ambivalentes como ${ambivalentes.map(n => n.name).join(', ')}, que reciben tanto votos positivos como negativos. Esta ambivalencia puede deberse a posiciones intermedias de poder o a relaciones polarizadas.`;
+        texto += ` Algunos participantes como ${ambivalentes.join(", ")} muestran una posición ambivalente en el grupo, recibiendo tanto aceptación como rechazo.`;
       }
 
-      texto += `</p><p>Desde la perspectiva de la intervención educativa, estos datos permiten visualizar dinámicas de aceptación, exclusión y liderazgo, proporcionando una base empírica para diseñar estrategias de mejora de la convivencia y cohesión grupal.</p>`;
+      texto += ` Desde la perspectiva de la educación social, es recomendable realizar un seguimiento y posible intervención para fortalecer la cohesión del grupo, potenciar las relaciones positivas y acompañar a quienes se encuentran en posiciones de vulnerabilidad dentro de la red relacional.`;
 
-      return texto;
+      document.getElementById("textoInterpretacion").innerHTML = texto;
     }
 
-    document.getElementById("interpretacion").innerHTML = generarInterpretacion();
+    generarInterpretacion();
   </script>
 </body>
 </html>
