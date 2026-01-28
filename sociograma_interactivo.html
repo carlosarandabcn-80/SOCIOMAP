@@ -1,184 +1,216 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Sociograma Interactivo — SOCIOMAP</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<title>Sociograma Interactivo — SOCIOMAP</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      background: #0b132b;
-      font-family: "Segoe UI", Arial, sans-serif;
-      color: #fff;
-      text-align: center;
-    }
-    h1 { margin: 24px 0 4px; font-size: 26px; }
-    h2 { margin: 0 0 16px; font-size: 16px; color: #a0aec0; }
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
-    #sociograma {
-      width: 100%;
-      height: 680px;
-      background: white;
-      border-radius: 18px;
-      margin-top: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      position: relative;
-    }
-    svg { width: 100%; height: 100%; }
+<style>
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background:#0f172a;
+  color:#fff;
+  text-align:center;
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:24px;
+}
+h1{font-size:28px;margin-bottom:4px}
+h2{font-size:16px;color:#94a3b8;margin-top:8px;margin-bottom:18px}
 
-    .legend {
-      margin-top: 14px;
-      display: flex; justify-content: center; gap: 20px;
-      flex-wrap: wrap; font-size: 14px;
-    }
-    .legend div {
-      display: flex; align-items: center; gap: 6px;
-      color: white;
-    }
-    .circle {
-      width: 12px; height: 12px; border-radius: 50%;
-    }
-    .green { background:#22c55e; }
-    .red { background:#ef4444; }
-    .yellow { background:#facc15; }
-    .blue { background:#60a5fa; }
+#sociograma{
+  background:white;
+  height:680px;
+  border-radius:18px;
+  overflow:hidden;
+}
 
-    .tooltip {
-      position: absolute;
-      background: #0b132b; color:white;
-      padding: 8px 12px; border-radius:8px;
-      font-size:14px; pointer-events:none;
-      box-shadow:0 4px 12px rgba(0,0,0,0.3);
-      opacity:0; transition:.2s;
-    }
+.legend{
+  margin-top:16px;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:20px;
+  font-size:14px;
+  color:white;
+}
+.legend span{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.legend i{
+  width:14px;
+  height:14px;
+  border-radius:50%;
+}
 
-    #interpretacion {
-      margin: 40px auto;
-      padding: 24px;
-      background: white;
-      color: #0b132b;
-      border-radius: 12px;
-      text-align: left;
-      max-width: 820px;
-      line-height:1.6;
-      box-shadow:0 6px 24px rgba(0,0,0,0.15);
-    }
-    #interpretacion h2 {
-      margin-top:0; font-size:20px;
-    }
-  </style>
+.tooltip{
+  position:absolute;
+  background:#0f172a;
+  color:white;
+  padding:8px 14px;
+  border-radius:8px;
+  font-size:13px;
+  pointer-events:none;
+  box-shadow:0 6px 18px rgba(0,0,0,0.3);
+  opacity:0;
+  transition:.2s;
+}
+
+#interpretacion{
+  margin-top:32px;
+  padding:24px;
+  background:white;
+  color:#0f172a;
+  text-align:left;
+  border-radius:12px;
+  line-height:1.65;
+  box-shadow:0 8px 24px rgba(0,0,0,0.15);
+}
+#interpretacion h2{margin-top:0;font-size:20px;color:#111}
+</style>
 </head>
-<body>
 
+<body>
+<div class="container">
   <h1>Sociograma Interactivo</h1>
-  <h2 id="grupoInfo">Grupo de ejemplo — Fecha de ejemplo</h2>
+  <h2 id="grupoInfo"></h2>
 
   <div id="sociograma"></div>
 
   <div class="legend">
-    <div><span class="circle green"></span>Voto positivo emitido</div>
-    <div><span class="circle red"></span>Voto negativo emitido</div>
-    <div><span class="circle yellow"></span>Líder sociométrico</div>
-    <div><span class="circle blue"></span>Tamaño = votos positivos recibidos</div>
+    <span><i class="green" style="background:#22c55e"></i>Voto positivo emitido</span>
+    <span><i class="red"   style="background:#ef4444"></i>Voto negativo emitido</span>
+    <span><i class="yellow"style="background:#facc15"></i>Líder sociométrico</span>
+    <span><i class="blue"  style="background:#60a5fa"></i>Tamaño = votos positivos recibidos</span>
   </div>
 
   <div id="interpretacion"></div>
+</div>
 
-  <div class="tooltip" id="tooltip"></div>
+<div class="tooltip" id="tooltip"></div>
 
 <script>
-// =========== DATOS DE EJEMPLO (puedes sustituir estos por los reales) ===========
-const ejemploTabla = [
-  // Cada fila → 3 positivos y 3 negativos, como exige la regla sociométrica
-  // Los positivos van en los primeros 3, los negativos en los siguientes 3
-  ["P2","P4","P5","P3","P6","P7"],
-  ["P1","P3","P4","P2","P6","P5"],
-  ["P2","P5","P7","P1","P4","P6"],
-  ["P1","P2","P6","P3","P5","P7"],
-  ["P2","P3","P6","P1","P4","P7"],
-  ["P1","P3","P5","P2","P4","P7"],
-  ["P3","P4","P2","P1","P5","P6"]
-];
-// =======================
+// ——— Cargar datos de localStorage ———
+let raw = localStorage.getItem("sociogramaData");
+let data;
+try{ data = raw ? JSON.parse(raw) : null; }
+catch{ data = null; }
 
-const nodes = [];
-const links = [];
+if(!data || !Array.isArray(data.nodes)){
+  document.getElementById("sociograma").innerHTML = "<p style='padding:24px;color:red;'>No hay datos sociométricos válidos.</p>";
+  throw new Error("Datos inválidos");
+}
 
-const recPos = {}, recNeg = {};  // contadores de votos recibidos
+// Nombre grupo y fecha
+const grupoNombre = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
+document.getElementById("grupoInfo").textContent = `${grupoNombre} — ${new Date().toLocaleDateString("es-ES",{day:'numeric',month:'long',year:'numeric'})}`;
 
-ejemploTabla.forEach((fila, i) => {
-  recPos[`P${i+1}`] = 0;
-  recNeg[`P${i+1}`] = 0;
+// ——— Calcular votos recibidos y emitidos ———
+data.nodes.forEach(n=>{
+  n.recPos = 0;
+  n.recNeg = 0;
+  n.emitPos = 0;
+  n.emitNeg = 0;
 });
 
-ejemploTabla.forEach((fila, i) => {
-  const from = `P${i+1}`;
-  fila.slice(0,3).forEach(to => {
-    links.push({ source: from, target: to, type: "positivo" });
-    recPos[to]++;
-  });
-  fila.slice(3).forEach(to => {
-    links.push({ source: from, target: to, type: "negativo" });
-    recNeg[to]++;
-  });
+// Contar
+data.links.forEach(l=>{
+  const sourceNode = data.nodes.find(n=>n.name === l.source);
+  const targetNode = data.nodes.find(n=>n.name === l.target);
+  if(!sourceNode || !targetNode) return;
+
+  if(l.type === "+"){
+    sourceNode.emitPos++;
+    targetNode.recPos++;
+  } else {
+    sourceNode.emitNeg++;
+    targetNode.recNeg++;
+  }
 });
 
-Object.keys(recPos).forEach(name => {
-  nodes.push({
-    id: name,
-    recPos: recPos[name],
-    recNeg: recNeg[name]
-  });
-});
+// Construir nodos y links D3
+const nodes = data.nodes.map((n,i)=>({
+  id: i,
+  name: n.name,
+  recPos: n.recPos,
+  recNeg: n.recNeg,
+  emitPos: n.emitPos,
+  emitNeg: n.emitNeg,
+  r: 22 + n.recPos * 3
+}));
 
-// calcular líder
-const maxRecPos = Math.max(...nodes.map(n=>n.recPos));
-nodes.forEach(n => n.esLider = (n.recPos === maxRecPos));
+const indexMap = Object.fromEntries(nodes.map(n=>[n.name,n.id]));
+const links = data.links.map(l=>({
+  source: indexMap[l.source],
+  target: indexMap[l.target],
+  type: l.type
+}));
 
-// =========== D3 FORCE DIRECTED ===========
+// Quién es líder
+const maxPos = Math.max(...nodes.map(n=>n.recPos));
+nodes.forEach(n=> n.esLider = n.recPos === maxPos);
+
+// ——— Crear D3 sociograma ———
 const W = document.getElementById("sociograma").clientWidth;
 const H = document.getElementById("sociograma").clientHeight;
 
-const svg = d3.select("#sociograma").append("svg");
+const svg = d3.select("#sociograma").append("svg")
+  .attr("width",W).attr("height",H);
 
-const g = svg.append("g");
+const container = svg.append("g");
 
-const link = g.selectAll("path")
-  .data(links)
-  .enter().append("path")
-  .attr("stroke", d => d.type==="positivo" ? "#22c55e" : "#ef4444")
-  .attr("stroke-width", 2)
-  .attr("fill","none")
-  .attr("stroke-dasharray", d => d.type==="negativo" ? "6,4" : "0");
-
+// Definir flechas
 svg.append("defs").selectAll("marker")
-.data(["positivo","negativo"]).enter().append("marker")
-  .attr("id",d=>"arrow-"+d)
+  .data(["+","-"]).enter().append("marker")
+  .attr("id",d=>"arr-"+(d==="+"?"pos":"neg"))
   .attr("viewBox","0 -5 10 10")
   .attr("refY",0)
-  .attr("markerWidth",6)
-  .attr("markerHeight",6)
+  .attr("markerWidth",6).attr("markerHeight",6)
   .attr("orient","auto")
   .append("path")
   .attr("d","M0,-5L10,0L0,5")
-  .attr("fill",d=> d==="positivo"?"#22c55e":"#ef4444");
+  .attr("fill",d=> d==="+" ? "#22c55e" : "#ef4444");
 
-link.attr("marker-end",d=>"url(#arrow-"+d.type+")");
+// Dibujar enlaces
+const link = container.append("g").selectAll("path")
+  .data(links).enter().append("path")
+  .attr("stroke", d=> d.type==="+"?"#22c55e":"#ef4444")
+  .attr("stroke-width",2)
+  .attr("fill","none")
+  .attr("stroke-dasharray",d=> d.type==="-"?"6,4":"0")
+  .attr("marker-end", d=>`url(#arr-${d.type==="+"?"pos":"neg"})`)
+  .attr("opacity",0.15);
 
-const node = g.selectAll("g.node")
-  .data(nodes)
-  .enter().append("g");
+// Dibujar nodos
+const node = container.append("g").selectAll("g")
+  .data(nodes).enter().append("g")
+  .call(d3.drag()
+    .on("start", (event,d) => {
+      if(!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x; d.fy = d.y;
+    })
+    .on("drag", (event,d) => { d.fx = event.x; d.fy = event.y; })
+    .on("end", (event,d) => {
+      if(!event.active) simulation.alphaTarget(0);
+      d.fx = null; d.fy = null;
+    })
+  );
 
 node.append("circle")
-  .attr("r", d=> 20 + d.recPos*4)
-  .attr("fill", d => d.esLider ? "#facc15" : "#60a5fa")
-  .attr("stroke","#0f172a")
-  .attr("stroke-width",2);
+  .attr("r", d=>d.r)
+  .attr("fill", d=> d.esLider ? "#facc15" : "#60a5fa")
+  .attr("stroke","#0f172a").attr("stroke-width",2);
 
 node.append("text")
-  .text(d => `${d.id}  +${d.recPos} / -${d.recNeg}`)
+  .text(d=>`${d.name}  +${d.emitPos} / -${d.emitNeg}`)
   .attr("text-anchor","middle")
   .attr("dy",4)
   .style("font-size","12px")
@@ -188,65 +220,63 @@ node.append("text")
 
 const tooltip = d3.select("#tooltip");
 
-node.on("mouseover", (event,d) => {
-  tooltip.style("opacity",1).html(
-    `<strong>${d.id}</strong><br>`+
-    `Votos positivos recibidos: ${d.recPos}<br>`+
-    `Votos negativos recibidos: ${d.recNeg}`
-  );
+node.on("mouseover",(event,d)=>{
+  tooltip.style("opacity",1)
+    .html(`<strong>${d.name}</strong><br>Votos positivos recibidos: ${d.recPos}<br>Votos negativos recibidos: ${d.recNeg}`);
 })
-.on("mousemove", (event) => {
-  tooltip.style("left",(event.pageX+14)+"px").style("top",(event.pageY+14)+"px");
+.on("mousemove",(event)=>{
+  tooltip.style("left",(event.pageX+14)+"px")
+         .style("top",(event.pageY+14)+"px");
 })
-.on("mouseout", ()=>tooltip.style("opacity",0));
+.on("mouseout",()=>tooltip.style("opacity",0));
 
+// Simulación D3
 const simulation = d3.forceSimulation(nodes)
-  .force("link", d3.forceLink(links).id(d=>d.id).distance(180))
-  .force("charge", d3.forceManyBody().strength(-600))
+  .force("link", d3.forceLink(links).id(d=>d.id).distance(170))
+  .force("charge", d3.forceManyBody().strength(-750))
   .force("center", d3.forceCenter(W/2,H/2))
-  .force("collision",d3.forceCollide().radius(d=> (20+d.recPos*4) + 6));
+  .force("collision", d3.forceCollide().radius(d=>d.r+8));
 
-simulation.on("tick", () => {
-  link.attr("d", d => {
-    const dx=d.target.x-d.source.x;
-    const dy=d.target.y-d.source.y;
-    const angle=Math.atan2(dy,dx);
-    const rT = 20 + d.target.recPos*4;
-    const tx=d.target.x - Math.cos(angle)*(rT+2);
-    const ty=d.target.y - Math.sin(angle)*(rT+2);
-    return `M${d.source.x},${d.source.y} L${tx},${ty}`;
+simulation.on("tick",()=>{
+  link.attr("d",d=>{
+    const dx = d.target.x - d.source.x;
+    const dy = d.target.y - d.source.y;
+    const angle = Math.atan2(dy, dx);
+    const tr = nodes[d.target.id].r + 4;
+    return `M${d.source.x},${d.source.y} L${d.target.x - Math.cos(angle)*tr},${d.target.y - Math.sin(angle)*tr}`;
   });
-  node.attr("transform", d=>`translate(${d.x},${d.y})`);
+
+  node.attr("transform",d=>`translate(${d.x},${d.y})`);
 });
 
-// =========== INTERPRETACION AUTOMATICA ===========
-function generarInterpretacion() {
-  let texto = `<h2>Interpretación sociométrica del grupo</h2>`;
-  texto += `<p>Este sociograma representa la estructura relacional interna del grupo mediante votos positivos y negativos.`;
+// ——— Interpretación automática IA ———
+function generarInterpretacion(){
+  let html = `<h2>Interpretación sociométrica del grupo</h2>`;
+  html += `<p>El sociograma describe las relaciones sociales en función de votos positivos y negativos.</p>`;
 
-  texto += ` El liderazgo sociométrico recae en <strong>${nodes.find(n=>n.esLider).id}</strong>, con mayor número de votos positivos recibidos (${maxRecPos}). Esto indica una posición central de influencia y aceptación.</p>`;
+  html += `<p>El liderazgo sociométrico recae en <strong>${nodes.find(n=>n.esLider).name}</strong>, quien recibió la máxima aceptación positiva (${maxPos} votos). Este tipo de posición suele reflejar reconocimiento social destacado.</p>`;
 
   const aislados = nodes.filter(n=>n.recPos===0 && n.recNeg===0);
   if(aislados.length){
-    texto += `<p>Se identifican perfiles aislados como ${aislados.map(n=>n.id).join(", ")}, que no han sido ni aceptados ni rechazados, situación que suele reflejar baja visibilidad relacional.</p>`;
+    html += `<p>Se identifican perfiles aislados (${aislados.map(n=>n.name).join(", ")}), sin elecciones expresadas ni recibidas, lo cual sugiere baja visibilidad relacional.</p>`;
   }
 
   const periferia = nodes.filter(n=>n.recPos===0 && n.recNeg>0);
   if(periferia.length){
-    texto += `<p>También hay periféricos (${periferia.map(n=>n.id).join(", ")}), con rechazo pero sin aceptación positiva.</p>`;
+    html += `<p>Miembros en periferia (${periferia.map(n=>n.name).join(", ")}) presentan rechazo sin aceptación, lo cual indica posibles dificultades de integración.</p>`;
   }
 
-  const ambivalentes = nodes.filter(n=>n.recPos>0 && n.recNeg>0 && n.recPos<=2 && n.recNeg<=2);
+  const ambivalentes = nodes.filter(n=>n.recPos>0 && n.recNeg>0);
   if(ambivalentes.length){
-    texto += `<p>Perfiles ambivalentes (${ambivalentes.map(n=>n.id).join(", ")}) combinan aceptación y rechazo, lo que puede indicar relaciones polarizadas.</p>`;
+    html += `<p>Perfiles ambivalentes (${ambivalentes.map(n=>n.name).join(", ")}) reciben tanto aceptación como rechazo, señalando dinamismos relacionales mixtos.</p>`;
   }
 
-  texto += `<p>Desde una perspectiva socioeducativa, este análisis apoya la planificación de acciones que refuercen la inclusión, amplíen las relaciones positivas y acompañen a quienes se encuentran en posiciones de vulnerabilidad dentro del grupo.</p>`;
-  return texto;
+  html += `<p>Desde una perspectiva socioeducativa, es recomendable potenciar dinámicas cooperativas, fortalecer la inclusión y atención a perfiles vulnerables, orientando la convivencia grupal hacia una mayor cohesión e integración.</p>`;
+
+  return html;
 }
 
 document.getElementById("interpretacion").innerHTML = generarInterpretacion();
-
 </script>
 </body>
 </html>
