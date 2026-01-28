@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Formulario Sociométrico — SOCIOMAP</title>
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -52,7 +51,7 @@ input,select{
   font-weight:bold;
   font-size:14px;
   cursor:pointer;
-  margin-top:12px;
+  margin-top:14px;
 }
 .btn-primary{
   background:#3b82f6;
@@ -86,6 +85,7 @@ th{
   font-weight:bold;
 }
 
+/* Ranking y gráfico */
 .ranking-box,.grafico-box{
   display:none;
   background:white;
@@ -95,6 +95,14 @@ th{
   margin-top:24px;
 }
 
+/* Altura controlada del gráfico */
+.grafico-box{
+  height:240px;
+}
+.grafico-box canvas{
+  height:180px !important;
+}
+
 /* Colores por rol */
 .role-lider{background:#dcfce7}
 .role-rechazado{background:#fee2e2}
@@ -102,12 +110,20 @@ th{
 .role-ambivalente{background:#fef9c3}
 .role-integrado{background:#dbeafe}
 
+/* Botón sociograma */
+#btnSociograma{
+  display:none;
+}
+
+/* Logo */
 .logo{
   height:64px;
-  margin-top:24px;
+  margin:24px auto 0;
+  display:block;
 }
+
 footer{
-  margin-top:12px;
+  margin-top:10px;
   color:#94a3b8;
   font-size:14px;
 }
@@ -147,10 +163,10 @@ footer{
 
 <div id="graficoBox" class="grafico-box">
   <h3>📊 Gráfico de Barras Sociométrico</h3>
-  <canvas id="chart" height="320"></canvas>
+  <canvas id="chart"></canvas>
 </div>
 
-<button id="btnSociograma" class="btn btn-primary btn-disabled" disabled onclick="irASociograma()">
+<button id="btnSociograma" class="btn btn-primary" onclick="irASociograma()">
   CREAR SOCIOGRAMA
 </button>
 
@@ -160,7 +176,6 @@ footer{
 </div>
 
 <script>
-/* Referencias */
 const grupoInput=document.getElementById("grupo");
 const numSelect=document.getElementById("num");
 const customCheck=document.getElementById("custom");
@@ -174,7 +189,7 @@ const chartCanvas=document.getElementById("chart");
 
 let chart=null;
 
-/* Rellenar participantes */
+/* Participantes */
 for(let i=7;i<=40;i++){
   numSelect.innerHTML+=`<option value="${i}">${i}</option>`;
 }
@@ -224,7 +239,7 @@ function crearTabla(){
   document.querySelectorAll(".cell").forEach(c=>c.onchange=validarTabla);
 }
 
-/* Validar tabla */
+/* Validar */
 function validarTabla(){
   let ok=true;
   document.querySelectorAll("#tablaVotos tbody tr").forEach((tr,i)=>{
@@ -243,7 +258,7 @@ function validarTabla(){
   }
 }
 
-/* Procesar ranking y gráfico */
+/* Procesar ranking + gráfico */
 function procesar(){
   const headers=[...document.querySelectorAll("#tablaVotos thead th")]
     .slice(1,-1).map(th=>th.textContent);
@@ -262,7 +277,6 @@ function procesar(){
     return {name:h,p,n,rol:calcularRol(p,n)};
   });
 
-  /* Ranking */
   let rh=`<table><tr><th>Nombre</th><th>+</th><th>-</th><th>Rol</th></tr>`;
   results.forEach(r=>{
     rh+=`<tr class="role-${r.rol.toLowerCase()}">
@@ -273,9 +287,8 @@ function procesar(){
   rankingDiv.innerHTML=rh;
   rankingDiv.style.display="block";
 
-  /* Gráfico */
   graficoBox.style.display="block";
-  if(chart) chart.destroy();
+  if(chart)chart.destroy();
 
   chart=new Chart(chartCanvas.getContext("2d"),{
     type:"bar",
@@ -289,12 +302,10 @@ function procesar(){
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      scales:{y:{beginAtZero:true,ticks:{stepSize:1}}},
-      plugins:{legend:{position:"top"}}
+      scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}
     }
   });
 
-  /* Guardar datos para sociograma */
   localStorage.setItem("sociogramaData",JSON.stringify({
     nodes:results,
     links:results.flatMap((r,i)=>
@@ -303,11 +314,10 @@ function procesar(){
         .filter(x=>x))
   }));
 
-  btnSociograma.disabled=false;
-  btnSociograma.classList.remove("btn-disabled");
+  btnSociograma.style.display="inline-block";
 }
 
-/* Roles */
+/* Rol */
 function calcularRol(p,n){
   if(p>3&&n<=1)return"Lider";
   if(n>3)return"Rechazado";
