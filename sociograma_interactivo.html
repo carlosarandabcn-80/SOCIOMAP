@@ -1,205 +1,223 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Sociograma Interactivo</title>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>Sociograma — SOCIOMAP</title>
 
-<style>
-  body {
-    margin: 0;
-    font-family: "Segoe UI", sans-serif;
-    background: #0f172a;
-    color: #0f172a;
-    text-align: center;
-  }
-  .container {
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 20px;
-    background: #ffffff;
-    border-radius: 14px;
-  }
-  h1 { margin-bottom: 6px; font-size: 28px; color: #0f172a; }
-  p { margin-top: 0; color: #334155; font-size: 15px; font-weight: 500; }
-  #graph { width: 100%; height: 650px; border-radius: 12px; cursor: grab; }
-  .legend { display: flex; justify-content: center; gap: 24px; margin-top: 18px; flex-wrap: wrap; font-size: 14px; font-weight: 500; color: #1e293b; }
-  .legend span { display: flex; align-items: center; gap: 6px; }
-  .legend i { width: 16px; height: 16px; border-radius: 50%; }
-  .btn { margin-top: 18px; padding: 10px 18px; border-radius: 8px; border: none; background: #3b82f6; color: white; font-size: 15px; font-weight: bold; cursor: pointer; }
-  .btn:hover { background: #2563eb; }
-  footer { margin-top: 30px; font-size: 13px; color: #64748b; }
-  img.logo { height: 60px; background: white; border-radius: 12px; padding: 4px 10px; margin-top: 18px; }
-</style>
+  <!-- LIBRERÍAS -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvg/dist/browser/canvg.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    body {
+      background: #0f172a;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 32px;
+      text-align: center;
+    }
+    h1 {font-size: 36px; color: white;}
+    .grupo-nombre {font-size: 20px; color: white; margin-bottom: 12px;}
+    .btn { margin: 10px; padding: 10px 18px; font-weight: bold; cursor: pointer; border-radius: 8px; border: none; background: #e5e7eb; color: #0f172a;}
+    .btn:hover {background: #cbd5e1;}
+    #sociograma { margin: 20px auto; background: white; border-radius: 8px; width: 100%; max-width: 1200px; height: 800px;}
+    #chartContainer { margin: 20px auto; background: white; border-radius: 8px; width: 100%; max-width: 1000px;}
+    footer {margin-top: 40px;}
+    .footer-logo {height: 80px;}
+  </style>
 </head>
 
 <body>
-<div class="container">
 
   <h1>Sociograma Interactivo</h1>
-  <p id="infoGrupoFecha"></p>
-  
-  <div id="graph"></div>
+  <div id="grupo-nombre"></div>
 
-  <button class="btn" onclick="location.href='index.html'">← Volver al formulario</button>
+  <!-- SOCIOGRAMA D3 -->
+  <div id="sociograma"></div>
+  <p style="font-size:15px; color:#a5f3fc;">💡 Puedes reorganizar los nodos manualmente para una mejor visualización.</p>
 
-  <div class="legend">
-    <span><i style="background:#22c55e;"></i> Vínculo positivo</span>
-    <span><i style="background:#ef4444;"></i> Vínculo negativo</span>
-    <span><i style="background:#facc15;"></i> Líder sociométrico</span>
-    <span><i style="background:#60a5fa;"></i> Tamaño ∝ votos positivos</span>
+  <!-- EXPORT -->
+  <button class="btn" onclick="exportarSociograma()">Exportar Sociograma PNG</button>
+
+  <!-- BARRAS -->
+  <div id="chartContainer">
+    <canvas id="rankingChart"></canvas>
   </div>
+  <p style="font-size:15px; color:#38bdf8;">💡 Gráfico interactivo: pasa el cursor para detalles.</p>
 
-  <div>
-    <button class="btn" onclick="exportToPNG()">Exportar PNG</button>
-    <button class="btn" onclick="exportToPDF()">Exportar PDF</button>
-  </div>
+  <button class="btn" onclick="exportarGrafico()">Exportar Gráfico PNG</button>
 
-  <img src="logo.png" class="logo" alt="SOCIOMAP">
-  <footer>© SOCIOMAP · Aranda Tools · 2026</footer>
-
-</div>
+  <!-- FOOTER -->
+  <footer>
+    <img src="logo.png" class="footer-logo" alt="LOGO">
+    <p>Gracias por usar Sociomap 💙</p>
+  </footer>
 
 <script>
-  let raw = localStorage.getItem("sociogramaData");
-  let data;
+  // BLOQUEAR RETROCESO
+  history.pushState(null, null, location.href);
+  window.onpopstate = () => history.go(1);
 
-  try {
-    data = raw ? JSON.parse(raw) : null;
-  } catch {
-    data = null;
+  // CARGAR DATOS DESDE localStorage
+  const rawData = JSON.parse(localStorage.getItem("sociogramaData") || "null");
+  const grupo = localStorage.getItem("grupoNombre") || "SIN NOMBRE";
+
+  if (!rawData || !rawData.nodes || !rawData.links) {
+    document.body.innerHTML = "<h2 style='color:red;'>❌ No se encontraron datos sociométricos válidos.</h2><p>Por favor, regresa al formulario y genera el ranking.</p>";
+    throw new Error("Datos no encontrados");
   }
 
-  const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
-  const fecha = new Date().toLocaleDateString("es-ES", { day:'numeric', month:'long', year:'numeric' });
-  document.getElementById("infoGrupoFecha").textContent = `${grupo} — ${fecha}`;
-
-  if (!data || !Array.isArray(data.nodes) || data.nodes.length === 0) {
-    document.getElementById("graph").innerHTML = 
-      "<p style='color:red;font-size:20px;'>⚠️ No hay datos sociométricos para mostrar. <br>Genera el gráfico desde el formulario primero.</p>";
-    throw new Error("No sociograma data");
-  }
-
-  const nodeMap = new Map(data.nodes.map(n => [n.name, n]));
-  data.links.forEach(l => {
-    l.source = nodeMap.get(l.source);
-    l.target = nodeMap.get(l.target);
-  });
-
-  const svg = d3.select("#graph")
-                .append("svg")
-                .attr("width","100%")
-                .attr("height","650px");
-
-  const container = svg.append("g");
-
-  svg.append("defs")
-    .selectAll("marker")
-    .data(["pos","neg"])
-    .enter().append("marker")
-      .attr("id", d => "arrow-"+d)
-      .attr("viewBox","0 -5 10 10")
-      .attr("refX",24)
-      .attr("refY",0)
-      .attr("markerWidth",6)
-      .attr("markerHeight",6)
-      .attr("orient","auto")
-    .append("path")
-      .attr("d","M0,-5L10,0L0,5")
-      .attr("fill", d => d==="pos" ? "#22c55e" : "#ef4444");
-
-  const simulation = d3.forceSimulation(data.nodes)
-    .force("link", d3.forceLink(data.links).id(d => d.name).distance(120))
-    .force("charge", d3.forceManyBody().strength(-400))
-    .force("center", d3.forceCenter(svg.node().clientWidth/2, svg.node().clientHeight/2))
-    .force("collision", d3.forceCollide().radius(d => 15 + d.p));
-
-  const link = container.append("g")
-    .selectAll("path")
-    .data(data.links)
-    .enter().append("path")
-      .attr("stroke", d => d.type==="+" ? "#22c55e" : "#ef4444")
-      .attr("stroke-width", 2)
-      .attr("fill", "none")
-      .attr("stroke-dasharray", d => d.type==="-"?"4,2":"0")
-      .attr("marker-end", d => "url(#arrow-" + (d.type==="+"?"pos":"neg") + ")");
-
-  const node = container.append("g")
-    .selectAll("g")
-    .data(data.nodes)
-    .enter().append("g")
-      .call(d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended)
-      );
-
-  node.append("circle")
-    .attr("r", d => 12 + d.p)
-    .attr("fill", d => d.rol === "Líder" ? "#facc15" : "#60a5fa")
-    .attr("stroke","#0f172a")
-    .attr("stroke-width",2);
-
-  node.append("text")
-    .attr("class","node-label")
-    .attr("text-anchor","middle")
-    .attr("dy",4)
-    .text(d => d.name);
-
-  node.append("text")
-    .attr("class","node-stats")
-    .attr("text-anchor","middle")
-    .attr("dy",18)
-    .text(d => `+${d.p} / −${d.n}`);
-
-  simulation.on("tick", () => {
-    link.attr("d", d => {
-      const dx = d.target.x - d.source.x;
-      const dy = d.target.y - d.source.y;
-      const dr = Math.sqrt(dx*dx + dy*dy);
-      return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1${d.target.x},${d.target.y}`;
-    });
-    node.attr("transform", d => `translate(${d.x},${d.y})`);
-  });
-
-  svg.call(d3.zoom().on("zoom", (event) => {
-    container.attr("transform", event.transform);
+  const labels = rawData.nodes.map(n => n.name);
+  const nodes = rawData.nodes.map((n, i) => ({
+    id: i,
+    name: n.name,
+    votosPos: n.p,
+    votosNeg: n.n
   }));
 
-  function dragstarted(event,d){
-    if(!event.active) simulation.alphaTarget(0.3).restart();
+  const nodeIndexMap = Object.fromEntries(labels.map((name, i) => [name, i]));
+  const links = rawData.links.map(l => ({
+    source: nodeIndexMap[l.source],
+    target: nodeIndexMap[l.target],
+    type: l.type
+  }));
+
+  const fechaObj = new Date();
+  const fechaFormateada = fechaObj.toLocaleDateString("es-ES", {
+    year:'numeric', month:'long', day:'numeric'
+  });
+
+  document.getElementById("grupo-nombre").textContent = `Grupo: ${grupo} — ${fechaFormateada}`;
+
+  // --- D3 SOCIOGRAMA ---
+  const width = 1200, height = 800;
+  const liderIndex = nodes.reduce((a,c,i,arr) => c.votosPos > arr[a].votosPos ? i : a, 0);
+
+  const svg = d3.select("#sociograma").append("svg")
+    .attr("width", width).attr("height", height);
+
+  const sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+    .force("charge", d3.forceManyBody().strength(-350))
+    .force("center", d3.forceCenter(width / 2, height / 2));
+
+  const linkElems = svg.append("g").selectAll("line")
+    .data(links).enter().append("line")
+    .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+    .attr("stroke-width", 2);
+
+  const nodeElems = svg.append("g").selectAll("g")
+    .data(nodes).enter().append("g")
+      .call(d3.drag().on("start", dragStart).on("drag", drag).on("end", dragEnd));
+
+  nodeElems.append("circle")
+    .attr("r", d => 30 + d.votosPos * 3)
+    .attr("fill", d => d.id === liderIndex ? "#facc15" : "#0ea5e9");
+
+  nodeElems.append("text")
+    .text(d => d.name)
+    .attr("font-size", "14px")
+    .attr("fill", "#fff")
+    .attr("text-anchor", "middle")
+    .attr("dy", -8);
+
+  sim.on("tick", () => {
+    linkElems
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    nodeElems.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+
+  function dragStart(event, d) {
+    if (!event.active) sim.alphaTarget(0.3).restart();
     d.fx = d.x; d.fy = d.y;
   }
-  function dragged(event,d){
+  function drag(event, d) {
     d.fx = event.x; d.fy = event.y;
   }
-  function dragended(event,d){
-    if(!event.active) simulation.alphaTarget(0);
+  function dragEnd(event, d) {
+    if (!event.active) sim.alphaTarget(0);
     d.fx = null; d.fy = null;
   }
 
-  function exportToPNG(){
-    html2canvas(document.querySelector("#graph svg")).then(canvas => {
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = "sociograma.png";
-      link.click();
-    });
+  // --- CHART.JS ---
+  new Chart(document.getElementById("rankingChart"), {
+    type: 'bar',
+    data: {
+      labels: nodes.map(n => n.name),
+      datasets: [
+        { label: "Votos +", data: nodes.map(n => n.votosPos), backgroundColor: "#22c55e" },
+        { label: "Votos -", data: nodes.map(n => -n.votosNeg), backgroundColor: "#ef4444" }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        datalabels: {
+          color: "#000",
+          anchor: 'end',
+          align: 'end',
+          formatter: val => Math.abs(val)
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+
+  // --- EXPORT FUNCTIONS ---
+  async function exportarSociograma() {
+    const svgElem = document.querySelector("#sociograma svg");
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = width; tempCanvas.height = height;
+    const ctxTemp = tempCanvas.getContext("2d");
+    await canvg.Canvg.from(ctxTemp, new XMLSerializer().serializeToString(svgElem)).render();
+
+    const divTemp = document.createElement("div");
+    divTemp.style.position = "absolute"; divTemp.style.left = "-9999px";
+    divTemp.appendChild(tempCanvas);
+    document.body.appendChild(divTemp);
+
+    exportarCanvasConPie(tempCanvas, "sociograma");
+    document.body.removeChild(divTemp);
   }
 
-  function exportToPDF(){
-    html2canvas(document.querySelector("#graph svg")).then(canvas => {
-      const img = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation:"landscape" });
-      const width = pdf.internal.pageSize.getWidth();
-      const height = (canvas.height * width) / canvas.width;
-      pdf.addImage(img, "PNG", 0, 0, width, height);
-      pdf.save("sociograma.pdf");
-    });
+  function exportarGrafico() {
+    const grafCanvas = document.querySelector("#rankingChart");
+    exportarCanvasConPie(grafCanvas, "ranking");
   }
 
+  function exportarCanvasConPie(canvasOrig, nombre) {
+    html2canvas(canvasOrig, { scale: 2 }).then(c => {
+      const final = document.createElement("canvas");
+      final.width = c.width;
+      final.height = c.height + 100;
+      const ctx = final.getContext("2d");
+
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, final.width, final.height);
+      ctx.drawImage(c, 0, 0);
+
+      const logo = new Image();
+      logo.src = "logo.png";
+      logo.onload = () => {
+        ctx.drawImage(logo, 20, c.height + 10, 60, 60);
+        ctx.fillStyle = "#000";
+        ctx.font = "14px Arial";
+        ctx.fillText(`Grupo: ${grupo} — ${fechaFormateada}`, 100, c.height + 40);
+
+        const link = document.createElement("a");
+        link.download = `${nombre}_${grupo}.png`;
+        link.href = final.toDataURL("image/png");
+        link.click();
+      };
+    });
+  }
 </script>
+
 </body>
 </html>
