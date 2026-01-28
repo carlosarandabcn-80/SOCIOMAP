@@ -1,282 +1,259 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Sociograma Interactivo — SOCIOMAP</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sociograma Interactivo</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      background: #0f172a;
+      font-family: 'Inter', sans-serif;
+      color: white;
+      text-align: center;
+    }
+    h1 { margin: 12px 0 0; font-size: 24px; font-weight: 600; }
+    h2 { font-size: 14px; font-weight: 400; color: #cbd5e1; margin: 0 0 16px; }
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    #graph {
+      width: 100%;
+      height: 600px;
+      background: white;
+    }
 
-<style>
-body{
-  margin:0;
-  font-family:'Inter',sans-serif;
-  background:#0f172a;
-  color:#fff;
-  text-align:center;
-}
-.container{
-  max-width:1200px;
-  margin:auto;
-  padding:24px;
-}
-h1{font-size:28px;margin-bottom:4px}
-h2{font-size:16px;color:#94a3b8;margin-top:8px;margin-bottom:18px}
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      font-size: 14px;
+      margin: 12px 0;
+    }
 
-#sociograma{
-  background:white;
-  height:680px;
-  border-radius:18px;
-  overflow:hidden;
-}
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
-.legend{
-  margin-top:16px;
-  display:flex;
-  justify-content:center;
-  flex-wrap:wrap;
-  gap:20px;
-  font-size:14px;
-  color:white;
-}
-.legend span{
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-.legend i{
-  width:14px;
-  height:14px;
-  border-radius:50%;
-}
+    .legend i {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+    }
 
-.tooltip{
-  position:absolute;
-  background:#0f172a;
-  color:white;
-  padding:8px 14px;
-  border-radius:8px;
-  font-size:13px;
-  pointer-events:none;
-  box-shadow:0 6px 18px rgba(0,0,0,0.3);
-  opacity:0;
-  transition:.2s;
-}
+    #tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: #0f172a;
+      color: white;
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 6px;
+      opacity: 0;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+      transition: .2s ease;
+    }
 
-#interpretacion{
-  margin-top:32px;
-  padding:24px;
-  background:white;
-  color:#0f172a;
-  text-align:left;
-  border-radius:12px;
-  line-height:1.65;
-  box-shadow:0 8px 24px rgba(0,0,0,0.15);
-}
-#interpretacion h2{margin-top:0;font-size:20px;color:#111}
-</style>
+    #interpretacion {
+      background: white;
+      color: #1e293b;
+      padding: 24px;
+      max-width: 900px;
+      margin: 32px auto;
+      border-radius: 12px;
+      text-align: left;
+      line-height: 1.65;
+    }
+
+    #interpretacion h3 {
+      margin-top: 0;
+    }
+  </style>
 </head>
-
 <body>
-<div class="container">
-  <h1>Sociograma Interactivo</h1>
-  <h2 id="grupoInfo"></h2>
 
-  <div id="sociograma"></div>
+  <h1>Sociograma Interactivo</h1>
+  <h2>Grupo de ejemplo — Fecha de ejemplo</h2>
+
+  <div id="graph"></div>
 
   <div class="legend">
-    <span><i class="green" style="background:#22c55e"></i>Voto positivo emitido</span>
-    <span><i class="red"   style="background:#ef4444"></i>Voto negativo emitido</span>
-    <span><i class="yellow"style="background:#facc15"></i>Líder sociométrico</span>
-    <span><i class="blue"  style="background:#60a5fa"></i>Tamaño = votos positivos recibidos</span>
+    <span><i style="background:#22c55e;"></i> Voto positivo emitido</span>
+    <span><i style="background:#ef4444;"></i> Voto negativo emitido</span>
+    <span><i style="background:#facc15;"></i> Líder sociométrico</span>
+    <span><i style="background:#60a5fa;"></i> Tamaño = votos positivos recibidos</span>
   </div>
 
+  <div id="tooltip"></div>
+
   <div id="interpretacion"></div>
-</div>
 
-<div class="tooltip" id="tooltip"></div>
+  <script>
+    // Simulación de datos del formulario
+    const participantes = ["P1","P2","P3","P4","P5","P6","P7"];
 
-<script>
-// ——— Cargar datos de localStorage ———
-let raw = localStorage.getItem("sociogramaData");
-let data;
-try{ data = raw ? JSON.parse(raw) : null; }
-catch{ data = null; }
+    const links = [
+      // Cada participante emite 3 positivos y 3 negativos
+      {source:"P1",target:"P2",type:"+"}, {source:"P1",target:"P3",type:"+"}, {source:"P1",target:"P5",type:"+"},
+      {source:"P1",target:"P4",type:"-"}, {source:"P1",target:"P6",type:"-"}, {source:"P1",target:"P7",type:"-"},
+      
+      {source:"P2",target:"P1",type:"+"}, {source:"P2",target:"P3",type:"+"}, {source:"P2",target:"P4",type:"+"},
+      {source:"P2",target:"P5",type:"-"}, {source:"P2",target:"P6",type:"-"}, {source:"P2",target:"P7",type:"-"},
+      
+      {source:"P3",target:"P1",type:"+"}, {source:"P3",target:"P2",type:"+"}, {source:"P3",target:"P6",type:"+"},
+      {source:"P3",target:"P4",type:"-"}, {source:"P3",target:"P5",type:"-"}, {source:"P3",target:"P7",type:"-"},
+      
+      {source:"P4",target:"P1",type:"+"}, {source:"P4",target:"P2",type:"+"}, {source:"P4",target:"P3",type:"+"},
+      {source:"P4",target:"P5",type:"-"}, {source:"P4",target:"P6",type:"-"}, {source:"P4",target:"P7",type:"-"},
+      
+      {source:"P5",target:"P1",type:"+"}, {source:"P5",target:"P3",type:"+"}, {source:"P5",target:"P6",type:"+"},
+      {source:"P5",target:"P2",type:"-"}, {source:"P5",target:"P4",type:"-"}, {source:"P5",target:"P7",type:"-"},
+      
+      {source:"P6",target:"P1",type:"+"}, {source:"P6",target:"P2",type:"+"}, {source:"P6",target:"P3",type:"+"},
+      {source:"P6",target:"P4",type:"-"}, {source:"P6",target:"P5",type:"-"}, {source:"P6",target:"P7",type:"-"},
+      
+      {source:"P7",target:"P1",type:"+"}, {source:"P7",target:"P2",type:"+"}, {source:"P7",target:"P4",type:"+"},
+      {source:"P7",target:"P3",type:"-"}, {source:"P7",target:"P5",type:"-"}, {source:"P7",target:"P6",type:"-"}
+    ];
 
-if(!data || !Array.isArray(data.nodes)){
-  document.getElementById("sociograma").innerHTML = "<p style='padding:24px;color:red;'>No hay datos sociométricos válidos.</p>";
-  throw new Error("Datos inválidos");
-}
+    const nodes = participantes.map(name => ({
+      id: name,
+      name,
+      recPos: 0,
+      recNeg: 0,
+      emitPos: 0,
+      emitNeg: 0
+    }));
 
-// Nombre grupo y fecha
-const grupoNombre = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
-document.getElementById("grupoInfo").textContent = `${grupoNombre} — ${new Date().toLocaleDateString("es-ES",{day:'numeric',month:'long',year:'numeric'})}`;
+    // Cálculo de votos
+    links.forEach(link => {
+      const from = nodes.find(n => n.name === link.source);
+      const to = nodes.find(n => n.name === link.target);
+      if (link.type === "+") {
+        from.emitPos++;
+        to.recPos++;
+      } else {
+        from.emitNeg++;
+        to.recNeg++;
+      }
+    });
 
-// ——— Calcular votos recibidos y emitidos ———
-data.nodes.forEach(n=>{
-  n.recPos = 0;
-  n.recNeg = 0;
-  n.emitPos = 0;
-  n.emitNeg = 0;
-});
+    const maxRec = Math.max(...nodes.map(n=>n.recPos));
+    nodes.forEach(n => {
+      n.radius = 20 + n.recPos * 4;
+      n.color = n.recPos === maxRec ? "#facc15" : "#60a5fa";
+    });
 
-// Contar
-data.links.forEach(l=>{
-  const sourceNode = data.nodes.find(n=>n.name === l.source);
-  const targetNode = data.nodes.find(n=>n.name === l.target);
-  if(!sourceNode || !targetNode) return;
+    // Crear sociograma
+    const width = document.getElementById("graph").clientWidth;
+    const height = document.getElementById("graph").clientHeight;
 
-  if(l.type === "+"){
-    sourceNode.emitPos++;
-    targetNode.recPos++;
-  } else {
-    sourceNode.emitNeg++;
-    targetNode.recNeg++;
-  }
-});
+    const svg = d3.select("#graph").append("svg")
+      .attr("width", width)
+      .attr("height", height);
 
-// Construir nodos y links D3
-const nodes = data.nodes.map((n,i)=>({
-  id: i,
-  name: n.name,
-  recPos: n.recPos,
-  recNeg: n.recNeg,
-  emitPos: n.emitPos,
-  emitNeg: n.emitNeg,
-  r: 22 + n.recPos * 3
-}));
+    const marker = svg.append("defs").selectAll("marker")
+      .data(["pos","neg"])
+      .enter()
+      .append("marker")
+      .attr("id", d => `arrow-${d}`)
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 20)
+      .attr("refY", 0)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr("fill", d => d === "pos" ? "#22c55e" : "#ef4444");
 
-const indexMap = Object.fromEntries(nodes.map(n=>[n.name,n.id]));
-const links = data.links.map(l=>({
-  source: indexMap[l.source],
-  target: indexMap[l.target],
-  type: l.type
-}));
+    const link = svg.append("g")
+      .selectAll("path")
+      .data(links)
+      .enter()
+      .append("path")
+      .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+      .attr("stroke-width", 2)
+      .attr("stroke-dasharray", d => d.type === "-" ? "4,4" : "0")
+      .attr("fill", "none")
+      .attr("marker-end", d => `url(#arrow-${d.type === "+" ? "pos" : "neg"})`)
+      .attr("opacity", 0.6);
 
-// Quién es líder
-const maxPos = Math.max(...nodes.map(n=>n.recPos));
-nodes.forEach(n=> n.esLider = n.recPos === maxPos);
+    const node = svg.selectAll("g.node")
+      .data(nodes)
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .call(d3.drag()
+        .on("start", (event, d) => {
+          if (!event.active) sim.alphaTarget(0.3).restart();
+          d.fx = d.x; d.fy = d.y;
+        })
+        .on("drag", (event,d) => {
+          d.fx = event.x; d.fy = event.y;
+        })
+        .on("end", (event,d) => {
+          if (!event.active) sim.alphaTarget(0);
+          d.fx = null; d.fy = null;
+        })
+      );
 
-// ——— Crear D3 sociograma ———
-const W = document.getElementById("sociograma").clientWidth;
-const H = document.getElementById("sociograma").clientHeight;
+    node.append("circle")
+      .attr("r", d => d.radius)
+      .attr("fill", d => d.color)
+      .attr("stroke", "#1e293b")
+      .attr("stroke-width", 2);
 
-const svg = d3.select("#sociograma").append("svg")
-  .attr("width",W).attr("height",H);
+    node.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dy", 4)
+      .attr("fill", "#fff")
+      .style("font-size", "12px")
+      .text(d => `${d.name} +${d.emitPos}/-${d.emitNeg}`);
 
-const container = svg.append("g");
+    const tooltip = d3.select("#tooltip");
 
-// Definir flechas
-svg.append("defs").selectAll("marker")
-  .data(["+","-"]).enter().append("marker")
-  .attr("id",d=>"arr-"+(d==="+"?"pos":"neg"))
-  .attr("viewBox","0 -5 10 10")
-  .attr("refY",0)
-  .attr("markerWidth",6).attr("markerHeight",6)
-  .attr("orient","auto")
-  .append("path")
-  .attr("d","M0,-5L10,0L0,5")
-  .attr("fill",d=> d==="+" ? "#22c55e" : "#ef4444");
+    node.on("mouseover", (event, d) => {
+      tooltip
+        .style("opacity", 1)
+        .html(`<strong>${d.name}</strong><br>Votos positivos recibidos: ${d.recPos}<br>Votos negativos recibidos: ${d.recNeg}`);
+    }).on("mousemove", (event) => {
+      tooltip.style("left", (event.pageX + 14) + "px").style("top", (event.pageY + 14) + "px");
+    }).on("mouseout", () => {
+      tooltip.style("opacity", 0);
+    });
 
-// Dibujar enlaces
-const link = container.append("g").selectAll("path")
-  .data(links).enter().append("path")
-  .attr("stroke", d=> d.type==="+"?"#22c55e":"#ef4444")
-  .attr("stroke-width",2)
-  .attr("fill","none")
-  .attr("stroke-dasharray",d=> d.type==="-"?"6,4":"0")
-  .attr("marker-end", d=>`url(#arr-${d.type==="+"?"pos":"neg"})`)
-  .attr("opacity",0.15);
+    const sim = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.name).distance(140))
+      .force("charge", d3.forceManyBody().strength(-700))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collide", d3.forceCollide().radius(d => d.radius + 10));
 
-// Dibujar nodos
-const node = container.append("g").selectAll("g")
-  .data(nodes).enter().append("g")
-  .call(d3.drag()
-    .on("start", (event,d) => {
-      if(!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x; d.fy = d.y;
-    })
-    .on("drag", (event,d) => { d.fx = event.x; d.fy = event.y; })
-    .on("end", (event,d) => {
-      if(!event.active) simulation.alphaTarget(0);
-      d.fx = null; d.fy = null;
-    })
-  );
+    sim.on("tick", () => {
+      link.attr("d", d => `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`);
+      node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
 
-node.append("circle")
-  .attr("r", d=>d.r)
-  .attr("fill", d=> d.esLider ? "#facc15" : "#60a5fa")
-  .attr("stroke","#0f172a").attr("stroke-width",2);
+    // Interpretación automática
+    const interpretacion = () => {
+      const lider = nodes.find(n => n.recPos === maxRec)?.name;
+      const aislados = nodes.filter(n => n.recPos === 0 && n.recNeg === 0).map(n => n.name);
+      const periferia = nodes.filter(n => n.recPos === 0 && n.recNeg > 0).map(n => n.name);
+      const ambivalentes = nodes.filter(n => n.recPos > 0 && n.recNeg > 0).map(n => n.name);
 
-node.append("text")
-  .text(d=>`${d.name}  +${d.emitPos} / -${d.emitNeg}`)
-  .attr("text-anchor","middle")
-  .attr("dy",4)
-  .style("font-size","12px")
-  .style("font-weight","600")
-  .style("fill","#fff")
-  .style("pointer-events","none");
+      let html = `<h3>Interpretación sociométrica del grupo</h3>`;
+      html += `<p>El líder sociométrico es <strong>${lider}</strong>, quien ha recibido el mayor número de votos positivos, reflejando centralidad e influencia positiva dentro del grupo.</p>`;
+      if (aislados.length) html += `<p><strong>Miembros aislados:</strong> ${aislados.join(", ")}. Estos miembros no reciben votos y pueden requerir atención socioeducativa específica.</p>`;
+      if (periferia.length) html += `<p><strong>Periferia:</strong> ${periferia.join(", ")}. Reciben rechazo sin aceptación, lo que puede indicar riesgo de exclusión.</p>`;
+      if (ambivalentes.length) html += `<p><strong>Ambivalentes:</strong> ${ambivalentes.join(", ")}. Presentan vínculos contradictorios (aceptación y rechazo), lo que puede reflejar posiciones inestables o polarizantes.</p>`;
+      html += `<p>Este análisis permite a profesionales en educación social diseñar estrategias de intervención para fortalecer la cohesión del grupo y prevenir dinámicas de exclusión.</p>`;
+      return html;
+    }
 
-const tooltip = d3.select("#tooltip");
-
-node.on("mouseover",(event,d)=>{
-  tooltip.style("opacity",1)
-    .html(`<strong>${d.name}</strong><br>Votos positivos recibidos: ${d.recPos}<br>Votos negativos recibidos: ${d.recNeg}`);
-})
-.on("mousemove",(event)=>{
-  tooltip.style("left",(event.pageX+14)+"px")
-         .style("top",(event.pageY+14)+"px");
-})
-.on("mouseout",()=>tooltip.style("opacity",0));
-
-// Simulación D3
-const simulation = d3.forceSimulation(nodes)
-  .force("link", d3.forceLink(links).id(d=>d.id).distance(170))
-  .force("charge", d3.forceManyBody().strength(-750))
-  .force("center", d3.forceCenter(W/2,H/2))
-  .force("collision", d3.forceCollide().radius(d=>d.r+8));
-
-simulation.on("tick",()=>{
-  link.attr("d",d=>{
-    const dx = d.target.x - d.source.x;
-    const dy = d.target.y - d.source.y;
-    const angle = Math.atan2(dy, dx);
-    const tr = nodes[d.target.id].r + 4;
-    return `M${d.source.x},${d.source.y} L${d.target.x - Math.cos(angle)*tr},${d.target.y - Math.sin(angle)*tr}`;
-  });
-
-  node.attr("transform",d=>`translate(${d.x},${d.y})`);
-});
-
-// ——— Interpretación automática IA ———
-function generarInterpretacion(){
-  let html = `<h2>Interpretación sociométrica del grupo</h2>`;
-  html += `<p>El sociograma describe las relaciones sociales en función de votos positivos y negativos.</p>`;
-
-  html += `<p>El liderazgo sociométrico recae en <strong>${nodes.find(n=>n.esLider).name}</strong>, quien recibió la máxima aceptación positiva (${maxPos} votos). Este tipo de posición suele reflejar reconocimiento social destacado.</p>`;
-
-  const aislados = nodes.filter(n=>n.recPos===0 && n.recNeg===0);
-  if(aislados.length){
-    html += `<p>Se identifican perfiles aislados (${aislados.map(n=>n.name).join(", ")}), sin elecciones expresadas ni recibidas, lo cual sugiere baja visibilidad relacional.</p>`;
-  }
-
-  const periferia = nodes.filter(n=>n.recPos===0 && n.recNeg>0);
-  if(periferia.length){
-    html += `<p>Miembros en periferia (${periferia.map(n=>n.name).join(", ")}) presentan rechazo sin aceptación, lo cual indica posibles dificultades de integración.</p>`;
-  }
-
-  const ambivalentes = nodes.filter(n=>n.recPos>0 && n.recNeg>0);
-  if(ambivalentes.length){
-    html += `<p>Perfiles ambivalentes (${ambivalentes.map(n=>n.name).join(", ")}) reciben tanto aceptación como rechazo, señalando dinamismos relacionales mixtos.</p>`;
-  }
-
-  html += `<p>Desde una perspectiva socioeducativa, es recomendable potenciar dinámicas cooperativas, fortalecer la inclusión y atención a perfiles vulnerables, orientando la convivencia grupal hacia una mayor cohesión e integración.</p>`;
-
-  return html;
-}
-
-document.getElementById("interpretacion").innerHTML = generarInterpretacion();
-</script>
+    document.getElementById("interpretacion").innerHTML = interpretacion();
+  </script>
 </body>
 </html>
