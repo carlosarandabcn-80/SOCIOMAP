@@ -1,213 +1,218 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Sociograma Interactivo · SOCIOMAP</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
-<style>
-body{
-  margin:0;
-  background:#0f172a;
-  font-family:'Inter',sans-serif;
-  color:#fff;
-  text-align:center;
-}
-h1{margin-top:24px;font-size:26px}
-h2{font-size:15px;color:#94a3b8;margin:6px 0 18px}
-
-#graph{
-  width:100%;
-  height:760px;
-  background:#ffffff;
-  border-radius:16px;
-  box-shadow:0 18px 50px rgba(0,0,0,.25);
-}
-
-.legend{
-  display:flex;
-  justify-content:center;
-  gap:24px;
-  font-size:14px;
-  margin:14px 0;
-}
-.legend span{display:flex;align-items:center;gap:6px}
-.legend i{width:14px;height:14px;border-radius:50%}
-
-.tooltip{
-  position:absolute;
-  background:#020617;
-  color:white;
-  padding:10px 14px;
-  font-size:13px;
-  border-radius:10px;
-  pointer-events:none;
-  opacity:0;
-  box-shadow:0 10px 30px rgba(0,0,0,.35);
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Sociograma Interactivo · SOCIOMAP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      margin: 0;
+      background: #0f172a;
+      font-family: 'Inter', sans-serif;
+      color: #fff;
+      text-align: center;
+    }
+    h1 { margin-top: 24px; font-size: 26px; }
+    h2 { font-size: 15px; color: #94a3b8; margin: 6px 0 18px; }
+    
+    #graph {
+      width: 100%;
+      height: 760px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.25);
+    }
+    
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      font-size: 14px;
+      margin: 14px 0;
+    }
+    .legend span { display: flex; align-items: center; gap: 6px; }
+    .legend i {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+    }
+    
+    .tooltip {
+      position: absolute;
+      background: #020617;
+      color: white;
+      padding: 10px 14px;
+      font-size: 13px;
+      border-radius: 10px;
+      pointer-events: none;
+      opacity: 0;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+  </style>
 </head>
-
 <body>
 
-<h1>Sociograma Interactivo</h1>
-<h2 id="grupoInfo"></h2>
+  <h1>Sociograma Interactivo</h1>
+  <h2 id="grupoInfo"></h2>
 
-<div id="graph"></div>
+  <div id="graph"></div>
 
-<div class="legend">
-  <span><i style="background:#22c55e"></i>Voto positivo</span>
-  <span><i style="background:#ef4444"></i>Voto negativo</span>
-  <span><i style="background:#facc15"></i>Líder</span>
-  <span><i style="background:#60a5fa"></i>Tamaño = aceptación</span>
-</div>
+  <div class="legend">
+    <span><i style="background:#22c55e"></i>Voto positivo</span>
+    <span><i style="background:#ef4444"></i>Voto negativo</span>
+    <span><i style="background:#facc15"></i>Líder</span>
+    <span><i style="background:#60a5fa"></i>Tamaño = aceptación</span>
+  </div>
 
-<div class="tooltip" id="tooltip"></div>
+  <div class="tooltip" id="tooltip"></div>
 
-<script>
-/* ========= DATOS ========= */
-const raw = localStorage.getItem("sociogramaData");
-if(!raw){
-  document.getElementById("graph").innerHTML =
-    "<p style='padding:24px;color:red'>No hay datos sociométricos.</p>";
-  throw "";
-}
+  <script>
+    const raw = localStorage.getItem("sociogramaData");
+    if (!raw) {
+      document.getElementById("graph").innerHTML =
+        "<p style='padding:24px;color:red'>No hay datos sociométricos.</p>";
+      throw "";
+    }
 
-const data = JSON.parse(raw);
-const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
-document.getElementById("grupoInfo").textContent =
-  `${grupo} — ${new Date().toLocaleDateString("es-ES")}`;
+    const data = JSON.parse(raw);
+    const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
+    document.getElementById("grupoInfo").textContent =
+      `${grupo} — ${new Date().toLocaleDateString("es-ES")}`;
 
-/* ===== PROCESAR VOTOS ===== */
-data.nodes.forEach(n=>{ n.recPos=0; n.recNeg=0; });
-data.links.forEach(l=>{
-  const t = data.nodes.find(n=>n.name===l.target);
-  if(l.type==="+") t.recPos++; else t.recNeg++;
-});
+    data.nodes.forEach(n => { n.recPos = 0; n.recNeg = 0; });
+    data.links.forEach(l => {
+      const t = data.nodes.find(n => n.name === l.target);
+      if (l.type === "+") t.recPos++; else t.recNeg++;
+    });
 
-const maxPos = Math.max(...data.nodes.map(n=>n.recPos));
+    const maxPos = Math.max(...data.nodes.map(n => n.recPos));
 
-const nodes = data.nodes.map((n,i)=>({
-  id:i,
-  name:n.name,
-  recPos:n.recPos,
-  recNeg:n.recNeg,
-  radius:26 + n.recPos*4,
-  leader:n.recPos===maxPos
-}));
+    const nodes = data.nodes.map((n, i) => ({
+      id: i,
+      name: n.name,
+      recPos: n.recPos,
+      recNeg: n.recNeg,
+      radius: 26 + n.recPos * 4,
+      leader: n.recPos === maxPos
+    }));
 
-const index = Object.fromEntries(nodes.map(n=>[n.name,n.id]));
+    const index = Object.fromEntries(nodes.map(n => [n.name, n.id]));
 
-const links = data.links.map((l,i)=>({
-  source:index[l.source],
-  target:index[l.target],
-  type:l.type,
-  curve:(i%2?1:-1)*50
-}));
+    const links = data.links.map((l, i) => ({
+      source: index[l.source],
+      target: index[l.target],
+      type: l.type,
+      curve: (i % 2 ? 1 : -1) * 50
+    }));
 
-/* ========= SVG ========= */
-const graph = document.getElementById("graph");
-const width = graph.clientWidth;
-const height = graph.clientHeight;
+    const graph = document.getElementById("graph");
+    const width = graph.clientWidth;
+    const height = graph.clientHeight;
 
-const svg = d3.select(graph).append("svg")
-  .attr("width",width)
-  .attr("height",height);
+    const svg = d3.select(graph).append("svg")
+      .attr("width", width)
+      .attr("height", height);
 
-const g = svg.append("g");
+    const g = svg.append("g");
 
-/* ===== FLECHAS ===== */
-const defs = svg.append("defs");
-["pos","neg"].forEach(t=>{
-  defs.append("marker")
-    .attr("id","arrow-"+t)
-    .attr("viewBox","0 -5 10 10")
-    .attr("refX",42)
-    .attr("refY",0)
-    .attr("markerWidth",6)
-    .attr("markerHeight",6)
-    .attr("markerUnits","userSpaceOnUse")
-    .attr("orient","auto")
-    .append("path")
-    .attr("d","M0,-5L10,0L0,5")
-    .attr("fill",t==="pos"?"#22c55e":"#ef4444");
-});
+    const defs = svg.append("defs");
+    ["pos", "neg"].forEach(t => {
+      defs.append("marker")
+        .attr("id", "arrow-" + t)
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 42)
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("markerUnits", "userSpaceOnUse")
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", t === "pos" ? "#22c55e" : "#ef4444");
+    });
 
-/* ===== ENLACES ===== */
-const link = g.append("g")
-  .selectAll("path")
-  .data(links)
-  .enter().append("path")
-  .attr("stroke",d=>d.type==="+"?"#22c55e":"#ef4444")
-  .attr("stroke-width",1.4)
-  .attr("fill","none")
-  .attr("stroke-dasharray",d=>d.type==="-"?"6,4":"0")
-  .attr("marker-end",d=>"url(#arrow-"+(d.type==="+"?"pos":"neg")+")");
+    const link = g.append("g")
+      .selectAll("path")
+      .data(links)
+      .enter().append("path")
+      .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
+      .attr("stroke-width", 1.4)
+      .attr("fill", "none")
+      .attr("stroke-dasharray", d => d.type === "-" ? "6,4" : "0")
+      .attr("marker-end", d => "url(#arrow-" + (d.type === "+" ? "pos" : "neg") + ")");
 
-/* ===== NODOS ===== */
-const node = g.append("g")
-  .selectAll("g")
-  .data(nodes)
-  .enter().append("g")
-  .call(d3.drag()
-    .on("start",(e,d)=>{ if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-    .on("drag",(e,d)=>{ d.fx=e.x; d.fy=e.y; })
-    .on("end",(e,d)=>{ if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; })
-  );
+    const node = g.append("g")
+      .selectAll("g")
+      .data(nodes)
+      .enter().append("g")
+      .call(d3.drag()
+        .on("start", (e, d) => {
+          if (!e.active) sim.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on("drag", (e, d) => {
+          d.fx = e.x;
+          d.fy = e.y;
+        })
+        .on("end", (e, d) => {
+          if (!e.active) sim.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        })
+      );
 
-node.append("circle")
-  .attr("r",d=>d.radius)
-  .attr("fill",d=>d.leader?"#facc15":"#60a5fa")
-  .attr("stroke","#0f172a")
-  .attr("stroke-width",2);
+    node.append("circle")
+      .attr("r", d => d.radius)
+      .attr("fill", d => d.leader ? "#facc15" : "#60a5fa")
+      .attr("stroke", "#0f172a")
+      .attr("stroke-width", 2);
 
-node.append("text")
-  .text(d=>d.name)
-  .attr("text-anchor","middle")
-  .attr("dy",5)
-  .style("font-weight","600")
-  .style("fill","#fff");
+    node.append("text")
+      .text(d => d.name)
+      .attr("text-anchor", "middle")
+      .attr("dy", 5)
+      .style("font-weight", "600")
+      .style("fill", "#fff");
 
-/* ===== TOOLTIP ===== */
-const tooltip = d3.select("#tooltip");
-node.on("mouseover",(e,d)=>{
-  tooltip.style("opacity",1)
-    .html(`<strong>${d.name}</strong><br>+ ${d.recPos}<br>- ${d.recNeg}`);
-})
-.on("mousemove",e=>{
-  tooltip.style("left",(e.pageX+14)+"px")
-         .style("top",(e.pageY+14)+"px");
-})
-.on("mouseout",()=>tooltip.style("opacity",0));
+    const tooltip = d3.select("#tooltip");
+    node.on("mouseover", (e, d) => {
+      tooltip.style("opacity", 1)
+        .html(`<strong>${d.name}</strong><br>+ ${d.recPos}<br>- ${d.recNeg}`);
+    })
+      .on("mousemove", e => {
+        tooltip.style("left", (e.pageX + 14) + "px")
+               .style("top", (e.pageY + 14) + "px");
+      })
+      .on("mouseout", () => tooltip.style("opacity", 0));
 
-/* ===== SIMULACIÓN ===== */
-const sim = d3.forceSimulation(nodes)
-  .force("link",d3.forceLink(links).id(d=>d.id).distance(320).strength(1))
-  .force("charge",d3.forceManyBody().strength(-2000))
-  .force("center",d3.forceCenter(width/2,height/2))
-  .force("collision",d3.forceCollide().radius(d=>d.radius+18));
+    const sim = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.id).distance(320).strength(1))
+      .force("charge", d3.forceManyBody().strength(-2000))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius(d => d.radius + 18));
 
-sim.on("tick",()=>{
-  link.attr("d",d=>{
-    const dx=d.target.x-d.source.x;
-    const dy=d.target.y-d.source.y;
-    const dr=Math.sqrt(dx*dx+dy*dy)*1.15;
-    return `M${d.source.x},${d.source.y}
-            A${dr},${dr} 0 0,${d.curve>0?1:0}
-            ${d.target.x},${d.target.y}`;
-  });
-  node.attr("transform",d=>`translate(${d.x},${d.y})`);
-});
+    sim.on("tick", () => {
+      link.attr("d", d => {
+        const dx = d.target.x - d.source.x;
+        const dy = d.target.y - d.source.y;
+        const dr = Math.sqrt(dx * dx + dy * dy) * 1.15;
+        return `M${d.source.x},${d.source.y}
+                A${dr},${dr} 0 0,${d.curve > 0 ? 1 : 0}
+                ${d.target.x},${d.target.y}`;
+      });
+      node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
 
-/* ===== ZOOM ===== */
-svg.call(
-  d3.zoom().scaleExtent([0.5,2.5])
-  .on("zoom",e=>g.attr("transform",e.transform))
-);
-</script>
+    svg.call(
+      d3.zoom().scaleExtent([0.5, 2.5])
+        .on("zoom", e => g.attr("transform", e.transform))
+    );
+  </script>
 
 </body>
 </html>
