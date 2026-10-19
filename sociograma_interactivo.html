@@ -70,43 +70,35 @@
 
   <div class="tooltip" id="tooltip"></div>
 
+  <script src="sociometria.js"></script>
   <script>
-    const raw = localStorage.getItem("sociogramaData");
-    if (!raw) {
-      document.getElementById("graph").innerHTML =
-        "<p style='padding:24px;color:red'>No hay datos sociométricos.</p>";
-      throw "";
+    function iniciarSociograma() {
+    let data;
+    try {
+      const raw = localStorage.getItem(Sociometria.STORAGE_KEY);
+      if (!raw) throw new Error('No hay datos sociométricos. Completa el formulario y crea el ranking.');
+      data = Sociometria.calcular(JSON.parse(raw));
+      if (typeof d3 === 'undefined') throw new Error('No se pudo cargar el gráfico. Comprueba la conexión y recarga la página.');
+    } catch (error) {
+      const graph = document.getElementById('graph');
+      const message = document.createElement('p');
+      message.style.cssText = 'padding:24px;color:red';
+      message.setAttribute('role', 'alert');
+      message.textContent = 'No se pudo cargar el sociograma. ' + error.message;
+      const back = document.createElement('a');
+      back.href = 'formulario.html';
+      back.textContent = 'Volver al formulario';
+      graph.replaceChildren(message, back);
+      return;
     }
-
-    const data = JSON.parse(raw);
-    const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
-    document.getElementById("grupoInfo").textContent =
-      `${grupo} — ${new Date().toLocaleDateString("es-ES")}`;
-
-    data.nodes.forEach(n => { n.recPos = 0; n.recNeg = 0; });
-    data.links.forEach(l => {
-      const t = data.nodes.find(n => n.name === l.target);
-      if (l.type === "+") t.recPos++; else t.recNeg++;
-    });
-
+    document.getElementById('grupoInfo').textContent =
+      data.grupo + ' — ' + new Date().toLocaleDateString('es-ES');
     const maxPos = Math.max(...data.nodes.map(n => n.recPos));
-
-    const nodes = data.nodes.map((n, i) => ({
-      id: i,
-      name: n.name,
-      recPos: n.recPos,
-      recNeg: n.recNeg,
-      radius: 26 + n.recPos * 4,
-      leader: n.recPos === maxPos
+    const nodes = data.nodes.map(n => ({
+      ...n, radius: 26 + n.recPos * 4, leader: n.recPos === maxPos
     }));
-
-    const index = Object.fromEntries(nodes.map(n => [n.name, n.id]));
-
     const links = data.links.map((l, i) => ({
-      source: index[l.source],
-      target: index[l.target],
-      type: l.type,
-      curve: (i % 2 ? 1 : -1) * 50
+      ...l, curve: (i % 2 ? 1 : -1) * 50
     }));
 
     const graph = document.getElementById("graph");
@@ -182,7 +174,7 @@
     const tooltip = d3.select("#tooltip");
     node.on("mouseover", (e, d) => {
       tooltip.style("opacity", 1)
-        .html(`<strong>${d.name}</strong><br>+ ${d.recPos}<br>- ${d.recNeg}`);
+        .html(`<strong>${Sociometria.escaparHTML(d.name)}</strong><br>+ ${d.recPos}<br>- ${d.recNeg}`);
     })
       .on("mousemove", e => {
         tooltip.style("left", (e.pageX + 14) + "px")
@@ -212,6 +204,8 @@
       d3.zoom().scaleExtent([0.5, 2.5])
         .on("zoom", e => g.attr("transform", e.transform))
     );
+    }
+    iniciarSociograma();
   </script>
 
 </body>
