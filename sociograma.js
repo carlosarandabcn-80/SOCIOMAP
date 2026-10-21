@@ -142,6 +142,7 @@
   $('compararArchivo').addEventListener('change', async () => {
     const file = $('compararArchivo').files[0]; if (!file) return;
     comparison = null; $('comparacion').replaceChildren();
+    UI.mensaje('Leyendo y comprobando la medición anterior…', false, 'mensajeComparacion');
     try { const previous = await UI.archivo(file); comparison = S.comparar(proyecto.datos, previous.datos); mostrarComparacion(); UI.mensaje('Mediciones compatibles. Comparación calculada.', false, 'mensajeComparacion'); }
     catch (e) { UI.mensaje(e.message, true, 'mensajeComparacion'); }
     finally { $('compararArchivo').value = ''; }

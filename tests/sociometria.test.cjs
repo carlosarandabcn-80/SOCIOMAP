@@ -95,6 +95,18 @@ test('CSV da error ante cabeceras, orden, comillas o configuración corruptos', 
   for (const broken of [csv.replace('SOCIOMAP', 'otro'), csv.replace('Persona 0', 'cambio'), csv.slice(0, -4), '"sin cerrar', '"a"fuera', '"SOCIOMAP","2","null"']) assert.throws(() => S.deCSV(broken));
   for (const raw of ['{', 'null', '{}', 'x'.repeat(S.MAX_FILE + 1)]) assert.throws(() => S.importar(raw, 'json'));
 });
+test('el CSV permite registrar una respuesta pendiente mediante una columna explícita', () => {
+  const d = graph(3, [], [false, false, false]);
+  const csv = S.aCSV(d).replace('"Persona 0","0","","","0"', '"Persona 0","0","+","0","1"');
+  const imported = S.deCSV(csv);
+  assert.deepEqual(imported.respondidas, [true, false, false]); assert.deepEqual(imported.matriz[0], ['0', '+', '0']);
+  assert.equal(S.calcular(imported).nodes[1].recPos, 1);
+  const complete = graph(3, [[0, 1]]), rows = S.parseCSV(S.aCSV(complete));
+  rows[0][2] = JSON.stringify({ ...JSON.parse(rows[0][2]), respondidas: complete.respondidas });
+  for (const row of rows.slice(1)) row.pop();
+  const legacyCSV = rows.map(row => row.map(v => '"' + v.replace(/"/g, '""') + '"').join(',')).join('\n');
+  assert.deepEqual(S.deCSV(legacyCSV), S.validarDatos(complete));
+});
 test('seudonimiza sin perder matriz, identidades estables ni criterio', () => {
   const d = graph(3), result = S.seudonimizar(d);
   assert.deepEqual(result.nombres, ['P1', 'P2', 'P3']); assert.equal(result.grupo, 'Grupo seudonimizado');

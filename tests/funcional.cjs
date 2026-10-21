@@ -34,7 +34,10 @@ const server = http.createServer((req, res) => {
   const state = () => page.evaluate(key => JSON.parse(sessionStorage.getItem(key) || localStorage.getItem(key)), S.STORAGE_KEY);
   async function clean() { await page.goto(url + '/formulario.html'); await page.evaluate(() => { sessionStorage.clear(); localStorage.clear(); }); await page.reload(); }
   async function load(data = S.demo()) { await clean(); await page.evaluate(({ key, data }) => sessionStorage.setItem(key, JSON.stringify({ datos: data })), { key: S.STORAGE_KEY, data }); await page.reload(); }
-  async function upload(data, name = 'estudio.json', target = '#importar') { await page.setInputFiles(target, { name, mimeType: name.endsWith('csv') ? 'text/csv' : 'application/json', buffer: Buffer.from(typeof data === 'string' ? data : JSON.stringify(data)) }); }
+  async function upload(data, name = 'estudio.json', target = '#importar') {
+    await page.setInputFiles(target, { name, mimeType: name.endsWith('csv') ? 'text/csv' : 'application/json', buffer: Buffer.from(typeof data === 'string' ? data : JSON.stringify(data)) });
+    await page.waitForFunction(selector => document.querySelector(selector).value === '', target);
+  }
   async function download(selector, filename) {
     const pending = page.waitForEvent('download'); await page.click(selector); const dl = await pending;
     const output = path.join(qa, filename || dl.suggestedFilename()); await dl.saveAs(output); assert.equal(await dl.failure(), null); return output;

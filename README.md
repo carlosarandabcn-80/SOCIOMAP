@@ -32,7 +32,7 @@ Abre `http://localhost:8000/`. También puede servirse desde GitHub Pages, en la
 4. Exporta una copia JSON para continuar otro día. Para otra medición, exporta primero la actual y utiliza «Nueva medición del mismo grupo»: conserva los identificadores y vacía las respuestas.
 5. Carga la copia anterior en la comparación. Se exigen mismo estudio, participantes, pregunta y reglas, ambas recogidas completas y una fecha anterior registrada.
 
-`demo.json` y `tabla.csv` contienen una demostración ficticia y pueden importarse desde el formulario. El CSV es una matriz con configuración en su primera fila y cabeceras en la segunda. Conserva ambas: no se admiten matrices genéricas sin reglas ni identidades. Las copias JSON incluyen también la vista y las posiciones.
+`demo.json` y `tabla.csv` contienen una demostración ficticia y pueden importarse desde el formulario. El CSV es una matriz con configuración en su primera fila y cabeceras en la segunda. Conserva ambas y utiliza la última columna, «Respuesta registrada»: 1 para una respuesta registrada y 0 para una pendiente. En una fila registrada, completa todas las celdas con +, - o 0; deja vacías las elecciones de una fila pendiente. No se admiten matrices genéricas sin reglas ni identidades. Las copias JSON incluyen también la vista y las posiciones.
 
 ## Datos y privacidad
 

@@ -165,8 +165,9 @@
   const csvText = value => /^[\s]*[=+\-@'\t\r]/.test(value) ? "'" + value : value;
   const csvCell = value => '"' + String(value ?? '').replace(/"/g, '""') + '"';
   function aCSV(input) {
-    const data = validarDatos(input, { borrador: true }), { matriz, ...meta } = data;
-    const rows = [['SOCIOMAP', '2', JSON.stringify(meta)], ['De/A', ...data.nombres.map(csvText)], ...matriz.map((row, i) => [csvText(data.nombres[i]), ...row])];
+    const data = validarDatos(input, { borrador: true }), { matriz, respondidas, ...meta } = data;
+    const rows = [['SOCIOMAP', '2', JSON.stringify(meta)], ['De/A', ...data.nombres.map(csvText), 'Respuesta registrada'],
+      ...matriz.map((row, i) => [csvText(data.nombres[i]), ...row, respondidas[i] ? '1' : '0'])];
     return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n');
   }
   function parseCSV(text) {
@@ -198,12 +199,18 @@
     try { meta = JSON.parse(rows[0][2]); } catch { fail('La configuración del CSV no es válida.'); }
     if (!meta || typeof meta !== 'object' || Array.isArray(meta)) fail('La configuración del CSV no es un objeto válido.');
     const nombres = validarNombres(meta.nombres), n = nombres.length;
-    if (rows.length !== n + 2 || rows[1]?.length !== n + 1 || rows[1][0] !== 'De/A' || nombres.some((name, i) => rows[1][i + 1] !== csvText(name))) fail('Las cabeceras del CSV no coinciden con sus participantes.');
+    const conRegistro = rows[1]?.length === n + 2 && rows[1][n + 1] === 'Respuesta registrada';
+    const ancho = n + 1 + Number(conRegistro), respondidas = conRegistro ? [] : meta.respondidas;
+    if (rows.length !== n + 2 || rows[1]?.length !== ancho || rows[1][0] !== 'De/A' || nombres.some((name, i) => rows[1][i + 1] !== csvText(name))) fail('Las cabeceras del CSV no coinciden con sus participantes.');
     const matriz = rows.slice(2).map((row, i) => {
-      if (row.length !== n + 1 || row[0] !== csvText(nombres[i])) fail('Las filas del CSV están incompletas o desordenadas.');
-      return row.slice(1).map(v => v === '' ? null : v);
+      if (row.length !== ancho || row[0] !== csvText(nombres[i])) fail('Las filas del CSV están incompletas o desordenadas.');
+      if (conRegistro) {
+        if (!['0', '1'].includes(row[n + 1])) fail('Respuesta registrada debe ser 1 o 0 en cada fila del CSV.');
+        respondidas.push(row[n + 1] === '1');
+      }
+      return row.slice(1, n + 1).map(v => v === '' ? null : v);
     });
-    return validarDatos({ ...meta, matriz }, { borrador: true });
+    return validarDatos({ ...meta, matriz, respondidas }, { borrador: true });
   }
   function importar(text, extension) {
     if (typeof text !== 'string' || text.length > MAX_FILE) fail('El archivo supera el tamaño permitido (1 MB).');

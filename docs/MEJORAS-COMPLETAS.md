@@ -10,7 +10,7 @@ Fecha: 21 de octubre de 2026. Trabajo realizado sobre `c9d270e`, que contenía l
 | 2. Seguridad y privacidad | Presentación con `textContent` y elementos del DOM, validación en todas las lecturas/importaciones, límites de tamaño, CSP y ausencia de CDN. Sesión temporal, persistencia voluntaria, borrado explícito, seudónimos y exportaciones identificadas solo si se elige. |
 | 3. Metodología | Se eliminan los roles automáticos. Pregunta, fecha, cuotas exactas/máximas y negativas opcionales; entre 2 y 40 participantes. Se distinguen respuestas pendientes y ceros. Denominadores y límites documentados, incluidos los de densidad con cuota fija. |
 | 4. Interacción y accesibilidad | Navegación entre todas las vistas, búsqueda, selección, detalle, filtros, disposiciones, arrastre y teclado, fijación de posiciones, deshacer, zoom, contraste y trazos además del color. Tablas equivalentes y contenedores desplazables en móvil. |
-| 5. Exportación y persistencia | PNG y SVG con grupo, fecha, leyenda y filtro; PDF con fuentes incorporadas, mapa, barras, tabla y criterios; copias CSV/JSON, importación verificada y posiciones recuperables. Mapa de calor conectado y enlace de vuelta corregido. |
+| 5. Exportación y persistencia | PNG y SVG con grupo, fecha, leyenda y filtro; PDF con fuentes incorporadas, mapa, barras, tabla y criterios; copias CSV/JSON, registro explícito por fila en CSV, importación verificada y posiciones recuperables. Mapa de calor conectado y enlace de vuelta corregido. |
 | 6. Análisis relacional | Entrada positiva relativa, reciprocidad por signo, densidad general y observada, intermediación positiva dirigida, componentes exploratorios y comparación entre fechas compatibles con identidades estables. |
 
 ## Primera revisión: contrato y cálculos
@@ -21,7 +21,7 @@ Se comprobó que la comparación empareja por identificadores y admite reordenar
 
 ## Segunda revisión: recorridos, estados y resultados exportados
 
-Se ejecutaron **20 pruebas de lógica y recursos** y **11 grupos de pruebas en navegador**, todos superados. El recorrido de navegador se repitió tras corregir los problemas encontrados: selección de opciones, referencia de estado al editar una fila y tipografía del PDF. Se añadió resolución de colisiones en las disposiciones del grafo y se volvió a ejecutar la suite completa.
+Se ejecutaron **21 pruebas de lógica y recursos** y **11 grupos de pruebas en navegador**, todos superados. El recorrido de navegador se repitió tras corregir los problemas encontrados: selección de opciones, referencia de estado al editar una fila y tipografía del PDF. La ejecución en GitHub detectó además una comprobación de importación que consultaba la pantalla antes de finalizar la lectura: la prueba ahora espera el final observable de la operación. Se añadió resolución de colisiones en las disposiciones del grafo y se volvió a ejecutar la suite completa.
 
 Los once grupos cubren:
 
