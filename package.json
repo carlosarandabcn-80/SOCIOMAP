@@ -1,0 +1,12 @@
+{
+  "name": "sociomap",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Análisis sociométrico local y descriptivo para intervención socioeducativa",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "test:browser": "node tests/funcional.cjs"
+  },
+  "devDependencies": { "playwright": "1.62.1" },
+  "engines": { "node": ">=22" }
+}

@@ -1,3 +1,5 @@
+> Registro histórico de la fase 1. La versión 2 integra y amplía este trabajo; consulta [MEJORAS-COMPLETAS.md](MEJORAS-COMPLETAS.md) para conocer el comportamiento y la validación vigentes.
+
 # Fase 1: integridad de los votos y conexión del sociograma
 
 Fecha: 19 de octubre de 2026. Base revisada: `313eab1`.

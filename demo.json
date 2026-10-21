@@ -1,0 +1,134 @@
+{
+  "formato": "SOCIOMAP",
+  "datos": {
+    "version": 2,
+    "cohorte": "demo-sociomap",
+    "grupo": "Grupo de demostración",
+    "nombres": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5",
+      "P6",
+      "P7",
+      "P8"
+    ],
+    "ids": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8"
+    ],
+    "fecha": "2026-10-21",
+    "fechaNoRegistrada": false,
+    "criterio": "¿Con quién preferirías realizar una actividad de grupo?",
+    "reglas": {
+      "positivos": 2,
+      "negativos": 1,
+      "modo": "maximos"
+    },
+    "respondidas": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "matriz": [
+      [
+        "0",
+        "+",
+        "0",
+        "+",
+        "-",
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        "+",
+        "0",
+        "+",
+        "0",
+        "0",
+        "-",
+        "0",
+        "0"
+      ],
+      [
+        "0",
+        "+",
+        "0",
+        "+",
+        "0",
+        "0",
+        "-",
+        "0"
+      ],
+      [
+        "+",
+        "0",
+        "+",
+        "0",
+        "0",
+        "0",
+        "0",
+        "-"
+      ],
+      [
+        "-",
+        "0",
+        "0",
+        "0",
+        "0",
+        "+",
+        "0",
+        "+"
+      ],
+      [
+        "0",
+        "-",
+        "0",
+        "0",
+        "+",
+        "0",
+        "+",
+        "0"
+      ],
+      [
+        "0",
+        "0",
+        "-",
+        "0",
+        "0",
+        "+",
+        "0",
+        "+"
+      ],
+      [
+        "0",
+        "0",
+        "0",
+        "-",
+        "+",
+        "0",
+        "+",
+        "0"
+      ]
+    ]
+  },
+  "vista": {
+    "seudonimos": true,
+    "filtro": "todos",
+    "disposicion": "automatico",
+    "posiciones": {}
+  }
+}
