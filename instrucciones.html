@@ -1,133 +1,19 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Instrucciones — SOCIOMAP</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: "Segoe UI", sans-serif;
-      background: linear-gradient(180deg, #0f172a, #0b1222);
-      color: #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer"><meta name="description" content="SOCIOMAP: análisis descriptivo y visualización de relaciones sociométricas, con datos tratados en el navegador.">
+<title>Guía y criterios · SOCIOMAP</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="estilos.css">
+<script src="sociometria.js" defer></script><script src="almacenamiento.js" defer></script><script src="ui.js" defer></script>
 
-    .container {
-      width: 100%;
-      max-width: 720px;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 24px 32px 40px;
-      border-radius: 16px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-      text-align: center;
-    }
-
-    .logo-wrapper {
-      background: white;
-      padding: 16px 24px;
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      margin-bottom: 24px;
-      display: inline-block;
-    }
-
-    .logo-wrapper img {
-      width: 180px;
-      display: block;
-    }
-
-    h1 {
-      font-size: 24px;
-      margin-bottom: 16px;
-    }
-
-    p {
-      font-size: 17px;
-      line-height: 1.6;
-      color: #cbd5e1;
-    }
-
-    .buttons {
-      margin-top: 36px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      align-items: center;
-    }
-
-    a.button {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      padding: 14px 28px;
-      font-size: 16px;
-      font-weight: bold;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 12px;
-      text-decoration: none;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-      min-width: 280px;
-      text-align: center;
-    }
-
-    a.button:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-    }
-
-    footer {
-      margin-top: 36px;
-      font-size: 14px;
-      color: #94a3b8;
-    }
-
-    @media (max-width: 600px) {
-      .container {
-        margin: 20px;
-        padding: 24px;
-      }
-
-      a.button {
-        min-width: unset;
-        width: 100%;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <div class="container">
-    <div class="logo-wrapper">
-      <img src="logo.png" alt="SOCIOLOGO">
-    </div>
-
-    <h1>Instrucciones para la aplicación del Sociograma</h1>
-    <p>
-      Descarga la plantilla, repártela al grupo para que la rellene de forma individual y confidencial, y recoge todas las respuestas.<br><br>
-      Después, pulsa <strong>Siguiente</strong> para acceder a la tabla sociométrica e introducir los resultados.
-    </p>
-
-    <div class="buttons">
-      <a href="SOCIOMAP_Votacion_Afinidad.pdf" download class="button">Descargar plantilla de votación</a>
-      <a href="formulario.html" class="button">Siguiente</a>
-    </div>
-
-    <footer>
-      &copy; SOCIOMAP - ARANDA TOOLS <span id="year"></span>
-    </footer>
-  </div>
-
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
-  </script>
-
-</body>
-</html>
-
+</head><body><a class="skip" href="#contenido">Saltar al contenido</a>
+<header class="header"><nav class="nav" aria-label="Principal"><a class="brand" href="index.html">SOCIOMAP<small>ARANDA TOOLS</small></a><div class="nav-links"><a href="index.html">Inicio</a><a href="instrucciones.html" aria-current="page">Guía y criterios</a><a href="formulario.html">Matriz</a><a href="sociograma_interactivo.html">Sociograma</a><a href="MapaCalor_web.html">Mapa de calor</a></div></nav></header>
+<main id="contenido" class="narrow">
+<div class="title-row"><div><span class="eyebrow">Guía de uso y metodología</span><h1>Una lectura del grupo, con contexto.</h1><p class="muted">El mapa ayuda a formular preguntas. El criterio profesional y la escucha de las personas siguen siendo imprescindibles.</p></div><a class="btn primary" href="formulario.html">Abrir la matriz</a></div>
+<article class="panel prose"><h2>1. Preparar la recogida</h2><p>Define una pregunta concreta, el grupo y la fecha. Informa de la finalidad, quién accederá a los resultados y cómo se conservarán. Recoge las respuestas individualmente, sin exponer elecciones personales ante el grupo. Si trabajas con menores o personas en situación de vulnerabilidad, adapta la explicación y aplica los procedimientos de tu entidad.</p><p>La plantilla original fija tres elecciones de cada signo y necesita al menos siete participantes. Si cambias límites o suprimes las elecciones negativas, adapta también el instrumento de recogida. No obligues a rellenar una elección que no se ha recogido.</p><a class="btn" href="SOCIOMAP_Votacion_Afinidad.pdf" download>Descargar plantilla original (3 + y 3 −)</a>
+<h2>2. Registrar sin confundir ceros y ausencias</h2><p>Introduce entre 2 y 40 participantes, preferiblemente con códigos. La aplicación impide duplicados y autovotos. El límite total de elecciones de ambos signos no puede superar N − 1.</p><p>En una fila registrada, 0 significa «no elegida». Una fila sin registrar contiene valores desconocidos y aparece como pendiente. Para una respuesta válida sin elecciones, marca expresamente «Respuesta registrada» y utiliza la regla de máximos. Puedes analizar una recogida parcial aceptando que es provisional.</p><h2>3. Explorar el mapa</h2><p>Las flechas van del emisor al destinatario. Las elecciones positivas son azules y continuas; las negativas, naranjas y discontinuas. El tamaño del nodo depende de los positivos recibidos. Todos los valores aparecen también en tablas accesibles.</p><p>Busca una persona para resaltar sus conexiones, filtra por signo o por positivas recíprocas y cambia la disposición. Puedes mover nodos con ratón, tacto o flechas del teclado, fijarlos y deshacer movimientos. La forma del mapa y la distancia visual no son medidas de afinidad.</p>
+<h2 id="metodo">4. Criterios de cálculo</h2><p>Sea N el número de participantes, R el número de respuestas registradas, L+ el número de elecciones positivas dirigidas y M+ el número de pares con elección positiva mutua. Las cuentas se obtienen directamente de la matriz; una elección negativa no se resta de una positiva.</p><ul><li><strong>Elecciones recibidas:</strong> suma por columna, diferenciada por signo. No equivale a liderazgo, integración ni diagnóstico de rechazo.</li><li><strong>Entrada positiva relativa:</strong> positivos recibidos divididos entre R − 1 si esa persona respondió y entre R si no respondió. Se muestra «No calculable» cuando no hay posibles emisores observados. Es una proporción dentro de esta medición, no una puntuación estandarizada.</li><li><strong>Reciprocidad positiva:</strong> 2M+ / L+. Sin elecciones positivas es indefinida, no cero. Los pares negativos se calculan por separado.</li><li><strong>Densidad positiva:</strong> L+ / [N(N − 1)]. La densidad sobre filas observadas utiliza R(N − 1). Con cuota positiva exacta k y respuestas completas, la densidad positiva es k / (N − 1); por sí sola no puede medir cambios de cohesión.</li><li><strong>Intermediación:</strong> proporción de caminos mínimos dirigidos positivos que pasan por una persona, sin contar los extremos, normalizada por (N − 1)(N − 2). Los pares desconectados no aportan caminos. Con N = 2 se muestra 0 por convención.</li><li><strong>Conexiones exploratorias:</strong> componentes conectados del grafo de elecciones positivas recíprocas, excluyendo componentes de una sola persona. Compartir componente significa estar conectado por cadenas; no implica que todos se elijan entre sí ni valida una comunidad social.</li></ul>
+<h3>Límites de interpretación</h3><p>Una persona con cero elecciones positivas puede recibir elecciones negativas o emitir elecciones: ese resultado no demuestra aislamiento. Las cuotas, la pregunta, las ausencias y el tamaño del grupo afectan a los indicadores. No se asignan etiquetas personales ni umbrales sin justificación. Contrasta los resultados con observación, entrevistas y el contexto socioeducativo.</p><p>Las comparaciones entre fechas exigen el mismo estudio, identificadores, criterio y reglas, y respuestas completas. Indican cambios en elecciones y reciprocidad; no permiten atribuir causalidad ni evaluar por sí solas la eficacia de un programa.</p>
+<h3>Referencias técnicas de las fórmulas</h3><p>Las definiciones operativas de <a href="https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.reciprocity.reciprocity.html" target="_blank" rel="noopener noreferrer">reciprocidad</a>, <a href="https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.centrality.betweenness_centrality.html" target="_blank" rel="noopener noreferrer">intermediación</a> y <a href="https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.components.connected_components.html" target="_blank" rel="noopener noreferrer">componentes conectados</a> pueden contrastarse en la documentación oficial de NetworkX. La aplicación realiza los cálculos localmente, sin usar ese servicio.</p>
+<h2>5. Guardar, exportar y borrar</h2><p>Por defecto se guarda en la sesión de la pestaña. «Recordar» utiliza almacenamiento persistente de este navegador hasta que lo borres. El almacenamiento del navegador no está cifrado por SOCIOMAP; otras personas con acceso al perfil podrían consultarlo. El navegador puede recuperar sesiones cerradas. Al terminar en un equipo compartido, utiliza «Borrar datos».</p><p>Una copia JSON permite recuperar el estudio y las posiciones. El CSV contiene configuración y matriz: conserva sus dos primeras filas y modifica las elecciones en las siguientes. La última columna, «Respuesta registrada», usa 1 para una respuesta completa y 0 para una pendiente. En filas registradas, escribe +, - o 0 en todas las celdas; en filas pendientes, deja vacías las celdas fuera de la diagonal. La aplicación admite solo CSV de SOCIOMAP, para evitar interpretar matrices sin contexto metodológico. El fichero tabla.csv del repositorio es una demostración.</p><p>Los archivos se exportan con seudónimos por defecto. Los códigos y las relaciones todavía pueden permitir reidentificar personas por contexto: seudonimización no equivale a anonimización. No publiques archivos con información real en un repositorio público.</p><p>PNG y SVG muestran la vista filtrada e incluyen grupo, fecha y leyenda. El informe PDF añade tabla completa, gráfico y criterios. Las relaciones excluidas por un filtro no desaparecen de la matriz ni de los indicadores. Los archivos descargados deben borrarse por separado.</p><p>Para una segunda medición, exporta primero la actual y pulsa «Nueva medición del mismo grupo». Cambia la fecha y registra las nuevas respuestas; los identificadores se conservan. Después carga la copia anterior en el apartado de comparación.</p></article></main>
+<footer>SOCIOMAP · ARANDA TOOLS · © <span data-year>2026</span> · Análisis descriptivo para una intervención responsable</footer>
+</body></html>

@@ -1,218 +1,24 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Sociograma Interactivo · SOCIOMAP</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  
-  <style>
-    body {
-      margin: 0;
-      background: #0f172a;
-      font-family: 'Inter', sans-serif;
-      color: #fff;
-      text-align: center;
-    }
-    h1 { margin-top: 24px; font-size: 26px; }
-    h2 { font-size: 15px; color: #94a3b8; margin: 6px 0 18px; }
-    
-    #graph {
-      width: 100%;
-      height: 760px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 18px 50px rgba(0,0,0,.25);
-    }
-    
-    .legend {
-      display: flex;
-      justify-content: center;
-      gap: 24px;
-      font-size: 14px;
-      margin: 14px 0;
-    }
-    .legend span { display: flex; align-items: center; gap: 6px; }
-    .legend i {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-    }
-    
-    .tooltip {
-      position: absolute;
-      background: #020617;
-      color: white;
-      padding: 10px 14px;
-      font-size: 13px;
-      border-radius: 10px;
-      pointer-events: none;
-      opacity: 0;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-    }
-  </style>
-</head>
-<body>
-
-  <h1>Sociograma Interactivo</h1>
-  <h2 id="grupoInfo"></h2>
-
-  <div id="graph"></div>
-
-  <div class="legend">
-    <span><i style="background:#22c55e"></i>Voto positivo</span>
-    <span><i style="background:#ef4444"></i>Voto negativo</span>
-    <span><i style="background:#facc15"></i>Líder</span>
-    <span><i style="background:#60a5fa"></i>Tamaño = aceptación</span>
-  </div>
-
-  <div class="tooltip" id="tooltip"></div>
-
-  <script>
-    const raw = localStorage.getItem("sociogramaData");
-    if (!raw) {
-      document.getElementById("graph").innerHTML =
-        "<p style='padding:24px;color:red'>No hay datos sociométricos.</p>";
-      throw "";
-    }
-
-    const data = JSON.parse(raw);
-    const grupo = localStorage.getItem("grupoNombre") || "Grupo sin nombre";
-    document.getElementById("grupoInfo").textContent =
-      `${grupo} — ${new Date().toLocaleDateString("es-ES")}`;
-
-    data.nodes.forEach(n => { n.recPos = 0; n.recNeg = 0; });
-    data.links.forEach(l => {
-      const t = data.nodes.find(n => n.name === l.target);
-      if (l.type === "+") t.recPos++; else t.recNeg++;
-    });
-
-    const maxPos = Math.max(...data.nodes.map(n => n.recPos));
-
-    const nodes = data.nodes.map((n, i) => ({
-      id: i,
-      name: n.name,
-      recPos: n.recPos,
-      recNeg: n.recNeg,
-      radius: 26 + n.recPos * 4,
-      leader: n.recPos === maxPos
-    }));
-
-    const index = Object.fromEntries(nodes.map(n => [n.name, n.id]));
-
-    const links = data.links.map((l, i) => ({
-      source: index[l.source],
-      target: index[l.target],
-      type: l.type,
-      curve: (i % 2 ? 1 : -1) * 50
-    }));
-
-    const graph = document.getElementById("graph");
-    const width = graph.clientWidth;
-    const height = graph.clientHeight;
-
-    const svg = d3.select(graph).append("svg")
-      .attr("width", width)
-      .attr("height", height);
-
-    const g = svg.append("g");
-
-    const defs = svg.append("defs");
-    ["pos", "neg"].forEach(t => {
-      defs.append("marker")
-        .attr("id", "arrow-" + t)
-        .attr("viewBox", "0 -5 10 10")
-        .attr("refX", 42)
-        .attr("refY", 0)
-        .attr("markerWidth", 6)
-        .attr("markerHeight", 6)
-        .attr("markerUnits", "userSpaceOnUse")
-        .attr("orient", "auto")
-        .append("path")
-        .attr("d", "M0,-5L10,0L0,5")
-        .attr("fill", t === "pos" ? "#22c55e" : "#ef4444");
-    });
-
-    const link = g.append("g")
-      .selectAll("path")
-      .data(links)
-      .enter().append("path")
-      .attr("stroke", d => d.type === "+" ? "#22c55e" : "#ef4444")
-      .attr("stroke-width", 1.4)
-      .attr("fill", "none")
-      .attr("stroke-dasharray", d => d.type === "-" ? "6,4" : "0")
-      .attr("marker-end", d => "url(#arrow-" + (d.type === "+" ? "pos" : "neg") + ")");
-
-    const node = g.append("g")
-      .selectAll("g")
-      .data(nodes)
-      .enter().append("g")
-      .call(d3.drag()
-        .on("start", (e, d) => {
-          if (!e.active) sim.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on("drag", (e, d) => {
-          d.fx = e.x;
-          d.fy = e.y;
-        })
-        .on("end", (e, d) => {
-          if (!e.active) sim.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
-        })
-      );
-
-    node.append("circle")
-      .attr("r", d => d.radius)
-      .attr("fill", d => d.leader ? "#facc15" : "#60a5fa")
-      .attr("stroke", "#0f172a")
-      .attr("stroke-width", 2);
-
-    node.append("text")
-      .text(d => d.name)
-      .attr("text-anchor", "middle")
-      .attr("dy", 5)
-      .style("font-weight", "600")
-      .style("fill", "#fff");
-
-    const tooltip = d3.select("#tooltip");
-    node.on("mouseover", (e, d) => {
-      tooltip.style("opacity", 1)
-        .html(`<strong>${d.name}</strong><br>+ ${d.recPos}<br>- ${d.recNeg}`);
-    })
-      .on("mousemove", e => {
-        tooltip.style("left", (e.pageX + 14) + "px")
-               .style("top", (e.pageY + 14) + "px");
-      })
-      .on("mouseout", () => tooltip.style("opacity", 0));
-
-    const sim = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).id(d => d.id).distance(320).strength(1))
-      .force("charge", d3.forceManyBody().strength(-2000))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(d => d.radius + 18));
-
-    sim.on("tick", () => {
-      link.attr("d", d => {
-        const dx = d.target.x - d.source.x;
-        const dy = d.target.y - d.source.y;
-        const dr = Math.sqrt(dx * dx + dy * dy) * 1.15;
-        return `M${d.source.x},${d.source.y}
-                A${dr},${dr} 0 0,${d.curve > 0 ? 1 : 0}
-                ${d.target.x},${d.target.y}`;
-      });
-      node.attr("transform", d => `translate(${d.x},${d.y})`);
-    });
-
-    svg.call(
-      d3.zoom().scaleExtent([0.5, 2.5])
-        .on("zoom", e => g.attr("transform", e.transform))
-    );
-  </script>
-
-</body>
-</html>
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer"><meta name="description" content="SOCIOMAP: análisis descriptivo y visualización de relaciones sociométricas, con datos tratados en el navegador.">
+<title>Sociograma interactivo · SOCIOMAP</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="estilos.css">
+<script src="sociometria.js" defer></script><script src="almacenamiento.js" defer></script><script src="ui.js" defer></script>
+<script src="graficos.js" defer></script><script src="exportaciones.js" defer></script><script src="sociograma.js" defer></script>
+</head><body><a class="skip" href="#contenido">Saltar al contenido</a>
+<header class="header"><nav class="nav" aria-label="Principal"><a class="brand" href="index.html">SOCIOMAP<small>ARANDA TOOLS</small></a><div class="nav-links"><a href="index.html">Inicio</a><a href="instrucciones.html">Guía y criterios</a><a href="formulario.html">Matriz</a><a href="sociograma_interactivo.html" aria-current="page">Sociograma</a><a href="MapaCalor_web.html">Mapa de calor</a></div></nav></header>
+<main id="contenido">
+<div class="title-row"><div><span class="eyebrow">02 / Lectura de relaciones</span><h1>Sociograma interactivo</h1><p id="grupoInfo" class="muted"></p></div><a class="btn" href="formulario.html">Editar respuestas</a></div>
+<p id="mensaje" class="status" role="status" aria-live="polite"></p><div id="estudio">
+<section class="panel"><div class="toolbar"><div class="field"><label for="buscar">Buscar participante</label><input id="buscar" type="search" placeholder="Código o nombre visible" autocomplete="off"></div><div class="field"><label for="participante">Seleccionar participante</label><select id="participante"><option value="">Todo el grupo</option></select></div><div class="field"><label for="filtro">Relaciones visibles</label><select id="filtro"><option value="todos">Positivas y negativas</option><option value="+">Solo positivas</option><option value="-">Solo negativas</option><option value="mutuas">Positivas recíprocas</option></select></div><div class="field"><label for="disposicion">Disposición</label><select id="disposicion"><option value="automatico">Automática</option><option value="circulo">Circular</option><option value="rejilla">Rejilla</option></select></div></div>
+<div class="actions"><label class="check"><input id="seudonimos" type="checkbox" checked>Mostrar seudónimos</label><button id="fijar" class="btn" type="button" disabled>Fijar posición</button><button id="deshacer" class="btn" type="button" disabled>Deshacer movimiento</button><button id="acercar" class="btn" type="button" aria-label="Acercar mapa">Zoom +</button><button id="alejar" class="btn" type="button" aria-label="Alejar mapa">Zoom −</button><button id="ajustar" class="btn" type="button">Ajustar vista</button><button id="limpiarSeleccion" class="btn" type="button">Ver todo el grupo</button></div>
+<div class="graph-wrap"><svg id="graph" viewBox="0 0 1100 690" aria-labelledby="graphTitle graphDesc"><title id="graphTitle">Mapa de elecciones sociométricas</title><desc id="graphDesc">Las flechas van de quien elige a quien recibe la elección. Las relaciones positivas son líneas continuas azules; las negativas, discontinuas naranjas. Hay una tabla equivalente debajo del mapa.</desc></svg></div>
+<div class="legend"><span class="positive">+ Línea azul continua: elección positiva</span><span class="negative">− Línea naranja discontinua: elección negativa</span><span>Círculo mayor: más elecciones positivas recibidas</span><span>Contorno doble: posición fijada</span></div>
+<p class="graph-hint">Arrastra los nodos para reorganizar. Con teclado: Tab para acceder; flechas para mover; Enter para seleccionar; espacio para fijar; Escape para salir de la selección. Usa los botones para ampliar. Las posiciones se guardan en el estudio.</p><p id="seleccionInfo" class="hint" role="status" aria-live="polite"></p><div id="detalle" class="detail-card" hidden></div>
+<div class="export-box"><h2>Exportar el estudio</h2><label class="check"><input id="incluirNombres" type="checkbox">Incluir nombres y grupo originales en los archivos</label><div class="actions"><button id="exportPNG" class="btn" type="button">Descargar PNG</button><button id="exportSVG" class="btn" type="button">Descargar SVG</button><button id="exportPDF" class="btn primary" type="button">Descargar informe PDF</button><button id="exportJSON" class="btn" type="button">Copia JSON</button><button id="exportCSV" class="btn" type="button">Matriz CSV</button><a class="btn" href="MapaCalor_web.html">Mapa de calor</a></div><p class="hint">PNG y SVG incluyen el filtro actual, grupo, fecha y leyenda. El PDF añade indicadores, barras, tabla y criterios de análisis. Exportación con seudónimos por defecto.</p></div></section>
+<section class="panel"><h2>Indicadores del grupo</h2><div id="resumen"></div><div id="subgrupos"></div><details><summary>Cómo se calculan y qué significan</summary><div id="metodologia"></div><a href="instrucciones.html#metodo">Consultar criterios y limitaciones</a></details></section>
+<section class="panel"><h2>Tabla y gráfico equivalentes</h2><div id="ranking" class="table-scroll" tabindex="0" role="region" aria-label="Indicadores por participante"></div><h3>Elecciones recibidas</h3><div id="chart"></div><details><summary>Consultar todas las relaciones como texto</summary><div id="relaciones" class="table-scroll" tabindex="0" role="region" aria-label="Lista de elecciones"></div></details></section>
+<section class="panel"><h2>Comparar dos mediciones</h2><p class="hint">Carga una copia anterior JSON o CSV del mismo estudio. Deben coincidir participantes, identificadores, criterio y reglas, con respuestas completas. Para otra fecha utiliza «Nueva medición del mismo grupo» en la matriz. Los cambios son descriptivos y no prueban el efecto de una intervención.</p><div class="field"><label for="compararArchivo">Medición anterior (JSON o CSV, máximo 1 MB)</label><input id="compararArchivo" type="file" accept=".json,.csv"></div><p id="mensajeComparacion" class="status" role="status" aria-live="polite"></p><div id="comparacion"></div></section>
+<section class="panel privacy"><label class="check"><input id="recordar" type="checkbox">Recordar este estudio en este navegador (equipo privado)</label><p id="guardado" class="hint" role="status" aria-live="polite"></p><button id="borrarDatos" class="btn danger" type="button">Borrar datos del navegador</button></section></div></main>
+<footer>SOCIOMAP · ARANDA TOOLS · © <span data-year>2026</span> · Análisis descriptivo para una intervención responsable</footer>
+</body></html>

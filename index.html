@@ -1,95 +1,16 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Sociomap — ARANDA TOOLS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(180deg, #0f172a, #0b1222);
-      color: #e5e7eb;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
-    }
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer"><meta name="description" content="SOCIOMAP: análisis descriptivo y visualización de relaciones sociométricas, con datos tratados en el navegador.">
+<title>Relaciones que ayudan a comprender · SOCIOMAP</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="estilos.css">
+<script src="sociometria.js" defer></script><script src="almacenamiento.js" defer></script><script src="ui.js" defer></script>
 
-    .logo-wrapper {
-      background: white;
-      padding: 20px 40px;
-      border-radius: 16px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      margin-bottom: 32px;
-    }
-
-    .logo-wrapper img {
-      width: 240px;
-      display: block;
-    }
-
-    h1 {
-      font-size: 26px;
-      margin-bottom: 10px;
-    }
-
-    p {
-      font-size: 17px;
-      margin-bottom: 36px;
-      color: #cbd5e1;
-    }
-
-    .btn-modern {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      padding: 16px 32px;
-      font-size: 16px;
-      font-weight: bold;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 12px;
-      text-decoration: none;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn-modern:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-    }
-
-    .footer {
-      margin-top: 60px;
-      font-size: 14px;
-      color: #64748b;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="logo-wrapper">
-    <img src="logo.png" alt="Logo SOCIOMAP" />
-  </div>
-
-  <h1>Sociograma desde tabla sociométrica</h1>
-  <p>Genera visualmente relaciones sociales entre participantes con una tabla validada.</p>
-
-  <a href="instrucciones.html" class="btn-modern">Comenzar</a>
-
-  <div class="footer">
-    ARANDA TOOLS — © <span id="year"></span>
-  </div>
-
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
-  </script>
-
-</body>
-</html>
+</head><body><a class="skip" href="#contenido">Saltar al contenido</a>
+<header class="header"><nav class="nav" aria-label="Principal"><a class="brand" href="index.html">SOCIOMAP<small>ARANDA TOOLS</small></a><div class="nav-links"><a href="index.html" aria-current="page">Inicio</a><a href="instrucciones.html">Guía y criterios</a><a href="formulario.html">Matriz</a><a href="sociograma_interactivo.html">Sociograma</a><a href="MapaCalor_web.html">Mapa de calor</a></div></nav></header>
+<main id="contenido">
+<section class="hero"><div><span class="eyebrow">Herramientas para la intervención socioeducativa</span><h1>Comprender el grupo.<br>Cuidar las relaciones.</h1><p class="muted">Transforma una matriz sociométrica en un mapa de elecciones, reciprocidades y conexiones. Una lectura descriptiva para acompañar tu criterio profesional.</p><div class="actions"><a class="btn primary" href="formulario.html">Abrir un estudio</a><button class="btn" type="button" data-demo>Explorar una demostración</button></div><p class="hint">Sin registro. Los datos se procesan en tu navegador. La demostración utiliza datos ficticios.</p></div><div class="logo-card"><img src="logo.png" width="430" alt="SOCIOMAP, de Aranda Tools"></div></section>
+<p id="mensaje" class="status" role="status" aria-live="polite"></p>
+<section class="grid three" aria-label="Funciones"><article class="feature"><h2>De la matriz al mapa</h2><p>Respuestas verificadas, filtros por signo, búsqueda y posiciones que puedes reorganizar con ratón, tacto o teclado.</p></article><article class="feature"><h2>Indicadores explicables</h2><p>Elecciones recibidas, reciprocidad, densidad y conexiones exploratorias, con criterios y límites explícitos.</p></article><article class="feature"><h2>Control sobre tus datos</h2><p>Seudónimos, sesión temporal y copias JSON o CSV. Exporta el mapa y un informe para tu trabajo profesional.</p></article></section>
+<div class="actions"><a href="instrucciones.html">Consultar la guía y los criterios de análisis →</a></div></main>
+<footer>SOCIOMAP · ARANDA TOOLS · © <span data-year>2026</span> · Análisis descriptivo para una intervención responsable</footer>
+</body></html>
