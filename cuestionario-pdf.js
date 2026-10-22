@@ -34,6 +34,22 @@ window.CuestionarioPDF = (() => {
     }));
     const normal = await doc.embedFont(bytes[0], { subset: true });
     const bold = await doc.embedFont(bytes[1], { subset: true });
+    let logo = null;
+    try {
+      const image = new Image();
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+        image.src = 'logo-sociograma.webp';
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = 540;
+      canvas.height = Math.round(canvas.width * image.naturalHeight / image.naturalWidth);
+      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+      logo = await doc.embedPng(canvas.toDataURL('image/png'));
+    } catch {
+      // El formulario sigue siendo imprimible si no se puede incrustar la imagen.
+    }
     const allowed = new Set(normal.getCharacterSet());
     const clean = value => [...String(value).replace(/\s+/g,' ').trim()]
       .map(c => allowed.has(c.codePointAt(0)) ? c : '?').join('');
@@ -63,7 +79,8 @@ window.CuestionarioPDF = (() => {
     const custom=names.some((v,i)=>v!=='P'+(i+1));
     for(let i=0;i<names.length;i++){
       const page=doc.addPage([595.28,841.89]);
-      write(page,'SOCIOGRAMA',x,801,bold,20,ink,295);
+      if (logo) page.drawImage(logo,{x,y:782,width:178,height:178*logo.height/logo.width});
+      else write(page,'SOCIOGRAMA',x,801,bold,20,ink,295);
       write(page,'CUESTIONARIO / HOJA '+(i+1)+' DE '+names.length,341,806,bold,8,mute,211);
       page.drawLine({start:{x,y:775},end:{x:right,y:775},color:rule});
       write(page,'Elecciones del grupo',x,745,bold,20);
