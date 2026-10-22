@@ -25,7 +25,7 @@ const server = http.createServer((req, res) => {
   const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}), ...(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {}) });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
   const errors = [], external = [], consoleErrors = [];
-  context.on('page', p => { p.on('pageerror', e => errors.push(e.message)); p.on('console', e => { if (e.type() === 'error') consoleErrors.push(e.text()); }); p.on('dialog', d => d.accept(); });
+  context.on('page', p => { p.on('pageerror', e => errors.push(e.message)); p.on('console', e => { if (e.type() === 'error') consoleErrors.push(e.text()); }); p.on('dialog', d => d.accept()); });
   context.on('request', r => { if (!r.url().startsWith(url) && !r.url().startsWith('blob:') && !r.url().startsWith('data:')) external.push(r.url()); });
   const page = await context.newPage();
   page.setDefaultTimeout(12000);
