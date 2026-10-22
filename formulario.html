@@ -2,10 +2,10 @@
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer"><meta name="description" content="SOCIOMAP: registra tres elecciones positivas y tres negativas por persona y visualiza las relaciones del grupo.">
-<title>Registrar relaciones · SOCIOMAP</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="estilos.css">
+<title>Registrar relaciones · SOCIOMAP</title><link rel="icon" href="logo-sociograma.webp" type="image/webp"><link rel="stylesheet" href="estilos.css">
 <script src="sociometria.js" defer></script><script src="almacenamiento.js" defer></script><script src="ui.js" defer></script><script src="formulario.js" defer></script>
 </head><body class="simple-site"><a class="skip" href="#contenido">Saltar al contenido</a>
-<header class="header"><nav class="nav" aria-label="Principal"><a class="brand brand-image" href="index.html"><img src="logo.png" alt="" width="50" height="50"><span>SOCIOMAP</span></a><div class="nav-links"><a href="index.html">Inicio</a><a href="formulario.html" aria-current="page">Registrar</a><a href="sociograma_interactivo.html">Sociograma</a><a href="MapaCalor_web.html">Mapa de calor</a></div></nav></header>
+<header class="header brand-header"><nav class="nav" aria-label="Principal"><a class="brand brand-image" href="index.html" aria-label="Sociograma · Inicio"><img src="logo-sociograma.webp" width="240" height="80" alt="Sociograma"></a><div class="nav-links"><a href="index.html">Inicio</a><a href="formulario.html" aria-current="page">Registrar</a><a href="sociograma_interactivo.html">Sociograma</a></div></nav></header>
 <main id="contenido" class="simple-main">
 <div class="simple-heading"><span class="eyebrow">Registro sociométrico</span><h1>Un grupo. Seis elecciones.</h1><p class="muted">Para cada persona, elige <strong>3 positivas</strong> y <strong>3 negativas</strong>. Sin tablas ni pasos innecesarios.</p></div>
 <section class="panel setup-panel" aria-labelledby="tituloGrupo"><div class="section-head"><span class="step">01</span><h2 id="tituloGrupo">Configura el grupo</h2></div>
@@ -33,7 +33,7 @@
 </section>
 <section id="resultadosPanel" class="panel result-panel" aria-labelledby="tituloResultados" hidden><div class="section-head"><span class="step">03</span><h2 id="tituloResultados">Resultados</h2></div>
 <div id="resumen"></div><div id="ranking" class="table-scroll" tabindex="0" role="region" aria-label="Elecciones recibidas por participante"></div>
-<div class="actions"><a id="btnSociograma" class="btn primary" href="sociograma_interactivo.html" hidden>Ver sociograma →</a><a id="btnCalor" class="btn" href="MapaCalor_web.html" hidden>Mapa de calor</a></div>
+<div class="actions"><a id="btnSociograma" class="btn primary" href="sociograma_interactivo.html" hidden>Ver sociograma →</a></div>
 </section>
 <p class="simple-note">Los datos se guardan temporalmente en esta pestaña. Usa códigos si necesitas preservar la identidad de las personas.</p>
 </main><footer>SOCIOMAP · ARANDA TOOLS · © <span data-year>2026</span></footer>

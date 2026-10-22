@@ -91,3 +91,24 @@ body.simple-site{--bg:#f7f9fc;--panel:#ffffff;--line:#dde5ee;--text:#19283a;--mu
 .simple-site .home-steps p{color:#5b6d7f;font-size:14px}
 @media(max-width:800px){.simple-site .simple-main{padding:32px 16px 45px}.simple-site .nav{padding:10px 16px}.simple-site .nav-links{gap:12px}.simple-site .nav-links a{font-size:12px}.simple-site .panel{padding:20px}.simple-site .setup-grid{grid-template-columns:1fr 1fr}.simple-site .setup-grid .field:first-child{grid-column:1/-1}.simple-site .home-hero,.simple-site .choice-grid,.simple-site .home-steps{grid-template-columns:1fr}.simple-site .home-hero{min-height:0;gap:22px}.simple-site .home-brand{max-width:320px;padding:25px}.simple-site .metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:440px){.simple-site .brand-image{font-size:17px}.simple-site .brand-image img{width:38px;height:38px}.simple-site .nav-links{gap:9px}.simple-site .setup-grid{grid-template-columns:1fr}.simple-site .setup-grid .field:first-child{grid-column:auto}.simple-site .person-title{flex-wrap:wrap}.simple-site .progress-head{align-items:flex-start;flex-direction:column}.simple-site .choice-group{padding:16px}.simple-site .home-copy h1{font-size:40px}}
+
+/* Identidad SOCIOGRAMA y animación de acceso compatible con GitHub Pages. */
+.brand-header{background:#fff!important;border-bottom:1px solid #e1e8f1!important}
+.brand-header .nav{max-width:1120px;padding:12px 24px;gap:18px}
+.brand-header .brand-image{display:inline-flex;align-items:center;text-decoration:none;line-height:1;flex:none}
+.brand-header .brand-image img{display:block;width:clamp(178px,19vw,230px);height:auto;max-height:68px;object-fit:contain;border:0;background:transparent;border-radius:0}
+.brand-header .nav-links a{color:#4b5b71!important;font-weight:600}
+.brand-header .nav-links a:hover,.brand-header .nav-links a[aria-current="page"]{color:#174ead!important}
+.brand-header .nav-links a[aria-current="page"]{border-color:#1658c9}
+.simple-site .brand-header .brand-image img{width:clamp(178px,19vw,230px);height:auto;max-height:68px}
+.simple-site .home-brand{padding:25px}
+.simple-site .home-brand img{max-width:390px;width:100%;height:auto}
+.logo-intro{position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:#fff;pointer-events:none;animation:logoIntroExit 1.55s ease-in-out both}
+.logo-intro-inner{display:grid;place-items:center;gap:24px;width:min(82vw,680px);animation:logoIntroEnter 950ms cubic-bezier(.18,.8,.25,1) both}
+.logo-intro img{display:block;width:min(82vw,640px);height:auto;object-fit:contain}
+.logo-intro-line{display:block;width:58px;height:3px;background:#076bff;border-radius:4px;transform-origin:left;animation:logoIntroLine 950ms ease-out both}
+@keyframes logoIntroEnter{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes logoIntroExit{0%,65%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden}}
+@keyframes logoIntroLine{from{opacity:0;transform:scaleX(.25)}to{opacity:1;transform:scaleX(1)}}
+@media(max-width:600px){.brand-header .nav{padding:10px 16px}.brand-header .brand-image img,.simple-site .brand-header .brand-image img{width:190px;max-height:62px}.brand-header .nav-links{gap:12px}.brand-header .nav-links a{font-size:13px}.logo-intro-inner{gap:12px}}
+@media(prefers-reduced-motion:reduce){.logo-intro{display:none!important}}
