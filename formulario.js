@@ -1,167 +1,256 @@
 'use strict';
 (() => {
-  const S = Sociometria, $ = id => document.getElementById(id);
-  let proyecto = null, persistente = false, configDirty = false, restored = false;
-  for (let i = 2; i <= 40; i++) $('num').add(new Option(i, i));
-  $('num').value = '7'; $('fecha').value = UI.hoy();
-  const guardar = () => {
-    if (!proyecto) return false;
+  const S = Sociometria;
+  const $ = id => document.getElementById(id);
+  const LIMITE = 3;
+  let proyecto = null;
+  let indice = 0;
+  let configuracionPendiente = false;
+  let hayEstudioAnterior = false;
+  for (let n = 7; n <= 40; n++) $('num').add(new Option(n, n));
+  $('num').value = '7';
+  $('fecha').value = UI.hoy();
+
+  function mensaje(texto, error) { UI.mensaje(texto, Boolean(error)); }
+  function guardar() {
     try {
-      Almacen.guardar(proyecto, persistente);
-      $('guardado').textContent = persistente ? 'Guardado en este navegador hasta que lo borres.' : 'Guardado temporal en esta pestaña. Exporta una copia para conservarlo.';
+      Almacen.guardar(proyecto, false);
       return true;
-    } catch (e) { $('guardado').textContent = 'No se pudo guardar: ' + e.message + '. Exporta una copia JSON antes de salir.'; return false; }
-  };
-  function limpiarResultados() {
-    $('resultadosPanel').hidden = true; $('ranking').replaceChildren(); $('chart').replaceChildren();
-    $('btnSociograma').hidden = true; $('btnCalor').hidden = true;
+    } catch (e) {
+      mensaje('No se pueden guardar los datos en esta pestaña: ' + e.message, true);
+      return false;
+    }
+  }
+  function ocultarResultados() {
+    $('resultadosPanel').hidden = true;
+    $('btnSociograma').hidden = true;
+    $('btnCalor').hidden = true;
+  }
+  function esCompatible(datos) {
+    return datos.nombres.length >= 7 && datos.reglas.modo === 'exactos' &&
+      datos.reglas.positivos === LIMITE && datos.reglas.negativos === LIMITE;
   }
   function cargarConfig() {
     const d = proyecto.datos;
-    $('grupo').value = d.grupo; $('fecha').value = d.fechaNoRegistrada ? UI.hoy() : d.fecha;
-    $('num').value = String(d.nombres.length); $('modo').value = d.reglas.modo;
-    $('criterio').value = d.criterio; $('positivos').value = d.reglas.positivos; $('negativos').value = d.reglas.negativos;
-    $('custom').checked = d.nombres.some((name, i) => name !== `P${i + 1}`);
-    $('namesBox').hidden = !$('custom').checked; $('names').value = d.nombres.join('\n');
-    configDirty = false;
-  }
-  function actualizarBotones() {
-    for (const id of ['copiaJSON', 'copiaCSV', 'nuevaMedicion']) $(id).disabled = !proyecto;
-  }
-  function crearTablaDOM() {
-    const d = proyecto.datos, n = d.nombres.length;
-    const table = UI.el('table', { id: 'tablaVotos' }, UI.el('caption', {}, 'Matriz dirigida. Fila = emisor; columna = destinatario. Marca primero la respuesta registrada para habilitar su fila.'));
-    table.append(UI.el('thead', {}, UI.el('tr', {}, UI.el('th', { scope: 'col' }, 'De / A'), d.nombres.map(name => UI.el('th', { scope: 'col' }, name)), UI.el('th', { scope: 'col' }, 'Registro y validación'))));
-    const body = UI.el('tbody');
-    for (let i = 0; i < n; i++) {
-      const row = UI.el('tr', { 'data-row': i, className: d.respondidas[i] ? '' : 'missing' }, UI.el('th', { scope: 'row' }, d.nombres[i]));
-      for (let j = 0; j < n; j++) {
-        if (i === j) { row.append(UI.el('td', { className: 'diagonal', 'aria-label': 'Sin autovoto' }, '—')); continue; }
-        const select = UI.el('select', { className: 'cell', 'data-source': i, 'data-target': j,
-          'aria-label': `${d.nombres[i]} hacia ${d.nombres[j]}`, disabled: !d.respondidas[i] },
-          UI.el('option', { value: '0' }, '0'), UI.el('option', { value: '+' }, '+'), UI.el('option', { value: '-' }, '−'));
-        select.value = d.matriz[i][j] ?? '0';
-        select.classList.toggle('cell-pos', select.value === '+'); select.classList.toggle('cell-neg', select.value === '-');
-        select.addEventListener('change', () => {
-          proyecto.datos.matriz[i][j] = select.value;
-          select.classList.toggle('cell-pos', select.value === '+'); select.classList.toggle('cell-neg', select.value === '-');
-          limpiarResultados(); guardar(); validarTabla(); UI.mensaje('');
-        });
-        row.append(UI.el('td', {}, select));
-      }
-      const check = UI.el('input', { type: 'checkbox', id: `respuesta-${i}`, 'data-response': i }); check.checked = d.respondidas[i];
-      check.addEventListener('change', () => {
-        if (!check.checked && d.matriz[i].some(v => v === '+' || v === '-')) {
-          if (!confirm('Marcar esta respuesta como pendiente borrará las elecciones de su fila. ¿Continuar?')) { check.checked = true; return; }
-        }
-        d.respondidas[i] = check.checked;
-        d.matriz[i] = Array.from({ length: n }, (_, j) => i === j || check.checked ? '0' : null);
-        limpiarResultados(); guardar(); crearTablaDOM(); validarTabla();
-        $(`respuesta-${i}`).focus();
-      });
-      row.append(UI.el('td', { className: 'row-status' }, UI.el('label', { className: 'check', for: `respuesta-${i}` }, check, 'Respuesta registrada'), UI.el('span', { id: `check${i}` })));
-      body.append(row);
-    }
-    table.append(body); $('tabla').replaceChildren(table); $('matrizPanel').hidden = false;
-    $('reglaInfo').textContent = `${d.reglas.modo === 'exactos' ? 'Exactamente' : 'Como máximo'} ${d.reglas.positivos} + y ${d.reglas.negativos} − por respuesta. Grupo: ${d.nombres.length} personas. 0 = no elegida; fila pendiente = dato desconocido.`;
-  }
-  function validarTabla() {
-    if (!proyecto) { $('btnRanking').disabled = true; return; }
-    const d = proyecto.datos; let invalidas = 0;
-    d.matriz.forEach((row, i) => {
-      const p = row.filter(v => v === '+').length, m = row.filter(v => v === '-').length;
-      const ok = d.respondidas[i] && p <= d.reglas.positivos && m <= d.reglas.negativos && (d.reglas.modo === 'maximos' || p === d.reglas.positivos && m === d.reglas.negativos);
-      if (d.respondidas[i] && !ok) invalidas++;
-      const node = $(`check${i}`);
-      if (node) { node.textContent = d.respondidas[i] ? `${ok ? '✓' : 'Revisar'}: ${p} + / ${m} −` : 'Pendiente'; node.className = ok ? 'row-valid' : 'row-invalid'; }
-    });
-    const registradas = d.respondidas.filter(Boolean).length;
-    $('progreso').textContent = `${registradas} de ${d.nombres.length} respuestas registradas. ${invalidas} filas registradas por corregir.${configDirty ? ' Aplica la configuración antes de continuar.' : ''}`;
-    $('btnRanking').disabled = configDirty || !registradas || invalidas > 0 || (!$('parcial').checked && registradas !== d.nombres.length);
+    $('grupo').value = d.grupo;
+    $('num').value = String(d.nombres.length);
+    $('fecha').value = d.fechaNoRegistrada ? UI.hoy() : d.fecha;
+    $('criterio').value = d.criterio;
+    $('custom').checked = d.nombres.some((nombre, i) => nombre !== 'P' + (i + 1));
+    $('namesBox').hidden = !$('custom').checked;
+    $('names').value = d.nombres.join('\n');
+    if ($('custom').checked) $('custom').closest('details').open = true;
+    configuracionPendiente = false;
   }
   function leerConfig() {
-    const n = Number($('num').value), names = $('names').value;
-    const nombres = S.validarNombres($('custom').checked ? (names.includes('\n') ? names.split(/\r?\n/) : names.split(',')) : Array.from({ length: n }, (_, i) => `P${i + 1}`));
-    if (nombres.length !== n) throw new Error('La cantidad de participantes no coincide con el número indicado.');
-    return { grupo: $('grupo').value, nombres, fecha: $('fecha').value, criterio: $('criterio').value,
-      reglas: { positivos: Number($('positivos').value), negativos: Number($('negativos').value), modo: $('modo').value } };
+    const n = Number($('num').value);
+    if (!Number.isInteger(n) || n < 7 || n > 40) throw new Error('El grupo necesita entre 7 y 40 personas para permitir seis elecciones distintas.');
+    let nombres = Array.from({ length: n }, (_, i) => 'P' + (i + 1));
+    if ($('custom').checked) {
+      const entrada = $('names').value.trim();
+      nombres = S.validarNombres(entrada.includes('\n') ? entrada.split(/\r?\n/) : entrada.split(','));
+      if (nombres.length !== n) throw new Error('Escribe exactamente ' + n + ' nombres o desmarca la opción de nombres.');
+    }
+    return {
+      grupo: $('grupo').value, nombres, fecha: $('fecha').value, criterio: $('criterio').value,
+      reglas: { positivos: LIMITE, negativos: LIMITE, modo: 'exactos' }
+    };
   }
-  function crearTabla() {
+  function crearGrupo() {
     try {
-      const config = leerConfig(), n = config.nombres.length, actual = proyecto?.datos;
-      const iguales = actual && JSON.stringify(config.nombres) === JSON.stringify(actual.nombres) && JSON.stringify(config.reglas) === JSON.stringify(actual.reglas) && config.criterio === actual.criterio;
-      const nuevo = S.validarDatos({ ...config, version: 2, cohorte: iguales ? actual.cohorte : crypto.randomUUID(),
-        ids: iguales ? actual.ids : Array.from({ length: n }, () => crypto.randomUUID()),
-        respondidas: iguales ? actual.respondidas : Array(n).fill(false),
-        matriz: iguales ? actual.matriz : Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? '0' : null)) }, { borrador: true });
-      if (actual && !iguales && !confirm('Cambiar participantes, pregunta o reglas creará un estudio nuevo y vaciará las respuestas. Exporta antes la copia actual si quieres conservarla. ¿Continuar?')) return;
-      proyecto = S.validarProyecto({ datos: nuevo, vista: iguales ? proyecto.vista : {} });
-      configDirty = false; limpiarResultados(); cargarConfig(); crearTablaDOM(); guardar(); validarTabla(); actualizarBotones();
-      UI.mensaje(iguales ? 'Configuración actualizada. Se han conservado las respuestas.' : 'Matriz creada. Marca cada respuesta registrada y anota sus elecciones.');
-    } catch (e) { UI.mensaje(e.message, true); }
+      const cfg = leerConfig();
+      const prev = proyecto && proyecto.datos;
+      const igual = prev && JSON.stringify(prev.nombres) === JSON.stringify(cfg.nombres) &&
+        prev.criterio === cfg.criterio && esCompatible(prev);
+      if ((prev && !igual || hayEstudioAnterior) &&
+          !confirm('Se sustituirán las respuestas guardadas. ¿Crear este grupo?')) return;
+      const n = cfg.nombres.length;
+      const datos = S.validarDatos(Object.assign({}, cfg, {
+        version: 2,
+        cohorte: igual ? prev.cohorte : crypto.randomUUID(),
+        ids: igual ? prev.ids : Array.from({ length: n }, () => crypto.randomUUID()),
+        respondidas: igual ? prev.respondidas : Array(n).fill(false),
+        matriz: igual ? prev.matriz : Array.from({ length: n }, (_, i) =>
+          Array.from({ length: n }, (_, j) => i === j ? '0' : null))
+      }), { borrador: true });
+      proyecto = S.validarProyecto({ datos, vista: igual ? proyecto.vista : {} });
+      hayEstudioAnterior = false;
+      indice = 0;
+      cargarConfig();
+      ocultarResultados();
+      $('matrizPanel').hidden = false;
+      dibujarPersona();
+      validar();
+      guardar();
+      mensaje(igual ? 'Grupo actualizado. Se han conservado las elecciones.' : 'Grupo creado. Empieza por la primera persona.');
+      $('matrizPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { mensaje(e.message, true); }
   }
-  function procesar() {
-    limpiarResultados();
-    try {
-      if (configDirty) throw new Error('Aplica la configuración antes de calcular.');
-      const data = S.calcular(proyecto?.datos);
-      if (data.metricas.cobertura < 1 && !$('parcial').checked) throw new Error('Faltan respuestas. Regístralas o acepta expresamente un análisis provisional.');
-      Graficos.resumen(data, $('resumen')); Graficos.ranking(data, $('ranking'), true);
-      $('chart').replaceChildren(Graficos.barras(data, true)); $('resultadosPanel').hidden = false;
-      const ok = guardar(); $('btnSociograma').hidden = !ok; $('btnCalor').hidden = !ok;
-      UI.mensaje(ok ? 'Resultados actualizados. Puedes abrir el sociograma o el mapa de calor.' : 'Resultados calculados, pero no guardados. Exporta la copia JSON antes de salir.', !ok);
-    } catch (e) { UI.mensaje(e.message, true); }
+  function votosDe(signo, i) {
+    return proyecto.datos.matriz[i].flatMap((v, j) => v === signo ? [j] : []);
   }
-  function exportar(extension) {
+  function selector(signo, slot, elegidos) {
+    const d = proyecto.datos;
+    const label = (signo === '+' ? 'Positiva ' : 'Negativa ') + (slot + 1);
+    const sel = UI.el('select', {
+      className: 'vote-select', 'data-sign': signo, 'data-slot': slot,
+      'aria-label': label + ' de ' + d.nombres[indice]
+    });
+    sel.append(UI.el('option', { value: '' }, 'Selecciona una persona'));
+    for (let j = 0; j < d.nombres.length; j++) {
+      if (j === indice) continue;
+      sel.append(UI.el('option', { value: j }, d.nombres[j]));
+    }
+    sel.value = elegidos[slot] === undefined ? '' : String(elegidos[slot]);
+    sel.addEventListener('change', cambiarVoto);
+    return UI.el('label', { className: 'vote-field' }, UI.el('span', {}, String(slot + 1)), sel);
+  }
+  function refrescarOpciones() {
+    const selects = Array.from($('votacion').querySelectorAll('.vote-select'));
+    const usadas = selects.map(sel => sel.value).filter(v => v !== '');
+    for (const sel of selects) {
+      for (const option of sel.options) {
+        if (option.value !== '') option.disabled = usadas.includes(option.value) && option.value !== sel.value;
+      }
+    }
+  }
+  function cambiarVoto(e) {
+    const selects = Array.from($('votacion').querySelectorAll('.vote-select'));
+    const usadas = selects.map(sel => sel.value).filter(Boolean);
+    if (new Set(usadas).size !== usadas.length) {
+      e.target.value = '';
+      refrescarOpciones();
+      mensaje('Cada persona solo puede aparecer una vez.', true);
+      return;
+    }
+    const d = proyecto.datos, i = indice;
+    const completo = usadas.length > 0;
+    d.respondidas[i] = completo;
+    d.matriz[i] = Array.from({ length: d.nombres.length }, (_, j) => i === j || completo ? '0' : null);
+    for (const sel of selects) {
+      if (sel.value !== '') d.matriz[i][Number(sel.value)] = sel.dataset.sign;
+    }
+    ocultarResultados();
+    refrescarOpciones();
+    validar();
+    guardar();
+    mensaje('');
+  }
+  function dibujarPersona() {
     if (!proyecto) return;
-    const datos = $('incluirNombres').checked ? proyecto.datos : S.seudonimizar(proyecto.datos);
-    const output = extension === 'json' ? JSON.stringify({ ...proyecto, datos, vista: { ...proyecto.vista, seudonimos: true } }, null, 2) : S.aCSV(datos);
-    UI.descargar(output, `sociomap-${datos.fecha}.${extension}`, extension === 'json' ? 'application/json' : 'text/csv;charset=utf-8');
+    const d = proyecto.datos, nombre = d.nombres[indice];
+    const positivos = votosDe('+', indice).slice(0, LIMITE);
+    const negativos = votosDe('-', indice).slice(0, LIMITE);
+    const card = UI.el('div', { className: 'person-card' },
+      UI.el('div', { className: 'person-title' },
+        UI.el('div', {}, UI.el('span', { className: 'eyebrow' }, 'Persona ' + (indice + 1) + ' de ' + d.nombres.length),
+          UI.el('h3', {}, nombre)),
+        UI.el('span', { className: 'person-state', id: 'estadoPersona' }, '')
+      ),
+      UI.el('div', { className: 'choice-grid' },
+        UI.el('fieldset', { className: 'choice-group positive-choice' },
+          UI.el('legend', {}, '＋ 3 positivas'), UI.el('p', { className: 'hint' }, 'Con quién prefiere participar.'),
+          [0, 1, 2].map(slot => selector('+', slot, positivos))),
+        UI.el('fieldset', { className: 'choice-group negative-choice' },
+          UI.el('legend', {}, '− 3 negativas'), UI.el('p', { className: 'hint' }, 'Con quién prefiere menos participar.'),
+          [0, 1, 2].map(slot => selector('-', slot, negativos)))
+      )
+    );
+    $('votacion').replaceChildren(card);
+    $('anterior').disabled = indice === 0;
+    $('siguiente').disabled = indice === d.nombres.length - 1;
+    refrescarOpciones();
+    pintarNavegacion();
+  }
+  function completada(i) {
+    const d = proyecto.datos;
+    return d.respondidas[i] && votosDe('+', i).length === LIMITE && votosDe('-', i).length === LIMITE;
+  }
+  function pintarNavegacion() {
+    if (!proyecto) return;
+    const d = proyecto.datos;
+    $('pasos').replaceChildren(...d.nombres.map((nombre, i) => {
+      const boton = UI.el('button', {
+        type: 'button', className: 'person-pill' + (indice === i ? ' active' : '') + (completada(i) ? ' done' : ''),
+        'aria-label': 'Persona ' + (i + 1) + ': ' + nombre + (completada(i) ? ', completa' : ', pendiente'),
+        'aria-current': indice === i ? 'step' : null
+      }, String(i + 1));
+      boton.addEventListener('click', () => { indice = i; dibujarPersona(); });
+      return boton;
+    }));
+    const p = votosDe('+', indice).length, m = votosDe('-', indice).length;
+    const estado = $('estadoPersona');
+    if (estado) {
+      estado.textContent = completada(indice) ? 'Completa ✓' : p + '/3 positivas · ' + m + '/3 negativas';
+      estado.classList.toggle('is-done', completada(indice));
+    }
+  }
+  function validar() {
+    if (!proyecto) return;
+    const n = proyecto.datos.nombres.length;
+    const completadas = proyecto.datos.nombres.filter((_, i) => completada(i)).length;
+    const porcentaje = Math.round(100 * completadas / n);
+    $('progreso').textContent = completadas + ' de ' + n + ' personas completas';
+    $('barraProgreso').setAttribute('aria-valuenow', String(porcentaje));
+    $('barraRelleno').style.width = porcentaje + '%';
+    $('btnRanking').disabled = completadas !== n || configuracionPendiente;
+    pintarNavegacion();
+  }
+  function resultados() {
+    ocultarResultados();
+    try {
+      if ($('btnRanking').disabled) throw new Error('Completa las seis elecciones de todas las personas.');
+      const data = S.calcular(proyecto.datos), m = data.metricas;
+      $('resumen').replaceChildren(UI.el('div', { className: 'metrics' },
+        [[m.participantes, 'Personas'], [m.totalPos, 'Positivas'], [m.totalNeg, 'Negativas'],
+          [m.paresMutPos, 'Pares positivos recíprocos']].map(([num, titulo]) =>
+          UI.el('div', { className: 'metric' }, UI.el('strong', {}, num), UI.el('span', {}, titulo)))));
+      $('ranking').replaceChildren(UI.tabla(['Persona', '+ recibidas', '− recibidas'],
+        data.nodes.map(v => ['P' + (v.id + 1), v.recPos, v.recNeg]), 'Elecciones recibidas. Códigos por privacidad.'));
+      $('resultadosPanel').hidden = false;
+      const ok = guardar();
+      $('btnSociograma').hidden = !ok;
+      $('btnCalor').hidden = !ok;
+      if (!ok) mensaje('Resultados calculados, pero no se han podido guardar para abrir los mapas.', true);
+      else mensaje('Resultados listos.');
+      $('resultadosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { mensaje(e.message, true); }
   }
   function recuperar() {
     const state = Almacen.leer();
-    if (!state.proyecto) { if (state.error) UI.mensaje(state.error, true); return; }
-    proyecto = state.proyecto; persistente = state.persistente; $('recordar').checked = persistente;
-    cargarConfig(); crearTablaDOM(); actualizarBotones();
-    $('parcial').checked = false; validarTabla();
-    $('guardado').textContent = persistente ? 'Estudio recuperado del almacenamiento de este navegador.' : 'Estudio recuperado de la sesión temporal.';
-    if (state.legado) { UI.mensaje('Estudio de la fase 1 recuperado. Su fecha y criterio no estaban registrados: revísalos antes de exportar o comparar.'); guardar(); }
+    if (!state.proyecto) {
+      if (state.error) mensaje(state.error, true);
+      return;
+    }
+    if (!esCompatible(state.proyecto.datos)) {
+      hayEstudioAnterior = true;
+      mensaje('Los datos anteriores usan otras reglas. Crea un grupo nuevo para registrar 3 positivas y 3 negativas por persona.', true);
+      return;
+    }
+    proyecto = state.proyecto;
+    cargarConfig();
+    $('matrizPanel').hidden = false;
+    dibujarPersona();
+    validar();
   }
-  $('crearTabla').addEventListener('click', crearTabla); $('btnRanking').addEventListener('click', procesar); $('parcial').addEventListener('change', validarTabla);
-  for (const id of ['grupo', 'fecha', 'num', 'modo', 'criterio', 'positivos', 'negativos', 'names', 'custom']) {
-    $(id).addEventListener(id === 'num' || id === 'modo' || id === 'custom' ? 'change' : 'input', () => {
-      if (id === 'custom') $('namesBox').hidden = !$('custom').checked;
-      if (id === 'num') { const max = Number($('num').value) - 1; $('positivos').value = Math.min(Number($('positivos').value), max); $('negativos').value = Math.min(Number($('negativos').value), max - Number($('positivos').value)); }
-      if (proyecto) { configDirty = true; limpiarResultados(); validarTabla(); }
+  $('crearTabla').addEventListener('click', crearGrupo);
+  $('btnRanking').addEventListener('click', resultados);
+  $('anterior').addEventListener('click', () => { if (indice > 0) { indice--; dibujarPersona(); } });
+  $('siguiente').addEventListener('click', () => {
+    if (proyecto && indice < proyecto.datos.nombres.length - 1) { indice++; dibujarPersona(); }
+  });
+  $('custom').addEventListener('change', () => { $('namesBox').hidden = !$('custom').checked; });
+  for (const id of ['grupo', 'num', 'fecha', 'criterio', 'names', 'custom']) {
+    $(id).addEventListener('change', () => {
+      if (proyecto) { configuracionPendiente = true; ocultarResultados(); validar(); }
     });
   }
-  $('recordar').addEventListener('change', () => {
-    const before = persistente; persistente = $('recordar').checked;
-    if (proyecto && !guardar()) { persistente = before; $('recordar').checked = before; }
-  });
   $('borrarDatos').addEventListener('click', () => {
-    if (!confirm('Se borrarán el estudio y sus posiciones de la sesión y del almacenamiento de este navegador. Las copias descargadas se borran por separado. ¿Continuar?')) return;
-    try { Almacen.borrar(); location.reload(); } catch (e) { UI.mensaje(e.message, true); }
+    if (!confirm('Se borrarán las respuestas guardadas en este navegador. ¿Continuar?')) return;
+    try { Almacen.borrar(); location.reload(); }
+    catch (e) { mensaje(e.message, true); }
   });
-  $('importar').addEventListener('change', async () => {
-    const file = $('importar').files[0]; if (!file) return;
-    try {
-      const incoming = await UI.archivo(file);
-      if (proyecto && !confirm('La importación sustituirá el estudio abierto. ¿Continuar?')) return;
-      proyecto = incoming; configDirty = false; limpiarResultados(); cargarConfig(); crearTablaDOM(); actualizarBotones(); guardar();
-      $('parcial').checked = false; validarTabla(); UI.mensaje('Estudio importado. Revisa la configuración y las respuestas antes de analizar.');
-    } catch (e) { UI.mensaje('No se ha importado el archivo. ' + e.message, true); }
-    finally { $('importar').value = ''; }
-  });
-  $('copiaJSON').addEventListener('click', () => exportar('json')); $('copiaCSV').addEventListener('click', () => exportar('csv'));
-  $('nuevaMedicion').addEventListener('click', () => {
-    if (!proyecto || !confirm('Se vaciarán las respuestas conservando grupo e identificadores. Exporta antes la medición actual para poder compararla. ¿Continuar?')) return;
-    const d = proyecto.datos, n = d.nombres.length;
-    d.respondidas = Array(n).fill(false); d.matriz = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? '0' : null));
-    d.fecha = UI.hoy(); d.fechaNoRegistrada = false; limpiarResultados(); cargarConfig(); crearTablaDOM(); guardar(); validarTabla();
-    UI.mensaje('Nueva medición preparada. Comprueba la fecha y registra las nuevas respuestas.'); $('fecha').focus();
-  });
-  window.addEventListener('pageshow', e => { if (restored && e.persisted) { limpiarResultados(); recuperar(); } restored = true; });
-  window.addEventListener('storage', e => { if ([S.STORAGE_KEY, null].includes(e.key)) { proyecto = null; location.reload(); } });
+  window.addEventListener('pageshow', e => { if (e.persisted) { ocultarResultados(); recuperar(); } });
+  window.addEventListener('storage', e => { if ([S.STORAGE_KEY, null].includes(e.key)) location.reload(); });
   recuperar();
 })();

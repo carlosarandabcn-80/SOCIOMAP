@@ -1,23 +1,40 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<meta name="referrer" content="no-referrer"><meta name="description" content="SOCIOMAP: análisis descriptivo y visualización de relaciones sociométricas, con datos tratados en el navegador.">
-<title>Matriz sociométrica · SOCIOMAP</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="estilos.css">
-<script src="sociometria.js" defer></script><script src="almacenamiento.js" defer></script><script src="ui.js" defer></script>
-<script src="graficos.js" defer></script><script src="formulario.js" defer></script>
-</head><body><a class="skip" href="#contenido">Saltar al contenido</a>
-<header class="header"><nav class="nav" aria-label="Principal"><a class="brand" href="index.html">SOCIOMAP<small>ARANDA TOOLS</small></a><div class="nav-links"><a href="index.html">Inicio</a><a href="instrucciones.html">Guía y criterios</a><a href="formulario.html" aria-current="page">Matriz</a><a href="sociograma_interactivo.html">Sociograma</a><a href="MapaCalor_web.html">Mapa de calor</a></div></nav></header>
-<main id="contenido">
-<div class="title-row"><div><span class="eyebrow">01 / Recogida de datos</span><h1>Matriz sociométrica</h1><p class="muted">Cada fila es una persona que responde; cada columna, una destinataria.</p></div><a class="btn" href="instrucciones.html">Consultar la guía</a></div>
-<section class="panel privacy" aria-label="Privacidad"><p><strong>Sesión temporal por defecto.</strong> Usa códigos y guarda la correspondencia con identidades por separado. Cerrar la pestaña finaliza normalmente la sesión; algunos navegadores la restauran al reabrirla. El borrado explícito elimina los datos del sitio.</p><label class="check"><input id="recordar" type="checkbox">Recordar este estudio en este navegador (solo en un equipo privado)</label><p id="guardado" class="hint" role="status" aria-live="polite"></p></section>
-<section class="panel"><h2>Configurar el estudio</h2><div class="grid"><div class="field"><label for="grupo">Nombre o código del grupo</label><input id="grupo" maxlength="200" placeholder="Ej.: Grupo A" autocomplete="off"></div><div class="field"><label for="fecha">Fecha de la medición</label><input id="fecha" type="date" required></div><div class="field"><label for="num">Número de participantes</label><select id="num"></select></div><div class="field"><label for="modo">Regla de elección</label><select id="modo"><option value="exactos">Número exacto por signo</option><option value="maximos">Máximo por signo, sin obligación de elegir</option></select></div></div>
-<div class="field"><label for="criterio">Pregunta o criterio de elección</label><input id="criterio" maxlength="400" value="¿Con quién preferirías realizar una actividad de grupo?" aria-describedby="criterioAyuda"><p id="criterioAyuda" class="hint">+ = elección positiva; − = preferencia por no realizar esa actividad con esa persona. 0 = no elegida. Si no recoges elecciones negativas, fija su límite en 0. No deduzcas rechazo personal a partir de una elección contextual.</p></div>
-<div class="grid"><div class="field"><label for="positivos">Elecciones positivas por persona</label><input id="positivos" type="number" value="3" min="1" max="39"></div><div class="field"><label for="negativos">Elecciones negativas por persona</label><input id="negativos" type="number" value="3" min="0" max="39"></div></div>
-<div class="actions"><label class="check"><input id="custom" type="checkbox">Introducir códigos o nombres propios</label></div><div id="namesBox" class="field" hidden><label for="names">Participantes, uno por línea</label><textarea id="names" rows="4" placeholder="P1&#10;P2&#10;P3" aria-describedby="namesAyuda"></textarea><p id="namesAyuda" class="hint">Se admiten también nombres separados por comas. Si un nombre contiene una coma, utiliza una línea por persona.</p></div>
-<div class="actions"><button id="crearTabla" class="btn primary" type="button">Crear o actualizar matriz</button><button id="nuevaMedicion" class="btn" type="button" disabled>Nueva medición del mismo grupo</button></div><p class="hint">Actualizar la fecha conserva los votos. Cambiar participantes o reglas requiere confirmar una matriz nueva. «Nueva medición» conserva los identificadores para poder comparar dos fechas.</p></section>
-<section class="panel"><h2>Recuperar o probar un estudio</h2><div class="field"><label for="importar">Importar copia JSON o matriz CSV de SOCIOMAP (máximo 1 MB)</label><input id="importar" type="file" accept=".json,.csv,application/json,text/csv"></div><div class="actions"><button class="btn" type="button" data-demo>Usar datos de demostración</button><button id="copiaJSON" class="btn" type="button" disabled>Exportar copia JSON</button><button id="copiaCSV" class="btn" type="button" disabled>Exportar matriz CSV</button><button id="borrarDatos" class="btn danger" type="button">Borrar datos del navegador</button></div><label class="check"><input id="incluirNombres" type="checkbox">Incluir nombres y grupo originales en los archivos exportados</label><p class="hint">Por defecto se exportan códigos P1, P2… La copia JSON incluye las posiciones del mapa. Los archivos descargados se conservan hasta que tú los elimines.</p></section>
+<meta name="referrer" content="no-referrer"><meta name="description" content="SOCIOMAP: registra tres elecciones positivas y tres negativas por persona y visualiza las relaciones del grupo.">
+<title>Registrar relaciones · SOCIOMAP</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="estilos.css">
+<script src="sociometria.js" defer></script><script src="almacenamiento.js" defer></script><script src="ui.js" defer></script><script src="formulario.js" defer></script>
+</head><body class="simple-site"><a class="skip" href="#contenido">Saltar al contenido</a>
+<header class="header"><nav class="nav" aria-label="Principal"><a class="brand brand-image" href="index.html"><img src="logo.png" alt="" width="50" height="50"><span>SOCIOMAP</span></a><div class="nav-links"><a href="index.html">Inicio</a><a href="formulario.html" aria-current="page">Registrar</a><a href="sociograma_interactivo.html">Sociograma</a><a href="MapaCalor_web.html">Mapa de calor</a></div></nav></header>
+<main id="contenido" class="simple-main">
+<div class="simple-heading"><span class="eyebrow">Registro sociométrico</span><h1>Un grupo. Seis elecciones.</h1><p class="muted">Para cada persona, elige <strong>3 positivas</strong> y <strong>3 negativas</strong>. Sin tablas ni pasos innecesarios.</p></div>
+<section class="panel setup-panel" aria-labelledby="tituloGrupo"><div class="section-head"><span class="step">01</span><h2 id="tituloGrupo">Configura el grupo</h2></div>
+<div class="grid setup-grid">
+<div class="field"><label for="grupo">Grupo</label><input id="grupo" maxlength="200" placeholder="Ej. Grupo A" autocomplete="off"></div>
+<div class="field"><label for="num">Personas</label><select id="num"></select></div>
+<div class="field"><label for="fecha">Fecha</label><input id="fecha" type="date" required></div>
+</div>
+<details class="simple-details"><summary>Personalizar nombres y pregunta</summary>
+<div class="field"><label class="check"><input id="custom" type="checkbox">Usar nombres en vez de códigos</label></div>
+<div id="namesBox" class="field" hidden><label for="names">Una persona por línea</label><textarea id="names" rows="5" placeholder="Ana&#10;Bea&#10;Carlos"></textarea></div>
+<div class="field"><label for="criterio">Pregunta de elección</label><input id="criterio" maxlength="400" value="¿Con quién preferirías realizar una actividad de grupo?"></div>
+</details>
+<div class="actions setup-actions"><button id="crearTabla" type="button" class="btn primary">Crear grupo</button><button id="borrarDatos" type="button" class="btn text-btn">Borrar datos</button></div>
+</section>
 <p id="mensaje" class="status" role="status" aria-live="polite"></p>
-<section id="matrizPanel" class="panel" hidden><h2>Registrar respuestas</h2><p id="reglaInfo" class="hint"></p><p class="hint">Marca «Respuesta registrada» incluso si no hay ninguna elección. Una fila sin registrar es una respuesta pendiente, no una fila de ceros.</p><div id="tabla" class="table-scroll" tabindex="0" role="region" aria-label="Matriz de respuestas, desplazable"></div><p id="progreso" role="status" aria-live="polite"></p><label class="check"><input id="parcial" type="checkbox">Permitir un análisis provisional con respuestas pendientes</label><div class="actions"><button id="btnRanking" class="btn primary" type="button" disabled>Calcular resultados</button><a id="btnSociograma" class="btn" href="sociograma_interactivo.html" hidden>Abrir sociograma</a><a id="btnCalor" class="btn" href="MapaCalor_web.html" hidden>Abrir mapa de calor</a></div></section>
-<section id="resultadosPanel" class="panel" hidden><h2>Resultados descriptivos</h2><p class="hint">Sin etiquetas personales ni diagnósticos. Las elecciones dependen del criterio, el grupo y la fecha.</p><div id="resumen"></div><div id="ranking" class="table-scroll" tabindex="0" role="region" aria-label="Resultados por participante"></div><div id="graficoBox"><h3>Elecciones recibidas</h3><div id="chart"></div></div></section></main>
-<footer>SOCIOMAP · ARANDA TOOLS · © <span data-year>2026</span> · Análisis descriptivo para una intervención responsable</footer>
+<section id="matrizPanel" class="panel vote-panel" aria-labelledby="tituloRegistro" hidden>
+<div class="section-head"><span class="step">02</span><div><h2 id="tituloRegistro">Registra las elecciones</h2><p class="hint">Selecciona seis personas distintas, sin incluirse a sí misma.</p></div></div>
+<div class="progress-head"><strong id="progreso">0 de 7 personas completas</strong><span class="hint">3 positivas · 3 negativas</span></div>
+<div class="progress-track" role="progressbar" aria-label="Participantes completados" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="barraProgreso"><span id="barraRelleno"></span></div>
+<div id="pasos" class="person-pills" aria-label="Elegir participante"></div>
+<div id="votacion" class="vote-content"></div>
+<div class="actions vote-actions"><button id="anterior" type="button" class="btn">← Anterior</button><button id="siguiente" type="button" class="btn">Siguiente →</button><button id="btnRanking" type="button" class="btn primary" disabled>Ver resultados</button></div>
+<p class="hint ethics-note">Las elecciones negativas se refieren únicamente a la pregunta planteada. No son diagnósticos ni etiquetas personales.</p>
+</section>
+<section id="resultadosPanel" class="panel result-panel" aria-labelledby="tituloResultados" hidden><div class="section-head"><span class="step">03</span><h2 id="tituloResultados">Resultados</h2></div>
+<div id="resumen"></div><div id="ranking" class="table-scroll" tabindex="0" role="region" aria-label="Elecciones recibidas por participante"></div>
+<div class="actions"><a id="btnSociograma" class="btn primary" href="sociograma_interactivo.html" hidden>Ver sociograma →</a><a id="btnCalor" class="btn" href="MapaCalor_web.html" hidden>Mapa de calor</a></div>
+</section>
+<p class="simple-note">Los datos se guardan temporalmente en esta pestaña. Usa códigos si necesitas preservar la identidad de las personas.</p>
+</main><footer>SOCIOMAP · ARANDA TOOLS · © <span data-year>2026</span></footer>
 </body></html>
