@@ -6,7 +6,7 @@ Herramienta web de análisis sociométrico descriptivo para la intervención soc
 
 ## Funciones
 
-- Una matriz dirigida compartida por formulario, tabla, barras, sociograma y mapa de calor. Cálculo por destinatario, sin autovotos ni estados de resultados obsoletos.
+- Una matriz dirigida compartida por formulario, tabla, barras, sociograma . Cálculo por destinatario, sin autovotos ni estados de resultados obsoletos.
 - Entre 2 y 40 participantes; cuotas exactas o máximas, elecciones negativas opcionales, pregunta y fecha registradas. La suma de límites no puede superar N − 1.
 - Distinción entre respuestas pendientes (`null`) y personas no elegidas (`"0"`). El análisis parcial necesita aceptación expresa en el formulario y se identifica como provisional.
 - Elecciones positivas y negativas recibidas, entrada positiva relativa, reciprocidad por signo, densidad, intermediación dirigida positiva y componentes exploratorios de elecciones positivas recíprocas. Sin clasificación automática de personas como «líder», «rechazada» o «aislada».
@@ -28,7 +28,7 @@ Abre `http://localhost:8000/`. También puede servirse desde GitHub Pages, en la
 
 1. Configura grupo, fecha, pregunta, participantes y reglas. La plantilla PDF original corresponde exclusivamente a **3 + y 3 −**, con al menos siete participantes.
 2. Crea la matriz, marca cada respuesta registrada y transcribe las elecciones. Una fila pendiente no cuenta como una respuesta de ceros.
-3. Calcula resultados y abre el sociograma o el mapa de calor.
+3. Calcula resultados y abre el sociograma.
 4. Exporta una copia JSON para continuar otro día. Para otra medición, exporta primero la actual y utiliza «Nueva medición del mismo grupo»: conserva los identificadores y vacía las respuestas.
 5. Carga la copia anterior en la comparación. Se exigen mismo estudio, participantes, pregunta y reglas, ambas recogidas completas y una fecha anterior registrada.
 
@@ -71,8 +71,8 @@ Se puede indicar un navegador ya instalado con `CHROMIUM_EXECUTABLE_PATH` o un c
 | `almacenamiento.js` | Sesión, persistencia optativa y borrado |
 | `ui.js`, `estilos.css` | Elementos seguros del DOM, presentación y accesibilidad |
 | `formulario.js` | Configuración, captura de respuestas y resultados |
-| `graficos.js` | Disposiciones y representaciones SVG, tablas y mapa de calor |
-| `sociograma.js`, `mapa-calor.js` | Interacción de las vistas |
+| `graficos.js` | Disposiciones y representaciones SVG, tablas  |
+| `sociograma.js` | Interacción de las vistas |
 | `exportaciones.js` | PNG, SVG e informe PDF |
 | `vendor/` | Generación PDF, motor tipográfico, fuentes y sus avisos de licencia |
 | `tests/` | Regresión de cálculo, contrato, recursos y recorridos en navegador |

@@ -15,7 +15,7 @@ window.Exportaciones = (() => {
     return result;
   }
   function logo() {
-    if (!logoReady) logoReady = fetch('logo.png').then(r => { if (!r.ok) throw new Error('Logo no disponible'); return r.blob(); }).then(blob => new Promise((resolve, reject) => {
+    if (!logoReady) logoReady = fetch('logo-sociograma.webp').then(r => { if (!r.ok) throw new Error('Logo no disponible'); return r.blob(); }).then(blob => new Promise((resolve, reject) => {
       const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob);
     })).catch(() => null);
     return logoReady;
@@ -63,7 +63,7 @@ window.Exportaciones = (() => {
     text('Lectura descriptiva. No establece diagnósticos, etiquetas personales ni efectos causales.', y + 51, 14);
     text('ARANDA TOOLS · Datos tratados en el navegador', y + 81, 12);
     const image = await logo();
-    if (image) root.append(UI.svg('image', { href: image, x: width - 155, y: height - 52, width: 130, height: 35 }));
+    if (image) root.append(UI.svg('image', { href: image, x: width - 185, y: height - 70, width: 165, height: 55 }));
     return root;
   }
   async function exportarImagen(extension, data, vista, heatmap = false) {

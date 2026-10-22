@@ -24,7 +24,6 @@
   function ocultarResultados() {
     $('resultadosPanel').hidden = true;
     $('btnSociograma').hidden = true;
-    $('btnCalor').hidden = true;
   }
   function esCompatible(datos) {
     return datos.nombres.length >= 7 && datos.reglas.modo === 'exactos' &&
@@ -210,7 +209,6 @@
       $('resultadosPanel').hidden = false;
       const ok = guardar();
       $('btnSociograma').hidden = !ok;
-      $('btnCalor').hidden = !ok;
       if (!ok) mensaje('Resultados calculados, pero no se han podido guardar para abrir los mapas.', true);
       else mensaje('Resultados listos.');
       $('resultadosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });

@@ -53,6 +53,8 @@ const server = http.createServer((req, res) => {
     await page.goto(url + '/index.html');
     assert.equal(await page.locator('.brand-image img').count(), 1);
     assert.equal(await page.getByRole('link', { name: /Crear sociograma/ }).count(), 1);
+    assert.equal(await page.locator('.logo-intro img[src="logo-sociograma.webp"]').count(), 1);
+    assert.equal(await page.getByRole('link', { name: 'Mapa de calor' }).count(), 0);
     await page.getByRole('link', { name: /Crear sociograma/ }).click();
     await page.waitForURL('**/formulario.html');
     assert.equal(await page.locator('#importar').count(), 0);
@@ -102,11 +104,6 @@ const server = http.createServer((req, res) => {
     assert.deepEqual(S.deCSV(csv).matriz, datos.matriz);
     console.log('PASS 3: sociograma y exportaciones conservados');
 
-    await page.getByRole('link', { name: 'Mapa de calor', exact: true }).last().click();
-    await page.waitForURL('**/MapaCalor_web.html');
-    assert.equal(await page.locator('#heatmap tbody tr').count(), 7);
-    assert.equal(await page.locator('#heatmap td.positive').count(), 21);
-    await page.getByRole('link', { name: 'Volver al sociograma', exact: true }).click();
     await page.getByRole('link', { name: 'Editar respuestas', exact: true }).click();
     await page.locator('.person-pill').first().click();
     await page.selectOption('[data-sign="+"][data-slot="0"]', '');
@@ -114,7 +111,7 @@ const server = http.createServer((req, res) => {
     assert.equal((await state()).datos.matriz[0].filter(v => v === '+').length, 2);
     await page.selectOption('[data-sign="+"][data-slot="0"]', '1');
     assert.equal(await page.locator('#btnRanking').isEnabled(), true);
-    console.log('PASS 4: mapa de calor y corrección de votos sin perder los demás');
+    console.log('PASS 4: corrección de votos sin perder los demás');
 
     await clean();
     await page.fill('#grupo', 'Duplicados');
@@ -143,7 +140,7 @@ const server = http.createServer((req, res) => {
 
     const phone = await context.newPage();
     await phone.setViewportSize({ width: 390, height: 844 });
-    for (const file of ['index.html','formulario.html','sociograma_interactivo.html','MapaCalor_web.html','instrucciones.html']) {
+    for (const file of ['index.html','formulario.html','sociograma_interactivo.html','instrucciones.html']) {
       await phone.goto(url + '/' + file);
       assert.ok(await phone.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'Desbordamiento horizontal en ' + file);
       await phone.screenshot({ path: path.join(qa, 'movil-' + file.replace('.html', '') + '.png'), fullPage: true });
