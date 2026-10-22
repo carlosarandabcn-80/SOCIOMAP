@@ -69,6 +69,13 @@ const server = http.createServer((req, res) => {
     await page.check('#custom');
     const names = ['Ana', 'Beto', 'Celia', 'Dani', 'Eva', 'Fran', 'Gema'];
     await page.fill('#names', names.join('\n'));
+    const pdfCuestionarios = await download('#descargarCuestionarios', 'cuestionarios-prueba.pdf');
+    const { PDFDocument } = require('../vendor/pdf-lib.min.js');
+    const hojas = await PDFDocument.load(fs.readFileSync(pdfCuestionarios));
+    assert.equal(hojas.getPageCount(), 7, 'Debe haber una hoja de votación por participante');
+    assert.deepEqual(hojas.getPages()[0].getSize(), { width: 595.28, height: 841.89 });
+    assert.match(await page.locator('#mensaje').innerText(), /7 hojas/);
+    console.log('PASS PDF: 7 cuestionarios A4 descargados antes de registrar los votos');
     await page.click('#crearTabla');
     assert.equal(await page.locator('.vote-select').count(), 6);
     assert.equal(await page.locator('.person-pill').count(), 7);
