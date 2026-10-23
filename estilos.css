@@ -177,3 +177,10 @@ html.a11y-contrast .muted,html.a11y-contrast .hint,html.a11y-contrast .simple-si
 html.a11y-motion *:not(.accessibility-panel),html.a11y-motion *::before,html.a11y-motion *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.logo-intro{display:none!important}}
 @media(max-width:480px){.accessibility-panel{right:-4px}.brand-header .nav{gap:8px}.accessibility-trigger{min-width:46px;min-height:46px}}
+
+/* Movimiento reducido real: no mostrar SVG con animación SMIL incrustada. */
+.home-visual .static-social-visual{display:none}
+html.a11y-motion .home-visual img:not(.static-social-visual){display:none}
+html.a11y-motion .home-visual img.static-social-visual{display:block;width:70%;max-width:350px;height:auto}
+@media(prefers-reduced-motion:reduce){.home-visual img:not(.static-social-visual){display:none}.home-visual img.static-social-visual{display:block;width:70%;max-width:350px;height:auto}}
+.safe-note{margin:24px 0 0;font-size:.94rem;line-height:1.6;background:#eef5ff;border-left:3px solid var(--logo-blue);padding:14px 16px;border-radius:0 8px 8px 0;color:#183153}
