@@ -57,6 +57,7 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.getByRole('link', { name: 'Mapa de calor' }).count(), 0);
     await page.getByRole('link', { name: /Acceso a la app/ }).click();
     await page.waitForURL('**/acceso.html');
+    await page.fill('#grupo', 'Grupo inicial');
     await page.getByRole('button', { name: /Acceder a tabla sociométrica/ }).click();
     await page.waitForURL('**/formulario.html');
     assert.equal(await page.locator('#importar').count(), 0);
