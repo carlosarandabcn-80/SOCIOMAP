@@ -1,123 +1,62 @@
 'use strict';
-/* Una hoja A4 por persona. Todo se genera localmente en el navegador. */
+// Plantilla universal y reproducible: un A4, dos cuestionarios A5 apaisados.
 window.CuestionarioPDF = (() => {
-  let promise = null;
-  async function preparar() {
+  let cargar = null;
+  async function motor() {
     if (window.PDFLib && window.fontkit) return window.PDFLib;
-    if (!promise) promise = Promise.all([
-      ['PDFLib', 'vendor/pdf-lib.min.js'],
-      ['fontkit', 'vendor/fontkit.umd.min.js']
-    ].map(([nombre, url]) => new Promise((resolve, reject) => {
-      if (window[nombre]) { resolve(); return; }
-      const s = document.createElement('script');
-      s.src = url;
-      s.onload = resolve;
-      s.onerror = () => reject(new Error('No se ha podido cargar el motor PDF.'));
-      document.head.append(s);
-    }))).then(() => window.PDFLib).catch(e => { promise = null; throw e; });
-    return promise;
+    if (!cargar) cargar = Promise.all([['PDFLib','vendor/pdf-lib.min.js'],['fontkit','vendor/fontkit.umd.min.js']].map(([key,url])=>{
+      if (window[key]) return Promise.resolve();
+      return new Promise((resolve,reject)=>{ const s=document.createElement('script');s.src=url;s.onload=resolve;s.onerror=()=>reject(new Error('No se puede cargar el motor PDF.'));document.head.append(s); });
+    })).then(()=>window.PDFLib).catch(e=>{cargar=null;throw e;});
+    return cargar;
   }
-  async function descargar(config) {
-    const names = Sociometria.validarNombres(config.nombres);
-    if (!config.grupo.trim()) throw new Error('Escribe el nombre o código del grupo.');
-    if (!config.criterio.trim()) throw new Error('Escribe una pregunta de elección.');
-    if (names.length < 7 || names.length > 40) throw new Error('Se necesitan entre 7 y 40 personas.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(config.fecha)) throw new Error('Indica una fecha válida.');
-    const lib = await preparar(), doc = await lib.PDFDocument.create();
-    doc.setTitle('SOCIOMAP - Cuestionarios individuales de votación');
-    doc.setAuthor('SOCIOMAP · ARANDA TOOLS');
+  async function descargar() {
+    const lib=await motor();
+    const doc=await lib.PDFDocument.create();
+    doc.setTitle('SOCIOGRAMA - Hoja estándar de recogida de votos (2 cuestionarios por A4)');
+    doc.setAuthor('SOCIOGRAMA · ARANDA TOOLS');
     doc.registerFontkit(window.fontkit);
-    const bytes = await Promise.all(['DejaVuSans.ttf','DejaVuSans-Bold.ttf'].map(async file => {
-      const res = await fetch('vendor/' + file);
-      if (!res.ok) throw new Error('No se puede cargar la tipografía PDF.');
-      return res.arrayBuffer();
+    const [font,bold]=await Promise.all(['DejaVuSans.ttf','DejaVuSans-Bold.ttf'].map(async(n,i)=>{
+      const r=await fetch('vendor/'+n);if(!r.ok)throw new Error('Faltan las fuentes para crear el PDF.');
+      return doc.embedFont(await r.arrayBuffer(),{subset:true});
     }));
-    const normal = await doc.embedFont(bytes[0], { subset: true });
-    const bold = await doc.embedFont(bytes[1], { subset: true });
-    let logo = null;
-    try {
-      const image = new Image();
-      await new Promise((resolve, reject) => {
-        image.onload = resolve;
-        image.onerror = reject;
-        image.src = 'logo-sociograma.webp';
-      });
-      const canvas = document.createElement('canvas');
-      canvas.width = 540;
-      canvas.height = Math.round(canvas.width * image.naturalHeight / image.naturalWidth);
-      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-      logo = await doc.embedPng(canvas.toDataURL('image/png'));
-    } catch {
-      // El formulario sigue siendo imprimible si no se puede incrustar la imagen.
-    }
-    const allowed = new Set(normal.getCharacterSet());
-    const clean = value => [...String(value).replace(/\s+/g,' ').trim()]
-      .map(c => allowed.has(c.codePointAt(0)) ? c : '?').join('');
-    const shorten = (value, font, size, max) => {
-      let s = clean(value);
-      if (font.widthOfTextAtSize(s,size) <= max) return s;
-      while (s.length && font.widthOfTextAtSize(s + '…',size) > max) s=s.slice(0,-1);
-      return s+'…';
-    };
-    const ink=lib.rgb(.08,.16,.28), mute=lib.rgb(.35,.43,.52),
-      rule=lib.rgb(.81,.86,.91), blue=lib.rgb(.05,.37,.83), orange=lib.rgb(.67,.32,.19);
-    const x=42, right=553, width=511;
-    function write(page, value, left, y, font=normal, size=10, color=ink, max=width) {
-      page.drawText(shorten(value,font,size,max),{x:left,y,font,size,color});
-    }
-    function section(page,title,subtitle,y,color,sign) {
-      page.drawCircle({x:54,y:y+4,size:12,color});
-      write(page,sign,sign==='+'?48:50,y-1,bold,14,lib.rgb(1,1,1),24);
-      write(page,title,76,y+6,bold,12);
-      write(page,subtitle,76,y-10,normal,9,mute);
-      for (let k=0;k<3;k++){
-        const yy=y-39-k*27;
-        write(page,(k+1)+'.',54,yy+4,bold,10);
-        page.drawLine({start:{x:82,y:yy},end:{x:right,y:yy},color:rule});
+    const page=doc.addPage([595.28,841.89]);
+    const ink=lib.rgb(.055,.105,.19),slate=lib.rgb(.27,.34,.44),blue=lib.rgb(.015,.38,.98),soft=lib.rgb(.90,.94,.98),white=lib.rgb(1,1,1);
+    const line=(x1,y1,x2,y2,color=soft,w=1)=>page.drawLine({start:{x:x1,y:y1},end:{x:x2,y:y2},color,thickness:w});
+    const text=(s,x,y,size=10,f=font,color=ink)=>page.drawText(s,{x,y,font:f,size,color});
+    function half(top) {
+      const y=v=>top-v; // Distancias en puntos desde el borde superior de cada mitad.
+      page.drawRectangle({x:29,y:y(58),width:6,height:34,color:blue});
+      text('SOCIOGRAMA',47,y(33),17,bold);
+      text('HOJA DE ELECCIONES',47,y(49),8,bold,slate);
+      text('Grupo:',35,y(81),10,bold);line(79,y(84),290,y(84));
+      text('Fecha:',319,y(81),10,bold);line(355,y(84),555,y(84));
+      text('Mi nombre o código:',35,y(111),10,bold);line(150,y(114),555,y(114));
+      text('Elige 3 personas en cada bloque. No te elijas ni repitas personas.',35,y(137),9,font,slate);
+      page.drawRectangle({x:32,y:y(167),width:255,height:18,color:soft});
+      page.drawRectangle({x:306,y:y(167),width:255,height:18,color:soft});
+      text('+  3 ELECCIONES POSITIVAS',41,y(154),10,bold,blue);
+      text('−  3 ELECCIONES NEGATIVAS',315,y(154),10,bold,ink);
+      text('Con quién prefiero realizar una actividad',35,y(183),8,font,slate);
+      text('Con quién prefiero menos realizarla',309,y(183),8,font,slate);
+      for(let i=0;i<3;i++) {
+        const yy=y(218+i*34);
+        text(String(i+1)+'.',40,yy,10,bold);line(59,yy-3,279,yy-3,slate,.7);
+        text(String(i+1)+'.',314,yy,10,bold);line(333,yy-3,552,yy-3,slate,.7);
       }
+      text('Pregunta o actividad:',35,y(338),9,bold);
+      line(137,y(341),555,y(341));
+      text('Responde de forma individual. Tus elecciones se tratarán de forma confidencial.',35,y(366),8,font,slate);
+      text('La participación es voluntaria. Entrega esta mitad a la persona responsable.',35,y(385),8,font,slate);
     }
-    const custom=names.some((v,i)=>v!=='P'+(i+1));
-    for(let i=0;i<names.length;i++){
-      const page=doc.addPage([595.28,841.89]);
-      if (logo) page.drawImage(logo,{x,y:782,width:178,height:178*logo.height/logo.width});
-      else write(page,'SOCIOGRAMA',x,801,bold,20,ink,295);
-      write(page,'CUESTIONARIO / HOJA '+(i+1)+' DE '+names.length,341,806,bold,8,mute,211);
-      page.drawLine({start:{x,y:775},end:{x:right,y:775},color:rule});
-      write(page,'Elecciones del grupo',x,745,bold,20);
-      write(page,'Grupo: '+config.grupo,x,718,normal,10,ink,410);
-      write(page,'Fecha: '+config.fecha.split('-').reverse().join('/'),x,699,normal,10);
-      write(page,'Responde: P'+(i+1)+(custom?' · '+names[i]:''),213,699,bold,10,ink,337);
-      write(page,'PREGUNTA',x,676,bold,9,mute);
-      const q=clean(config.criterio), words=q.split(' ');
-      let lines=[],line='';
-      for(const word of words){
-        const next=line?line+' '+word:word;
-        if(normal.widthOfTextAtSize(next,10)>width && line){lines.push(line);line=word;}
-        else line=next;
-      }
-      if(line) lines.push(line);
-      lines.slice(0,4).forEach((part,k)=>write(page,part,x,662-14*k,normal,10));
-      page.drawRectangle({x,y:581,width,height:30,color:lib.rgb(.94,.96,.99)});
-      write(page,'Elige 3 personas en cada bloque, sin repetirte ni incluirte.',x+10,591,normal,9);
-      section(page,'3 elecciones positivas','Con quienes prefieres hacer la actividad.',553,blue,'+');
-      section(page,'3 elecciones negativas','Con quienes prefieres menos hacer la actividad.',426,orange,'-');
-      write(page,'LISTA DE PERSONAS (NO TE INCLUYAS)',x,302,bold,9,mute);
-      page.drawLine({start:{x,y:295},end:{x:right,y:295},color:rule});
-      const candidates=names.map((name,k)=>({name,k})).filter(v=>v.k!==i);
-      const half=Math.ceil(candidates.length/2);
-      candidates.forEach(({name,k},j)=>{
-        const col=Math.floor(j/half), row=j%half;
-        write(page,'P'+(k+1)+(custom?'  '+name:''),x+col*260,280-row*10.8,normal,8,ink,243);
-      });
-      page.drawLine({start:{x,y:53},end:{x:right,y:53},color:rule});
-      write(page,'Entrega esta hoja a la persona responsable. Las elecciones describen esta actividad, no a las personas.',x,37,normal,7.2,mute);
-      write(page,'Participación voluntaria. Custodia las respuestas de forma confidencial.',x,24,normal,7.2,mute);
-    }
-    const pdf=await doc.save();
-    const slug=config.grupo.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-      .replace(/[^a-zA-Z0-9_-]+/g,'-').slice(0,35)||'grupo';
-    UI.descargar(pdf,'sociomap-cuestionarios-'+slug+'-'+config.fecha+'.pdf','application/pdf');
-    return names.length;
+    half(841.89);half(420.945);
+    const cy=420.945;
+    // Corte justo en mitad del A4: trazos y dos guías de tijera no invasivas.
+    for(let x=20;x<576;x+=13)line(x,cy,Math.min(x+7,576),cy,slate,.65);
+    text('✂',4,cy+3,11,font,slate);
+    text('✂',577,cy+3,11,font,slate);
+    UI.descargar(await doc.save(),'sociograma-hoja-votaciones-2-por-a4.pdf','application/pdf');
+    return 1; // Un único folio con dos mitades reutilizables.
   }
-  return { descargar };
+  return {descargar};
 })();
