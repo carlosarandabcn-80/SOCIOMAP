@@ -214,3 +214,14 @@ html.a11y-motion .home-visual img.static-social-visual{display:block;width:70%;m
 @media(max-width:820px){.simple-site .onboarding-steps{grid-template-columns:1fr;gap:14px}.simple-site .onboarding-steps .onboarding-step{padding:24px}.simple-site .onboarding-steps .onboarding-number{margin-bottom:15px}.simple-site .onboarding-steps .onboarding-step .btn-step-pdf{margin-top:20px;align-self:flex-start}}
 @media(max-width:440px){.simple-site .onboarding-steps .onboarding-step h2{font-size:1.4rem}.simple-site .onboarding-steps .onboarding-step p{font-size:1rem}.simple-site .onboarding-steps .onboarding-step .btn-step-pdf{width:100%}}
 @media(prefers-reduced-motion:reduce){.simple-site .onboarding-steps .onboarding-step{transition:none}}
+
+/* Unificación definitiva: los tres números usan exactamente el mismo aspecto. */
+.simple-site .onboarding-steps .onboarding-step .onboarding-number,
+.simple-site .onboarding-steps .onboarding-step:nth-child(2) .onboarding-number{
+display:flex;align-items:center;justify-content:center;flex:none;
+width:82px;height:82px;padding:0;margin:0 0 23px;
+border-radius:23px;background:#0665ff;color:#fff;
+font-size:2.5rem;font-weight:800;line-height:1;letter-spacing:-.065em;
+font-variant-numeric:tabular-nums;
+}
+@media(max-width:820px){.simple-site .onboarding-steps .onboarding-step .onboarding-number{width:76px;height:76px;border-radius:21px;font-size:2.3rem}}
