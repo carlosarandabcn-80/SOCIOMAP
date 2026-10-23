@@ -58,6 +58,9 @@ const server = http.createServer((req, res) => {
     await page.getByRole('link', { name: /Acceso a la app/ }).click();
     await page.waitForURL('**/acceso.html');
     await page.fill('#grupo', 'Grupo inicial');
+    const pdfPrevio=await download('#descargarPDF', 'cuestionarios-acceso.pdf');
+    const { PDFDocument: PdfAcceso }=require('../vendor/pdf-lib.min.js');
+    assert.equal((await PdfAcceso.load(fs.readFileSync(pdfPrevio))).getPageCount(),7);
     await page.getByRole('button', { name: /Acceder a tabla sociométrica/ }).click();
     await page.waitForURL('**/formulario.html');
     assert.equal(await page.locator('#importar').count(), 0);
