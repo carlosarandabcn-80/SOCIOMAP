@@ -141,3 +141,39 @@ body.simple-site{--text:var(--logo-navy);--accent:var(--logo-blue);--line:var(--
 .simple-site .progress-track span{background:var(--logo-blue)}
 .onboarding-steps .btn-step-pdf{margin-top:16px;padding:10px 13px;font-size:12px;background:var(--logo-pale);border-color:#bad3ff;color:#114895}
 .onboarding-steps .btn-step-pdf:hover{background:#dceaff;color:#0c3b81}
+
+/* Auditoría UX: semántica, legibilidad y ajustes accesibles sin servicios externos. */
+:root{--a11y-scale:1;--ui-focus:#ffcf49}
+html{font-size:calc(16px * var(--a11y-scale));scroll-behavior:smooth}
+body{font-size:1rem;line-height:1.65}
+body.simple-site{font-size:1rem}
+p,.hint,.simple-site .hint,.simple-site .home-steps p,.onboarding-steps p{font-size:1rem;line-height:1.65}
+.simple-site .simple-heading p,.simple-site .onboarding>.muted{font-size:1.12rem}
+.field label,.simple-site .field label,.field legend,.simple-site .choice-group legend{font-size:1rem}
+.simple-site .vote-field,.simple-site .person-state,.simple-site .simple-note{font-size:.9rem}
+.btn,.simple-site .btn,.simple-site .btn-step-pdf{font-size:.98rem;min-height:44px}
+.simple-site .eyebrow{font-size:.82rem}
+.simple-site h1{font-size:clamp(2.1rem,4vw,3.45rem)}
+.simple-site h2,.simple-site .section-head h2{font-size:1.4rem}
+.simple-site .home-steps h2,.simple-site .onboarding-steps h2{font-size:1.25rem}
+.brand-header .nav{flex-wrap:nowrap;justify-content:space-between}
+.brand-header .nav-links{display:none!important}
+.accessibility-controls{position:relative;margin-left:auto;z-index:50}
+.accessibility-trigger{min-height:48px;min-width:48px;display:flex;align-items:center;justify-content:center;border:1px solid var(--logo-border,#cbd8ed);border-radius:14px;background:#fff;color:#133d7b;cursor:pointer}
+.accessibility-trigger:hover,.accessibility-trigger[aria-expanded="true"]{background:#e9f2ff;border-color:#1860cc}
+.accessibility-panel{position:absolute;right:0;top:calc(100% + 12px);z-index:200;width:min(330px,calc(100vw - 30px));background:white;color:#0d1d35;border:1px solid #bdcbe0;border-radius:18px;box-shadow:0 18px 48px #001c3f26;padding:20px;display:flex;flex-direction:column;gap:8px}
+.accessibility-panel[hidden]{display:none!important}
+.accessibility-panel h2{font-size:1.25rem;margin:0}
+.accessibility-panel p{font-size:.92rem;margin:0 0 8px;color:#3e5068}
+.accessibility-panel button,.accessibility-panel a{border:1px solid #cbd7e6;border-radius:9px;padding:11px 13px;text-align:left;background:#f7faff;color:#143a76;font-size:1rem;text-decoration:none;line-height:1.45}
+.accessibility-panel button:hover,.accessibility-panel a:hover{background:#e8f1ff}
+:focus-visible{outline:3px solid var(--ui-focus)!important;outline-offset:3px!important}
+html.a11y-large{--a11y-scale:1.16}
+html.a11y-contrast{--ui-focus:#ffdd00}
+html.a11y-contrast body,html.a11y-contrast body.simple-site{--bg:#fff;--panel:#fff;--text:#000;--muted:#1b2638;--line:#263849;--accent:#0035a8;background:#fff;color:#000}
+html.a11y-contrast .panel,html.a11y-contrast .onboarding-steps article{border:2px solid #000}
+html.a11y-contrast .btn.primary{background:#0035a8!important;border-color:#0035a8!important;color:#fff!important}
+html.a11y-contrast .muted,html.a11y-contrast .hint,html.a11y-contrast .simple-site .muted{color:#1b2638}
+html.a11y-motion *:not(.accessibility-panel),html.a11y-motion *::before,html.a11y-motion *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.logo-intro{display:none!important}}
+@media(max-width:480px){.accessibility-panel{right:-4px}.brand-header .nav{gap:8px}.accessibility-trigger{min-width:46px;min-height:46px}}

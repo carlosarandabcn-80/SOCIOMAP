@@ -51,6 +51,19 @@ const server = http.createServer((req, res) => {
   }
   try {
     await page.goto(url + '/index.html');
+    assert.equal(await page.locator('.nav-links:visible').count(),0);
+    await page.click('#abrirAccesibilidad');
+    assert.equal(await page.locator('#panelAccesibilidad').isVisible(),true);
+    await page.click('#tamanoTexto');
+    assert.equal(await page.locator('html.a11y-large').count(),1);
+    await page.click('#altoContraste');
+    assert.equal(await page.locator('html.a11y-contrast').count(),1);
+    await page.click('#reducirMovimiento');
+    assert.equal(await page.locator('html.a11y-motion').count(),1);
+    await page.click('#restablecerAccesibilidad');
+    assert.equal(await page.locator('html.a11y-large').count(),0);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#panelAccesibilidad').isVisible(),false);
     assert.equal(await page.locator('.brand-image img').count(), 1);
     assert.equal(await page.getByRole('link', { name: /Acceso a la app/ }).count(), 1);
     assert.equal(await page.locator('.logo-intro img[src="logo-sociograma.webp"]').count(), 1);
