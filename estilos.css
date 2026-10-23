@@ -112,3 +112,20 @@ body.simple-site{--bg:#f7f9fc;--panel:#ffffff;--line:#dde5ee;--text:#19283a;--mu
 @keyframes logoIntroLine{from{opacity:0;transform:scaleX(.25)}to{opacity:1;transform:scaleX(1)}}
 @media(max-width:600px){.brand-header .nav{padding:10px 16px}.brand-header .brand-image img,.simple-site .brand-header .brand-image img{width:190px;max-height:62px}.brand-header .nav-links{gap:12px}.brand-header .nav-links a{font-size:13px}.logo-intro-inner{gap:12px}}
 @media(prefers-reduced-motion:reduce){.logo-intro{display:none!important}}
+
+/* Itinerario de tres pasos */
+.simple-site .onboarding{max-width:1080px;padding-top:58px}
+.onboarding>h1{max-width:800px}
+.onboarding>.muted{font-size:18px;margin-bottom:32px}
+.onboarding-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:28px 0 34px}
+.onboarding-steps article{background:white;border:1px solid #dfe7f1;border-radius:18px;padding:25px}
+.onboarding-steps b{font-size:13px;color:#2360c4}
+.onboarding-steps h2{font-size:21px;margin:17px 0 9px}
+.onboarding-steps p{color:#56667a;font-size:14px;margin:0}
+.onboarding-panel{max-width:1010px}
+.onboarding-panel h2{margin-bottom:20px}
+.onboarding-actions{margin-top:27px;margin-bottom:4px}
+.home-visual{padding:0!important;overflow:hidden;aspect-ratio:9/6.4;background:#eff6ff!important}
+.home-visual img{display:block;width:100%;height:100%;object-fit:contain}
+@media(max-width:760px){.onboarding-steps{grid-template-columns:1fr}.onboarding-steps article{padding:20px}.onboarding-steps h2{margin:5px 0}.onboarding-actions .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.home-visual img{animation:none}}

@@ -266,4 +266,24 @@
   window.addEventListener('pageshow', e => { if (e.persisted) { ocultarResultados(); recuperar(); } });
   window.addEventListener('storage', e => { if ([S.STORAGE_KEY, null].includes(e.key)) location.reload(); });
   recuperar();
+  try{
+    const raw=sessionStorage.getItem('sociomap.config.pendiente');
+    if(raw){
+      sessionStorage.removeItem('sociomap.config.pendiente');
+      const cfg=JSON.parse(raw);
+      if(!proyecto || !proyecto.datos.respondidas.some(Boolean)){
+        $('grupo').value=cfg.grupo;
+        $('num').value=String(cfg.nombres.length);
+        $('fecha').value=cfg.fecha;
+        $('criterio').value=cfg.criterio;
+        const custom=cfg.nombres.some((name,i)=>name!=='P'+(i+1));
+        $('custom').checked=custom;
+        $('namesBox').hidden=!custom;
+        if(custom){$('names').value=cfg.nombres.join('\n');$('custom').closest('details').open=true;}
+        crearGrupo();
+      } else {
+        UI.mensaje('Ya hay respuestas guardadas. Para crear otro grupo, revisa los datos antes de pulsar «Crear grupo».');
+      }
+    }
+  }catch(e){UI.mensaje('No se pudo trasladar la configuración: '+e.message,true);}
 })();
