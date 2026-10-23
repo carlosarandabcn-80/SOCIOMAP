@@ -57,10 +57,13 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.getByRole('link', { name: 'Mapa de calor' }).count(), 0);
     await page.getByRole('link', { name: /Acceso a la app/ }).click();
     await page.waitForURL('**/acceso.html');
+    const pdfDirecto=await download('#descargarPaso2','pdf-universal.pdf');
+    const { PDFDocument: PdfUniversal }=require('../vendor/pdf-lib.min.js');
+    assert.equal((await PdfUniversal.load(fs.readFileSync(pdfDirecto))).getPageCount(),1);
     await page.fill('#grupo', 'Grupo inicial');
     const pdfPrevio=await download('#descargarPDF', 'cuestionarios-acceso.pdf');
     const { PDFDocument: PdfAcceso }=require('../vendor/pdf-lib.min.js');
-    assert.equal((await PdfAcceso.load(fs.readFileSync(pdfPrevio))).getPageCount(),7);
+    assert.equal((await PdfAcceso.load(fs.readFileSync(pdfPrevio))).getPageCount(),1);
     await page.getByRole('button', { name: /Acceder a tabla sociométrica/ }).click();
     await page.waitForURL('**/formulario.html');
     assert.equal(await page.locator('#importar').count(), 0);
@@ -78,10 +81,10 @@ const server = http.createServer((req, res) => {
     const pdfCuestionarios = await download('#descargarCuestionarios', 'cuestionarios-prueba.pdf');
     const { PDFDocument } = require('../vendor/pdf-lib.min.js');
     const hojas = await PDFDocument.load(fs.readFileSync(pdfCuestionarios));
-    assert.equal(hojas.getPageCount(), 7, 'Debe haber una hoja de votación por participante');
+    assert.equal(hojas.getPageCount(), 1, 'Plantilla universal en una hoja A4');
     assert.deepEqual(hojas.getPages()[0].getSize(), { width: 595.28, height: 841.89 });
-    assert.match(await page.locator('#mensaje').innerText(), /7 hojas/);
-    console.log('PASS PDF: 7 cuestionarios A4 descargados antes de registrar los votos');
+    assert.match(await page.locator('#mensaje').innerText(), /dos papeletas/);
+    console.log('PASS PDF: una hoja A4 universal para dos personas');
     await page.click('#crearTabla');
     assert.equal(await page.locator('.vote-select').count(), 6);
     assert.equal(await page.locator('.person-pill').count(), 7);

@@ -234,16 +234,15 @@
   $('descargarCuestionarios').addEventListener('click', async () => {
     const boton = $('descargarCuestionarios');
     try {
-      const config = leerConfig();
       boton.disabled = true;
       boton.textContent = 'Preparando PDF…';
-      const hojas = await CuestionarioPDF.descargar(config);
-      mensaje('PDF descargado: ' + hojas + ' hojas (una por persona). Reparte y recoge las respuestas antes de registrarlas.');
+      await CuestionarioPDF.descargar();
+      mensaje('PDF descargado: un A4 con dos papeletas independientes y línea de corte.');
     } catch (e) {
       mensaje('No se ha podido crear el cuestionario: ' + e.message, true);
     } finally {
       boton.disabled = false;
-      boton.textContent = 'Descargar hojas de votación (PDF)';
+      boton.textContent = 'Descargar plantilla PDF (2 por A4)';
     }
   });
   $('crearTabla').addEventListener('click', crearGrupo);

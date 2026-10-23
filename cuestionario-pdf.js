@@ -53,8 +53,8 @@ window.CuestionarioPDF = (() => {
     const cy=420.945;
     // Corte justo en mitad del A4: trazos y dos guías de tijera no invasivas.
     for(let x=20;x<576;x+=13)line(x,cy,Math.min(x+7,576),cy,slate,.65);
-    text('✂',4,cy+3,11,font,slate);
-    text('✂',577,cy+3,11,font,slate);
+    text('>',7,cy+3,9,bold,slate);
+    text('<',581,cy+3,9,bold,slate);
     UI.descargar(await doc.save(),'sociograma-hoja-votaciones-2-por-a4.pdf','application/pdf');
     return 1; // Un único folio con dos mitades reutilizables.
   }

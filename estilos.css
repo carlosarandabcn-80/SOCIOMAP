@@ -129,3 +129,15 @@ body.simple-site{--bg:#f7f9fc;--panel:#ffffff;--line:#dde5ee;--text:#19283a;--mu
 .home-visual img{display:block;width:100%;height:100%;object-fit:contain}
 @media(max-width:760px){.onboarding-steps{grid-template-columns:1fr}.onboarding-steps article{padding:20px}.onboarding-steps h2{margin:5px 0}.onboarding-actions .btn{width:100%}}
 @media(prefers-reduced-motion:reduce){.home-visual img{animation:none}}
+
+/* Identidad cromática derivada del logotipo: tinta azul noche, azul eléctrico, blanco. */
+:root{--logo-navy:#081b33;--logo-blue:#0665ff;--logo-white:#fff;--logo-pale:#eef5ff;--logo-border:#d8e5f7;--pos:#0665ff;--accent:#0665ff;--radius:14px}
+body.simple-site{--text:var(--logo-navy);--accent:var(--logo-blue);--line:var(--logo-border);--panel:var(--logo-white);--bg:#f6f9ff}
+.simple-site .btn.primary{background:var(--logo-blue);border-color:var(--logo-blue);color:white}
+.simple-site .btn.primary:hover{background:#004ac2;color:white}
+.simple-site .step,.simple-site .person-pill.active{background:var(--logo-blue);color:white}
+.simple-site .eyebrow,.simple-site .onboarding-steps b{color:#1457bc}
+.simple-site .panel,.simple-site .onboarding-steps article{border-color:var(--logo-border)}
+.simple-site .progress-track span{background:var(--logo-blue)}
+.onboarding-steps .btn-step-pdf{margin-top:16px;padding:10px 13px;font-size:12px;background:var(--logo-pale);border-color:#bad3ff;color:#114895}
+.onboarding-steps .btn-step-pdf:hover{background:#dceaff;color:#0c3b81}

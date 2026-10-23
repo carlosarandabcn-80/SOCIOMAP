@@ -26,11 +26,15 @@
   return {grupo:$('grupo').value.trim(),nombres,fecha:$('fecha').value,criterio:$('criterio').value.trim(),reglas:{positivos:3,negativos:3,modo:'exactos'}};
  }
  function error(e){UI.mensaje(e.message,true);}
+ async function pdfEstandar(b) { 
+  try { b.disabled=true;const original=b.textContent;b.textContent='Generando PDF…';
+   await CuestionarioPDF.descargar(); UI.mensaje('Plantilla descargada: un A4 con dos papeletas y marca de corte.');
+   b.textContent=original;
+  } catch(e) { error(e); } finally {b.disabled=false;b.textContent='Descargar plantilla PDF ↓';}
+ }
+ $('descargarPaso2').addEventListener('click',()=>pdfEstandar($('descargarPaso2')));
  $('descargarPDF').addEventListener('click',async()=>{
-  const b=$('descargarPDF');
-  try{const cfg=config();b.disabled=true;b.textContent='Preparando PDF…';
-   const paginas=await CuestionarioPDF.descargar(cfg);UI.mensaje(paginas+' hojas generadas, una por participante.');
-  }catch(e){error(e);}finally{b.disabled=false;b.textContent='Descargar PDF de votaciones ↓';}
+  await pdfEstandar($('descargarPDF'));
  });
  $('irTabla').addEventListener('click',()=>{
   try{const cfg=config();sessionStorage.setItem('sociomap.config.pendiente',JSON.stringify(cfg));
