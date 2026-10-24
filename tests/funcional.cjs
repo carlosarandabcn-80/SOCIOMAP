@@ -50,6 +50,22 @@ const server = http.createServer((req, res) => {
     return output;
   }
   try {
+    await page.goto(url + '/demo.html');
+    assert.equal(await page.locator('#grafoDemo [data-demo-node]').count(), 8);
+    assert.equal(await page.locator('#graficoRankingDemo .ranking-interactivo').count(), 8);
+    assert.equal(await page.locator('#rankingDemo tbody tr').count(), 8);
+    await page.locator('#graficoRankingDemo .ranking-interactivo').first().click();
+    assert.match(await page.locator('#detalleDemo').innerText(), /elecciones positivas/);
+    await page.locator('#grafoDemo [data-demo-node]').first().focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#grafoDemo .selected').count(), 1);
+    await page.click('#restablecerDemo');
+    assert.match(await page.locator('#detalleDemo').innerText(), /recuperadas/);
+    await page.selectOption('#filtroDemo', '+');
+    assert.equal(await page.locator('#grafoDemo line').count(), 24);
+    await page.selectOption('#filtroDemo', '-');
+    assert.equal(await page.locator('#grafoDemo line').count(), 24);
+    assert.equal(await page.locator('#descripcionDemo p').count(), 4);
     await page.goto(url + '/index.html');
     assert.equal(await page.locator('.nav-links:visible').count(),0);
     await page.click('#abrirAccesibilidad');
