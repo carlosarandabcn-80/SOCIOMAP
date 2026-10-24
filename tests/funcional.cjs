@@ -56,11 +56,15 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#rankingDemo tbody tr').count(), 8);
     await page.locator('#graficoRankingDemo .ranking-interactivo').first().click();
     assert.match(await page.locator('#detalleDemo').innerText(), /elecciones positivas/);
+    assert.equal(await page.locator('#graficoRankingDemo [aria-pressed="true"]').count(), 1);
+    await page.locator('#grafoDemo [data-demo-node="3"]').click();
+    assert.equal(await page.locator('#graficoRankingDemo [data-rank-node="3"]').getAttribute('aria-pressed'),'true');
     await page.locator('#grafoDemo [data-demo-node]').first().focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#grafoDemo .selected').count(), 1);
     await page.click('#restablecerDemo');
     assert.match(await page.locator('#detalleDemo').innerText(), /recuperadas/);
+    assert.equal(await page.locator('#graficoRankingDemo [aria-pressed="true"]').count(), 0);
     await page.selectOption('#filtroDemo', '+');
     assert.equal(await page.locator('#grafoDemo line').count(), 24);
     await page.selectOption('#filtroDemo', '-');
@@ -143,6 +147,11 @@ const server = http.createServer((req, res) => {
     await page.waitForURL('**/sociograma_interactivo.html');
     assert.equal(await page.locator('#graph .node').count(), 7);
     assert.equal(await page.locator('#graph .link').count(), 42);
+    assert.equal(await page.locator('#graficoRankingApp .ranking-interactivo').count(), 7);
+    await page.locator('#graficoRankingApp [data-rank-node="0"]').click();
+    assert.equal(await page.locator('#graficoRankingApp [data-rank-node="0"]').getAttribute('aria-pressed'),'true');
+    await page.locator('#graph [data-node="2"]').click();
+    assert.equal(await page.locator('#graficoRankingApp [data-rank-node="2"]').getAttribute('aria-pressed'),'true');
     const json = JSON.parse(fs.readFileSync(await download('#exportJSON', 'copia.json'), 'utf8'));
     assert.deepEqual(json.datos.nombres, Array.from({ length: 7 }, (_, i) => 'P' + (i + 1)));
     const csv = fs.readFileSync(await download('#exportCSV', 'matriz.csv'), 'utf8');
