@@ -249,3 +249,21 @@ html.a11y-motion .home-visual img.static-social-visual{display:block;width:70%;m
 #grafoDemo [data-demo-node]{cursor:grab;outline-offset:4px;touch-action:none}
 #grafoDemo [data-demo-node]:focus-visible circle{stroke:#081b33;stroke-width:5}
 #grafoDemo [data-demo-node].selected circle{stroke:#081b33;stroke-width:5}
+
+/* Estado seleccionado verificable: sincronización grafo↔ranking */
+.ranking-interactivo.seleccionado,
+.ranking-interactivo[aria-pressed="true"]{border:2px solid #075be6;background:#eaf3ff;box-shadow:inset 4px 0 #075be6}
+.ranking-interactivo[aria-pressed="true"] .ranking-persona{font-weight:800;color:#073f91}
+.ranking-interactivo:focus-visible{outline:3px solid #ffcf49;outline-offset:2px}
+@media(max-width:460px){.ranking-interactivo{grid-template-columns:46px minmax(0,1fr);gap:8px;padding:8px}.ranking-bar{font-size:.78rem}}
+
+/* Representación proporcional no engañosa: un valor cero ocupa anchura cero. */
+.ranking-fila{display:grid;grid-template-columns:minmax(0,1fr) 42px;align-items:center;gap:10px;min-height:15px}
+.ranking-pista{display:block;height:13px;width:100%;overflow:hidden;background:#eaf1fa;border-radius:5px}
+.ranking-relleno{display:block;height:100%;min-width:0;border-radius:5px}
+.ranking-relleno.positiva{background:#0965f5}
+.ranking-relleno.negativa{background:#ab5a23}
+.ranking-cantidad{text-align:right;font-size:.85rem;font-weight:750;font-variant-numeric:tabular-nums;color:#122b47}
+html.a11y-contrast .ranking-pista{border:1px solid #000;background:#fff}
+html.a11y-contrast .ranking-relleno.positiva{background:#002978}
+html.a11y-contrast .ranking-relleno.negativa{background:#9c4000}

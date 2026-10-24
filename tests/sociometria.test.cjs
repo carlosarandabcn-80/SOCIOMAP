@@ -130,3 +130,17 @@ test('valida posiciones, descarta identificadores ajenos y limita coordenadas', 
   const d = graph(3), v = S.validarVista({ seudonimos: false, filtro: 'invalido', disposicion: 'x', posiciones: { p0: { x: -1, y: 9999, fija: true }, p1: { x: NaN, y: 2 }, externo: { x: 30, y: 40 } } }, d);
   assert.equal(v.seudonimos, false); assert.equal(v.filtro, 'todos'); assert.deepEqual(v.posiciones.p0, { x: 65, y: 625, fija: true }); assert.equal(Object.keys(v.posiciones).length, 1);
 });
+
+test('demo pública comparte reglas 3+3 y produce resultados reproducibles', () => {
+  const d = S.demoPublica(), r = S.calcular(d);
+  assert.equal(d.nombres.length, 8);
+  assert.equal(d.reglas.modo, 'exactos');
+  assert.equal(d.reglas.positivos, 3);
+  assert.equal(d.reglas.negativos, 3);
+  assert.equal(r.metricas.totalPos, 24);
+  assert.equal(r.metricas.totalNeg, 24);
+  assert.ok(r.nodes.some((n, i, arr) => n.recPos !== arr[0].recPos),
+    'la demo debe ofrecer contrastes descriptivos, no puntuaciones idénticas');
+  assert.ok(d.matriz.every((row, i) => row[i] === '0' &&
+    row.filter(v => v === '+').length === 3 && row.filter(v => v === '-').length === 3));
+});

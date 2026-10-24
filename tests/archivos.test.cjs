@@ -2,8 +2,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
-const pages = ['index.html', 'acceso.html', 'formulario.html', 'sociograma_interactivo.html', 'instrucciones.html'];
-test('las cinco páginas tienen idioma, viewport, CSP y vínculos locales existentes', () => {
+const pages = ['index.html', 'acceso.html', 'formulario.html', 'sociograma_interactivo.html', 'instrucciones.html', 'demo.html'];
+test('las seis páginas tienen idioma, viewport, CSP y vínculos locales existentes', () => {
   for (const page of pages) {
     const source = fs.readFileSync(path.join(root, page), 'utf8');
     assert.match(source, /lang="es"/); assert.match(source, /name="viewport"/); assert.match(source, /Content-Security-Policy/);
@@ -22,4 +22,13 @@ test('el código propio no usa sumideros HTML ni dependencias de CDN', () => {
     assert.ok(!/\.innerHTML\s*=|\.outerHTML\s*=|insertAdjacentHTML|document\.write\s*\(|\beval\s*\(/.test(source), file + ': sumidero HTML');
     execFileSync(process.execPath, ['--check', path.join(root, file)]);
   }
+});
+
+test('archivo de demo coincide con el motor público 3+3', () => {
+  const S = require('../sociometria.js');
+  const archivo = JSON.parse(fs.readFileSync(path.join(root, 'demo.json'), 'utf8'));
+  const esperado = S.demoPublica();
+  assert.deepEqual(S.calcular(archivo.datos).nodes.map(n => [n.recPos,n.recNeg]),
+    S.calcular(esperado).nodes.map(n => [n.recPos,n.recNeg]));
+  assert.deepEqual(archivo.datos.matriz, esperado.matriz);
 });

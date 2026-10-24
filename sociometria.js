@@ -226,7 +226,24 @@
       reglas: { positivos: 2, negativos: 1, modo: 'maximos' }, respondidas: Array(n).fill(true),
       matriz: Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? '0' : ((i < 4) === (j < 4) && ((j % 4 === (i + 1) % 4) || (j % 4 === (i + 3) % 4))) ? '+' : j === (i + 4) % n ? '-' : '0')) };
   }
+  // Caso público ficticio 3+3, compartido por todas las interfaces de demostración.
+  function demoPublica() {
+    const n = 8, positivos = [[1,2,3],[0,2,3],[0,1,3],[0,1,2],[0,2,5],[0,2,6],[0,2,7],[0,2,4]];
+    return validarDatos({
+      version: 2, cohorte: 'demo-publica', grupo: 'Ejemplo ficticio',
+      nombres: Array.from({ length: n }, (_, i) => 'P' + (i + 1)),
+      ids: Array.from({ length: n }, (_, i) => 'p' + (i + 1)),
+      fecha: '2026-10-24', criterio: 'Preferencias para una actividad de grupo',
+      reglas: { positivos: 3, negativos: 3, modo: 'exactos' }, respondidas: Array(n).fill(true),
+      matriz: Array.from({ length: n }, (_, i) => {
+        const negativos = Array.from({ length: n }, (_, k) => (i + k + 1) % n)
+          .filter(k => !positivos[i].includes(k) && k !== i).slice(0, 3);
+        return Array.from({ length: n }, (_, j) => i === j ? '0' :
+          positivos[i].includes(j) ? '+' : negativos.includes(j) ? '-' : '0');
+      })
+    });
+  }
   const escaparHTML = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const api = { STORAGE_KEY, MAX_FILE, normalizarNombre, validarNombres, validarDatos, calcular, comparar, validarVista, validarProyecto, seudonimizar, aCSV, deCSV, parseCSV, importar, demo, escaparHTML, intermediacion, componentes };
+  const api = { STORAGE_KEY, MAX_FILE, normalizarNombre, validarNombres, validarDatos, calcular, comparar, validarVista, validarProyecto, seudonimizar, aCSV, deCSV, parseCSV, importar, demo, demoPublica, escaparHTML, intermediacion, componentes };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sociometria = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

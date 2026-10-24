@@ -8,7 +8,7 @@ Herramienta web de análisis sociométrico descriptivo para la intervención soc
 
 - Una matriz dirigida compartida por formulario, tabla, barras, sociograma . Cálculo por destinatario, sin autovotos ni estados de resultados obsoletos.
 - Entre 2 y 40 participantes; cuotas exactas o máximas, elecciones negativas opcionales, pregunta y fecha registradas. La suma de límites no puede superar N − 1.
-- Distinción entre respuestas pendientes (`null`) y personas no elegidas (`"0"`). El análisis parcial necesita aceptación expresa en el formulario y se identifica como provisional.
+- Distinción entre respuestas pendientes (`null`) y personas no elegidas (`"0"`). El motor distingue ambas situaciones, pero el formulario actual requiere seis elecciones completas por persona para calcular resultados.
 - Elecciones positivas y negativas recibidas, entrada positiva relativa, reciprocidad por signo, densidad, intermediación dirigida positiva y componentes exploratorios de elecciones positivas recíprocas. Sin clasificación automática de personas como «líder», «rechazada» o «aislada».
 - Búsqueda, selección y detalle de conexiones; filtros por signo o positivas recíprocas; disposición automática, circular o en rejilla; arrastre, teclado, posiciones fijadas, deshacer y controles de zoom.
 - Tablas equivalentes al grafo, símbolos y trazos además del color, foco visible y tablas desplazables en pantallas pequeñas.
@@ -32,7 +32,7 @@ Abre `http://localhost:8000/`. También puede servirse desde GitHub Pages, en la
 4. Exporta una copia JSON para continuar otro día. Para otra medición, exporta primero la actual y utiliza «Nueva medición del mismo grupo»: conserva los identificadores y vacía las respuestas.
 5. Carga la copia anterior en la comparación. Se exigen mismo estudio, participantes, pregunta y reglas, ambas recogidas completas y una fecha anterior registrada.
 
-`demo.json` y `tabla.csv` contienen una demostración ficticia y pueden importarse desde el formulario. El CSV es una matriz con configuración en su primera fila y cabeceras en la segunda. Conserva ambas y utiliza la última columna, «Respuesta registrada»: 1 para una respuesta registrada y 0 para una pendiente. En una fila registrada, completa todas las celdas con +, - o 0; deja vacías las elecciones de una fila pendiente. No se admiten matrices genéricas sin reglas ni identidades. Las copias JSON incluyen también la vista y las posiciones.
+`demo.json` contiene el mismo caso ficticio 3+3 que la demostración pública; `tabla.csv` es un archivo ilustrativo antiguo que puede usar reglas diferentes. La versión simplificada del formulario no incorpora importación de archivos. El CSV es una matriz con configuración en su primera fila y cabeceras en la segunda. Conserva ambas y utiliza la última columna, «Respuesta registrada»: 1 para una respuesta registrada y 0 para una pendiente. En una fila registrada, completa todas las celdas con +, - o 0; deja vacías las elecciones de una fila pendiente. No se admiten matrices genéricas sin reglas ni identidades. Las copias JSON incluyen también la vista y las posiciones.
 
 ## Datos y privacidad
 
@@ -80,3 +80,7 @@ Se puede indicar un navegador ya instalado con `CHROMIUM_EXECUTABLE_PATH` o un c
 ## Autoría y uso
 
 © 2026 Carlos Aranda · ARANDA TOOLS. Se conserva el régimen de uso indicado originalmente: uso educativo o interno; contactar con el autor para otros usos. `pdf-lib` conserva su licencia MIT en `vendor/pdf-lib.LICENSE.md`; el README y los metadatos originales de `@pdf-lib/fontkit` identifican su licencia MIT y autoría. Las fuentes DejaVu conservan su aviso en `vendor/DejaVu-LICENSE.txt`.
+
+## Estado de la auditoría y mejoras propuestas
+
+El análisis actualizado está en `docs/AUDITORIA-INTEGRAL-2026-10-24.md`. Las modificaciones en `codex/auditoria-sociomap-20261024` son una propuesta sujeta a comprobación antes de fusionarse. La demo pública no escribe en el almacenamiento del estudio actual. SOCIOGRAMA ofrece análisis descriptivo y no realiza diagnósticos.
