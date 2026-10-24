@@ -267,3 +267,10 @@ html.a11y-motion .home-visual img.static-social-visual{display:block;width:70%;m
 html.a11y-contrast .ranking-pista{border:1px solid #000;background:#fff}
 html.a11y-contrast .ranking-relleno.positiva{background:#002978}
 html.a11y-contrast .ranking-relleno.negativa{background:#9c4000}
+
+/* WCAG 2.2 / 2.5.7: botones de un clic alternativos al arrastre. */
+.move-tools{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;border:1px solid #b4c8e3;background:#f0f6ff;border-radius:12px;padding:5px 8px}
+.move-tools .move-label{font-size:.9rem;font-weight:750;color:#14375d;margin-right:5px}
+.move-tools button.btn{min-width:44px;min-height:44px;padding:6px 10px;text-align:center;font-size:1.2rem;background:white;color:#143d7b}
+.move-tools button.btn:disabled{opacity:.45}
+html.a11y-contrast .move-tools{background:white;border:2px solid black}

@@ -58,6 +58,10 @@ const server = http.createServer((req, res) => {
     assert.match(await page.locator('#detalleDemo').innerText(), /elecciones positivas/);
     assert.equal(await page.locator('#graficoRankingDemo [aria-pressed="true"]').count(), 1);
     await page.locator('#grafoDemo [data-demo-node="3"]').click();
+    assert.equal(await page.locator('.demo-move:enabled').count(), 4);
+    const demoInitial=Number(await page.locator('#grafoDemo [data-demo-node="3"] circle').getAttribute('cx'));
+    await page.locator('[data-demo-move="right"]').click();
+    assert.equal(Number(await page.locator('#grafoDemo [data-demo-node="3"] circle').getAttribute('cx'))-demoInitial,24);
     assert.equal(await page.locator('#graficoRankingDemo [data-rank-node="3"]').getAttribute('aria-pressed'),'true');
     await page.locator('#grafoDemo [data-demo-node]').first().focus();
     await page.keyboard.press('ArrowRight');
@@ -153,6 +157,15 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#graph .node').count(), 7);
     assert.equal(await page.locator('#graph .link').count(), 42);
     assert.equal(await page.locator('#graficoRankingApp .ranking-interactivo').count(), 7);
+    assert.equal(await page.locator('.move-node:enabled').count(), 0);
+    await page.selectOption('#participante', '0');
+    assert.equal(await page.locator('.move-node:enabled').count(), 4);
+    const beforePosition=await page.locator('#graph [data-node="0"]').getAttribute('transform');
+    const originalMatrix=JSON.stringify((await state()).datos.matriz);
+    await page.locator('[data-move="right"]').click();
+    assert.notEqual(await page.locator('#graph [data-node="0"]').getAttribute('transform'),beforePosition);
+    assert.equal(JSON.stringify((await state()).datos.matriz),originalMatrix);
+
     await page.locator('#graficoRankingApp [data-rank-node="0"]').click();
     assert.equal(await page.locator('#graficoRankingApp [data-rank-node="0"]').getAttribute('aria-pressed'),'true');
     await page.locator('#graph [data-node="2"]').click();

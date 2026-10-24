@@ -62,3 +62,6 @@ El trabajo se entrega como **rama para revisión**, no como despliegue. No se de
 - Agencia Española de Protección de Datos, *Realización de evaluaciones de impacto de protección de datos*, actualización del 23 de abril de 2025: https://www.aepd.es/derechos-y-deberes/cumple-tus-deberes/medidas-de-cumplimiento/realizacion-de-evaluaciones-de .
 - AEPD, *¿Qué debe incluir una EIPD?*: https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/10-evaluacion-de-impacto/FAQ-0229-que-debe-incluir-una-evaluacion-de-impacto-de-proteccion-de-datos .
 La obligación de EIPD depende del riesgo y del contexto concreto del tratamiento; no se declara automática para todo uso de SOCIOMAP.
+
+## Seguimiento accesibilidad: WCAG 2.2, 2.5.7
+Se ha detectado una carencia específica: mover nodos mediante teclado y arrastre no cubría las necesidades de personas con un dispositivo apuntador que no pueden arrastrar. Se incorporan cuatro botones de dirección para cada participante seleccionado, operables por clic o toque (además de teclado), en demo y aplicación. Los botones se desactivan sin selección y, en la app, con posiciones fijadas. Se prueba que mover con un clic no altera las votaciones. Referencia W3C: https://www.w3.org/WAI/WCAG22/quickref/#dragging-movements. Esta corrección concreta no certifica conformidad WCAG AA global.
