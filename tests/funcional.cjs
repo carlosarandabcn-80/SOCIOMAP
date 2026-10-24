@@ -62,6 +62,11 @@ const server = http.createServer((req, res) => {
     await page.locator('#grafoDemo [data-demo-node]').first().focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#grafoDemo .selected').count(), 1);
+    const boxAnterior=await page.locator('#grafoDemo').getAttribute('viewBox');
+    await page.click('#demoZoomMas');
+    assert.notEqual(await page.locator('#grafoDemo').getAttribute('viewBox'),boxAnterior);
+    await page.click('#demoZoomAjustar');
+    assert.equal(await page.locator('#grafoDemo').getAttribute('viewBox'),'0 0 810 660');
     await page.click('#restablecerDemo');
     assert.match(await page.locator('#detalleDemo').innerText(), /recuperadas/);
     assert.equal(await page.locator('#graficoRankingDemo [aria-pressed="true"]').count(), 0);
