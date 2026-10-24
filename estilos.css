@@ -249,3 +249,10 @@ html.a11y-motion .home-visual img.static-social-visual{display:block;width:70%;m
 #grafoDemo [data-demo-node]{cursor:grab;outline-offset:4px;touch-action:none}
 #grafoDemo [data-demo-node]:focus-visible circle{stroke:#081b33;stroke-width:5}
 #grafoDemo [data-demo-node].selected circle{stroke:#081b33;stroke-width:5}
+
+/* Estado seleccionado verificable: sincronización grafo↔ranking */
+.ranking-interactivo.seleccionado,
+.ranking-interactivo[aria-pressed="true"]{border:2px solid #075be6;background:#eaf3ff;box-shadow:inset 4px 0 #075be6}
+.ranking-interactivo[aria-pressed="true"] .ranking-persona{font-weight:800;color:#073f91}
+.ranking-interactivo:focus-visible{outline:3px solid #ffcf49;outline-offset:2px}
+@media(max-width:460px){.ranking-interactivo{grid-template-columns:46px minmax(0,1fr);gap:8px;padding:8px}.ranking-bar{font-size:.78rem}}
