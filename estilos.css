@@ -233,3 +233,19 @@ html.a11y-motion .home-visual img.static-social-visual{display:block;width:70%;m
 .simple-site .demo-metrics strong{display:block;color:#074cbd;font-size:2rem}
 .simple-site .demo-metrics span{display:block;font-size:.91rem;color:#405674}
 @media(max-width:750px){.simple-site .demo-top{align-items:stretch;flex-direction:column}.simple-site .demo-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Resultados accesibles e interactivos compartidos por demo y aplicación. */
+.ranking-grafico{display:grid;gap:9px;margin:20px 0 30px}
+.ranking-interactivo{display:grid;grid-template-columns:62px minmax(0,1fr);gap:14px;align-items:center;min-height:56px;width:100%;border:1px solid #e2eaf5;background:#fff;border-radius:12px;padding:9px 14px;text-align:left;color:#081b33}
+.ranking-interactivo:hover,.ranking-interactivo:focus-visible{border-color:#0665ff;background:#f1f7ff}
+.ranking-persona{font-weight:750;font-size:1rem}
+.ranking-barras{display:grid;gap:5px;min-width:0}
+.ranking-bar{display:block;min-width:43px;max-width:100%;padding:1px 8px;line-height:1.45;border-radius:6px;color:white;font-size:.85rem;font-weight:700;white-space:nowrap}
+.ranking-bar.positiva{background:#0765ed}
+.ranking-bar.negativa{background:#ab5a23}
+.descripcion-relacional{padding:18px 22px;background:#f1f6ff;border-left:4px solid #0765ed;border-radius:0 13px 13px 0;margin:18px 0 26px;color:#142941}
+.descripcion-relacional p{margin:0 0 12px;line-height:1.65}
+.descripcion-relacional p:last-child{margin-bottom:0}
+#grafoDemo [data-demo-node]{cursor:grab;outline-offset:4px;touch-action:none}
+#grafoDemo [data-demo-node]:focus-visible circle{stroke:#081b33;stroke-width:5}
+#grafoDemo [data-demo-node].selected circle{stroke:#081b33;stroke-width:5}

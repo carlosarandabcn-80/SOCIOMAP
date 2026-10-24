@@ -40,6 +40,8 @@
     $('participante').replaceChildren(UI.el('option', { value: '' }, 'Todo el grupo'), ...data.nodes.map(v => UI.el('option', { value: v.id }, nombre(v.id))));
     Graficos.resumen(data, $('resumen')); Graficos.ranking(data, $('ranking'), vista.seudonimos);
     $('chart').replaceChildren(Graficos.barras(data, vista.seudonimos));
+    AnalisisRelacional.grafico($('graficoRankingApp'),data,id=>{seleccionar(id);document.getElementById('graph').scrollIntoView({behavior:'smooth',block:'center'});});
+    AnalisisRelacional.insertar($('descripcionApp'),data);
     $('relaciones').replaceChildren(UI.tabla(['Emisor', 'Destinatario', 'Elección', 'Recíproca del mismo signo'], data.links.map(l => [nombre(l.source), nombre(l.target), l.type === '+' ? 'Positiva (+)' : 'Negativa (−)', l.reciproca ? 'Sí' : 'No']), 'Relaciones dirigidas del estudio completo, sin aplicar los filtros del mapa.'));
     $('subgrupos').replaceChildren(UI.el('h3', {}, 'Conexiones exploratorias'), UI.el('p', {}, `${data.metricas.componentesPos.length} componentes en el grafo positivo (conexión débil). ${data.metricas.subgrupos.length} componentes de elecciones positivas recíprocas con al menos dos personas.`),
       ...data.metricas.subgrupos.map((group, i) => UI.el('p', { className: 'hint' }, `Componente recíproco ${i + 1}: ${group.map(nombre).join(', ')}.`)),
