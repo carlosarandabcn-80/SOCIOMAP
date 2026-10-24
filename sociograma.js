@@ -40,7 +40,8 @@
     $('participante').replaceChildren(UI.el('option', { value: '' }, 'Todo el grupo'), ...data.nodes.map(v => UI.el('option', { value: v.id }, nombre(v.id))));
     Graficos.resumen(data, $('resumen')); Graficos.ranking(data, $('ranking'), vista.seudonimos);
     $('chart').replaceChildren(Graficos.barras(data, vista.seudonimos));
-    AnalisisRelacional.grafico($('graficoRankingApp'),data,id=>{seleccionar(id);document.getElementById('graph').scrollIntoView({behavior:'smooth',block:'center'});});
+    AnalisisRelacional.grafico($('graficoRankingApp'),data,id=>{seleccionar(id);document.getElementById('graph').scrollIntoView({behavior:'smooth',block:'center'});}, n => nombre(n.id));
+    AnalisisRelacional.destacar($('graficoRankingApp'),selected);
     AnalisisRelacional.insertar($('descripcionApp'),data);
     $('relaciones').replaceChildren(UI.tabla(['Emisor', 'Destinatario', 'Elección', 'Recíproca del mismo signo'], data.links.map(l => [nombre(l.source), nombre(l.target), l.type === '+' ? 'Positiva (+)' : 'Negativa (−)', l.reciproca ? 'Sí' : 'No']), 'Relaciones dirigidas del estudio completo, sin aplicar los filtros del mapa.'));
     $('subgrupos').replaceChildren(UI.el('h3', {}, 'Conexiones exploratorias'), UI.el('p', {}, `${data.metricas.componentesPos.length} componentes en el grafo positivo (conexión débil). ${data.metricas.subgrupos.length} componentes de elecciones positivas recíprocas con al menos dos personas.`),
@@ -49,7 +50,7 @@
     $('metodologia').replaceChildren(...Graficos.metodotexto(data).map(text => UI.el('p', { className: 'hint' }, text)));
     mostrarComparacion(); detalle();
   }
-  function seleccionar(id, focus = false) { selected = id; dibujar(focus ? id : null); detalle(); }
+  function seleccionar(id, focus = false) { selected = id; dibujar(focus ? id : null); detalle(); AnalisisRelacional.destacar($('graficoRankingApp'),selected); }
   $('filtro').value = vista.filtro; $('disposicion').value = vista.disposicion; $('seudonimos').checked = vista.seudonimos; $('recordar').checked = persistente;
   $('filtro').addEventListener('change', () => { vista.filtro = $('filtro').value; dibujar(); guardar(); });
   $('disposicion').addEventListener('change', () => { remember(); vista.disposicion = $('disposicion').value; vista.posiciones = Graficos.posiciones(data, vista, true); dibujar(); guardar(); detalle(); });
