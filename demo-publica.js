@@ -28,6 +28,12 @@
    select(selected);
  }));
  function zoom(factor){const box=svg.viewBox.baseVal;const w=Math.max(270,Math.min(1400,box.width*factor));const h=w*660/810;svg.setAttribute('viewBox',[box.x+(box.width-w)/2,box.y+(box.height-h)/2,w,h].join(' '));}
+ document.querySelectorAll('.demo-pan').forEach(button=>button.addEventListener('click',()=>{
+   const box=svg.viewBox.baseVal,shift=box.width*.12;
+   const steps={left:[-shift,0],right:[shift,0],up:[0,-shift],down:[0,shift]};
+   const [dx,dy]=steps[button.dataset.demoPan]||[0,0];
+   svg.setAttribute('viewBox',[box.x+dx,box.y+dy,box.width,box.height].join(' '));
+ }));
  document.getElementById('demoZoomMas').addEventListener('click',()=>zoom(.8));
  document.getElementById('demoZoomMenos').addEventListener('click',()=>zoom(1.25));
  document.getElementById('demoZoomAjustar').addEventListener('click',()=>svg.setAttribute('viewBox','0 0 810 660'));
