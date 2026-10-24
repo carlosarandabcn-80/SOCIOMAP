@@ -25,6 +25,7 @@
   function detalle() {
     $('participante').value = selected === null ? '' : String(selected);
     $('fijar').disabled = selected === null;
+    document.querySelectorAll('.move-node').forEach(button => { button.disabled = selected === null || vista.posiciones[data.ids[selected]].fija; });
     if (selected === null) { $('detalle').hidden = true; $('seleccionInfo').textContent = 'Vista del grupo completo.'; return; }
     const node = data.nodes[selected], fixed = vista.posiciones[node.uid].fija;
     $('fijar').textContent = fixed ? 'Liberar posición' : 'Fijar posición';
@@ -72,6 +73,20 @@
     const old = history.pop(); vista.posiciones = old.posiciones; vista.disposicion = old.disposicion;
     $('disposicion').value = vista.disposicion; $('deshacer').disabled = !history.length; dibujar(); detalle(); guardar();
   });
+  // Alternativa de un solo clic al arrastre, criterio WCAG 2.5.7.
+  document.querySelectorAll('.move-node').forEach(button => button.addEventListener('click', () => {
+    if (selected === null) return;
+    const p = vista.posiciones[data.ids[selected]];
+    if (!p || p.fija) return;
+    const steps = { left: [-24, 0], right: [24, 0], up: [0, -24], down: [0, 24] };
+    const [dx, dy] = steps[button.dataset.move] || [0, 0];
+    if (!dx && !dy) return;
+    const x = Math.max(65, Math.min(1035, p.x + dx));
+    const y = Math.max(65, Math.min(625, p.y + dy));
+    if (x === p.x && y === p.y) return;
+    remember(); p.x = x; p.y = y;
+    seleccionar(selected); guardar();
+  }));
   function punto(event) { const point = graph.createSVGPoint(); point.x = event.clientX; point.y = event.clientY; return point.matrixTransform(graph.getScreenCTM().inverse()); }
   graph.addEventListener('pointerdown', event => {
     if (event.button !== 0) return;
@@ -116,6 +131,13 @@
     const box = graph.viewBox.baseVal, width = Math.max(350, Math.min(2200, box.width * factor)), height = width * Graficos.H / Graficos.W;
     graph.setAttribute('viewBox', `${box.x + (box.width - width) / 2} ${box.y + (box.height - height) / 2} ${width} ${height}`);
   }
+  // El desplazamiento del lienzo también debe ser posible con un solo clic.
+  document.querySelectorAll('.pan-view').forEach(button => button.addEventListener('click', () => {
+    const box=graph.viewBox.baseVal, shift=box.width*.12;
+    const steps={left:[-shift,0],right:[shift,0],up:[0,-shift],down:[0,shift]};
+    const [dx,dy]=steps[button.dataset.pan]||[0,0];
+    graph.setAttribute('viewBox',[box.x+dx,box.y+dy,box.width,box.height].join(' '));
+  }));
   $('acercar').addEventListener('click', () => zoom(.8)); $('alejar').addEventListener('click', () => zoom(1.25)); $('ajustar').addEventListener('click', () => graph.setAttribute('viewBox', '0 0 1100 690'));
   graph.addEventListener('wheel', e => { if (e.ctrlKey) { e.preventDefault(); zoom(e.deltaY > 0 ? 1.1 : .9); } }, { passive: false });
   $('recordar').addEventListener('change', () => { const old = persistente; persistente = $('recordar').checked; if (!guardar()) { persistente = old; $('recordar').checked = old; } });
