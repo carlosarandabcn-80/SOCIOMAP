@@ -37,10 +37,16 @@ window.AnalisisRelacional = (() => {
           ' elecciones positivas y ' + n.recNeg + ' negativas recibidas'
       }, UI.el('span', { className: 'ranking-persona' }, label),
       UI.el('span', { className: 'ranking-barras' },
-        UI.el('span', { className: 'ranking-bar positiva',
-          style: 'width:' + Math.round(100 * n.recPos / max) + '%' }, '+' + n.recPos),
-        UI.el('span', { className: 'ranking-bar negativa',
-          style: 'width:' + Math.round(100 * n.recNeg / max) + '%' }, '−' + n.recNeg)));
+        UI.el('span', { className: 'ranking-fila' },
+          UI.el('span', { className: 'ranking-pista' },
+            UI.el('span', { className: 'ranking-relleno positiva',
+              style: 'width:' + Math.round(100 * n.recPos / max) + '%' })),
+          UI.el('span', { className: 'ranking-cantidad' }, '+' + n.recPos)),
+        UI.el('span', { className: 'ranking-fila' },
+          UI.el('span', { className: 'ranking-pista' },
+            UI.el('span', { className: 'ranking-relleno negativa',
+              style: 'width:' + Math.round(100 * n.recNeg / max) + '%' })),
+          UI.el('span', { className: 'ranking-cantidad' }, '−' + n.recNeg))));
       btn.addEventListener('click', () => seleccionar(n.id));
       return btn;
     }));
