@@ -131,6 +131,13 @@
     const box = graph.viewBox.baseVal, width = Math.max(350, Math.min(2200, box.width * factor)), height = width * Graficos.H / Graficos.W;
     graph.setAttribute('viewBox', `${box.x + (box.width - width) / 2} ${box.y + (box.height - height) / 2} ${width} ${height}`);
   }
+  // El desplazamiento del lienzo también debe ser posible con un solo clic.
+  document.querySelectorAll('.pan-view').forEach(button => button.addEventListener('click', () => {
+    const box=graph.viewBox.baseVal, shift=box.width*.12;
+    const steps={left:[-shift,0],right:[shift,0],up:[0,-shift],down:[0,shift]};
+    const [dx,dy]=steps[button.dataset.pan]||[0,0];
+    graph.setAttribute('viewBox',[box.x+dx,box.y+dy,box.width,box.height].join(' '));
+  }));
   $('acercar').addEventListener('click', () => zoom(.8)); $('alejar').addEventListener('click', () => zoom(1.25)); $('ajustar').addEventListener('click', () => graph.setAttribute('viewBox', '0 0 1100 690'));
   graph.addEventListener('wheel', e => { if (e.ctrlKey) { e.preventDefault(); zoom(e.deltaY > 0 ? 1.1 : .9); } }, { passive: false });
   $('recordar').addEventListener('change', () => { const old = persistente; persistente = $('recordar').checked; if (!guardar()) { persistente = old; $('recordar').checked = old; } });
