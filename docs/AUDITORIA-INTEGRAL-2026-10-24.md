@@ -15,9 +15,10 @@ Revisados: arquitectura estática, modelo sociométrico, función de cálculo, g
 | P1 | Interpretación relacional | La descripción anterior no diferenciaba con suficiente claridad datos, indicadores y límites; llamaba «pares» a una cifra por nodo. | Posible lectura excesivamente concluyente. | Redacción revisada en módulo compartido. |
 | P1 | Aplicación en entidades | Almacenamiento del estudio en navegador sin cifrado específico ni autenticación/roles. | Acceso de terceros en equipos compartidos. | Pendiente: exige arquitectura y decisión organizativa. |
 | P1 | Ética de recogida | El registro de 3 elecciones negativas obligatorias no contempla abstenciones ni respuestas parciales por participante. | Riesgo de participación forzada y sesgo de no respuesta. | Pendiente de rediseño metodológico. |
-| P2 | Demo y lógica de ejemplo | `Sociometria.demo()` genera una muestra de 2+/1− en modo máximos, mientras la demo pública utiliza 3+/3− exactos. | Discrepancia de criterios entre ejemplos. | Confirmado, pendiente de unificación con tests de regresión. |
+| P2 | Demo y lógica de ejemplo | `Sociometria.demo()` conserva una muestra de 2+/1− para pruebas legadas; el caso público usa 3+/3− exactos. | Modelos de demostración distintos podían confundirse. | `demoPublica()` centraliza la muestra pública y `demo.json` ya refleja sus datos; fixture legado preservado. |
 | P2 | Accesibilidad | SVG interactivo con alternativas de teclado y tabla, pero sin comprobación NVDA/VoiceOver ni auditoría completa WCAG. | Barreras potenciales en lector de pantalla. | Parcial; requiere pruebas manuales. |
 | P2 | Seguridad CSP | `style-src 'unsafe-inline'` en páginas HTML. | Política de estilos más permisiva. | Pendiente de retirada gradual de estilos inline. |
+| P1 | Gráfica de ranking | La regla `min-width` en barras originales daba anchura visible incluso con valor cero. | Representación cuantitativa engañosa. | Corregido: pistas con etiquetas externas y relleno de anchura proporcional, incluido cero. |
 | P2 | CSS | Hoja monolítica con múltiples bloques de sobrescritura y hoja duplicada específica para acceso. | Riesgo de especificidad, caché y regresiones visuales. | Pendiente de consolidación visual verificada. |
 | P2 | Trazabilidad profesional | No hay registros de auditoría de acceso a datos ni gestión multiusuario. | Inadecuado para servicio centralizado con datos reales. | Pendiente; arquitectura estática sin servidor. |
 
@@ -26,7 +27,9 @@ Revisados: arquitectura estática, modelo sociométrico, función de cálculo, g
 - `sociograma.js`: sincronización bidireccional de selección con gráfico de ranking, preservando la configuración de seudonimización del estudio.
 - `demo-publica.js`: sincronización nodos/gráfico, incluido restablecimiento de posiciones.
 - `estilos.css`: estado visual seleccionado inequívoco, foco y ajustes móviles.
-- `tests/funcional.cjs`: aserciones Playwright para sincronización en demo y aplicación.
+- `tests/funcional.cjs`: aserciones Playwright para sincronización en demo y aplicación, zoom de la demo y recuperación de vista.
+- `sociometria.js` y `demo-publica.js`: generación única del caso público 3+3, con prueba matemática y ejemplo `demo.json` alineado.
+- Barras de ranking con pista separada del dato: **cero elecciones equivale a cero anchura**, sin barras ficticias de tamaño mínimo.
 
 ## Criterios sociométricos verificados en código
 - Una elección positiva o negativa constituye una arista dirigida entre emisor y receptor; no equivale a causalidad ni a diagnóstico.
