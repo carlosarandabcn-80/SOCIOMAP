@@ -56,3 +56,9 @@ Revisados: arquitectura estática, modelo sociométrico, función de cálculo, g
 
 ## Estado de entrega
 El trabajo se entrega como **rama para revisión**, no como despliegue. No se declara que la aplicación esté validada científicamente ni que sea apta sin más para expedientes nominativos reales. Mantener o rechazar cada cambio según las pruebas del commit final y la revisión profesional.
+
+## Referencias normativas y técnicas verificadas
+- W3C, *Web Content Accessibility Guidelines (WCAG) 2.2*, recomendación: https://www.w3.org/TR/WCAG22/ . Referencia técnica para criterios de accesibilidad; no implica una certificación por incluirlos.
+- Agencia Española de Protección de Datos, *Realización de evaluaciones de impacto de protección de datos*, actualización del 23 de abril de 2025: https://www.aepd.es/derechos-y-deberes/cumple-tus-deberes/medidas-de-cumplimiento/realizacion-de-evaluaciones-de .
+- AEPD, *¿Qué debe incluir una EIPD?*: https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/10-evaluacion-de-impacto/FAQ-0229-que-debe-incluir-una-evaluacion-de-impacto-de-proteccion-de-datos .
+La obligación de EIPD depende del riesgo y del contexto concreto del tratamiento; no se declara automática para todo uso de SOCIOMAP.
