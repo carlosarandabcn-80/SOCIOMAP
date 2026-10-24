@@ -1,7 +1,7 @@
 'use strict';
 (() => {
  const S=Sociometria,n=8;
- const datos=S.validarDatos({version:2,cohorte:'demo-publica',grupo:'Ejemplo ficticio',nombres:Array.from({length:n},(_,i)=>'P'+(i+1)),ids:Array.from({length:n},(_,i)=>'p'+(i+1)),fecha:'2026-10-24',criterio:'Preferencias para una actividad de grupo',reglas:{positivos:3,negativos:3,modo:'exactos'},respondidas:Array(n).fill(true),matriz:Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>{const p=[[1,2,3],[0,2,3],[0,1,3],[0,1,2],[0,2,5],[0,2,6],[0,2,7],[0,2,4]][i];const negativos=Array.from({length:n},(_,k)=>(i+k+1)%n).filter(k=>!p.includes(k)&&k!==i).slice(0,3);return i===j?'0':p.includes(j)?'+':negativos.includes(j)?'-':'0';}))});
+ const datos=S.demoPublica();
  const d=S.calcular(datos),svg=document.getElementById('grafoDemo'),ns='http://www.w3.org/2000/svg';
  let selected=null,drag=null;
  const coords=Array.from({length:n},(_,i)=>{const a=2*Math.PI*i/n-Math.PI/2;return [405+245*Math.cos(a),330+238*Math.sin(a)]});
