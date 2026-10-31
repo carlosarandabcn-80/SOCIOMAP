@@ -84,3 +84,28 @@ test('A05: el estudio se mantiene cuando el soporte alternativo falla y se respe
  assert.equal(localStorage.getItem(S.STORAGE_KEY),null);
  assert.ok(sessionStorage.getItem(S.STORAGE_KEY));
 });
+
+test('fotografías: contrato estricto, copia JSON, seudónimos y preservación longitudinal',()=>{
+  const source=S.demoPublica(),id=source.ids[0];
+  const photo='data:image/png;base64,'+Buffer.from('retratos-ficticios-en-pruebas').toString('base64');
+  source.fotos={[id]:photo};
+  const validated=S.validarDatos(source);
+  assert.equal(validated.fotos[id],photo);
+  assert.equal(S.importar(JSON.stringify({datos:source}),'json').datos.fotos[id],photo);
+  const next=S.nuevaMedicion(source,'2026-10-31');
+  assert.equal(next.fotos[id],photo);
+  assert.deepEqual(S.seudonimizar(source).fotos,{});
+  const csv=S.aCSV(source);
+  assert.ok(!csv.includes('data:image/'));
+  assert.deepEqual(S.deCSV(csv).fotos,{});
+  assert.equal(S.calcular(source).nodes[0].recPos,S.calcular({...source,fotos:{}}).nodes[0].recPos);
+  for(const malicious of [
+    'javascript:alert(1)','https://example.com/foto.jpg',
+    'data:image/svg+xml;base64,PHN2Zy8+',
+    'data:image/jpeg;base64,'+'a'.repeat(S.FOTO_MAX),
+  ]){
+    assert.throws(()=>S.validarDatos({...source,fotos:{[id]:malicious}}),/Fotografía inválida/);
+  }
+  assert.throws(()=>S.validarDatos({...source,fotos:{extra:photo}}),/Fotografía inválida/);
+  assert.throws(()=>S.validarDatos({...source,fotos:['x']}),/Las fotografías/);
+});
