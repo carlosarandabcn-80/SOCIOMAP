@@ -185,6 +185,7 @@ const server = http.createServer((req, res) => {
     await page.check('#seudonimos');
     assert.equal(await page.locator('#graph image').count(),0);
     assert.equal(await page.locator('#graficoRankingApp img').count(),0);
+    await page.selectOption('#participante','');
     assert.equal(await page.locator('.move-node:enabled').count(), 0);
     await page.selectOption('#participante', '0');
     assert.equal(await page.locator('.move-node:enabled').count(), 4);
