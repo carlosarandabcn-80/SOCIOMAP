@@ -33,7 +33,7 @@ window.AnalisisRelacional = (() => {
       const btn = UI.el('button', {
         type: 'button', className: 'ranking-interactivo', 'data-rank-node': n.id,
         'aria-pressed': 'false',
-        'aria-label': 'Seleccionar ' + label + ': ' + n.recPos +
+        'aria-label': label + ' +' + n.recPos + ' −' + n.recNeg + '. Seleccionar participante con ' + n.recPos +
           ' elecciones positivas y ' + n.recNeg + ' negativas recibidas'
       }, UI.el('span', { className: 'ranking-persona' }, label),
       UI.el('span', { className: 'ranking-barras' },
