@@ -93,3 +93,13 @@ El informe `docs/AUDITORIA-INTEGRAL-2026-10-24.md` se conserva como registro his
 - El panel público continúa exigiendo 3+/3− exactos, sin añadir abstención ni recogida parcial (decisión expresa del titular).
 - En la aplicación se utiliza **SOCIOMAP** como nombre del producto; **sociograma** identifica el tipo de gráfico. Algunos recursos gráficos y documentos históricos conservan la denominación anterior "SOCIOGRAMA" como parte de su identidad original.
 - La auditoría automática de accesibilidad y seguridad reduce riesgos, pero **no sustituye** la revisión manual WCAG con NVDA/VoiceOver, el control de exportaciones PDF accesibles ni una auditoría de penetración.
+
+## Retratos opcionales y privacidad (versión fotográfica, 31/10/2026)
+
+Después de crear el grupo, el formulario muestra en cada ficha «Añadir fotografía». Se admiten archivos JPEG, PNG o WebP originales de hasta **6 MB**; un recorte cuadrado comprimido (máximo 18 000 caracteres en formato data URL) se guarda **solo en el navegador**. La miniatura no conserva los metadatos EXIF del original y se vincula al identificador estable del participante, no a su posición ni al texto del nombre. La fotografía puede cambiarse o retirarse sin afectar a las elecciones. No son necesarias fotografías para votar.
+
+En el sociograma interactivo, la opción **«Mostrar códigos y ocultar fotografías»** está activada por defecto. Al desactivarla en una sesión autorizada aparecen los nombres y las fotos disponibles tanto en nodos como en ranking, indicadores y ficha de detalle. Los participantes sin retrato mantienen su avatar-código. La demo pública muestra **ocho retratos vectoriales ficticios**, independientes de los datos reales y sin transferir información personal.
+
+**Privacidad y exportaciones:** las exportaciones PNG/SVG/PDF/JSON con seudónimos no contienen fotos. Al marcar expresamente «Incluir nombres y grupo originales en los archivos», la copia JSON incluye las miniaturas y los gráficos exportados las muestran. El CSV nunca incluye fotografías por seguridad, compatibilidad y tamaño. El JSON de respaldo necesario para nuevas mediciones **sí** conserva fotografías y nombres originales; guárdalo de forma confidencial. Las fotos son identificadores personales: el uso de códigos no garantiza el anonimato. No proceses fotografías sin la finalidad, información y salvaguardas pertinentes.
+
+La interfaz conserva exactamente **3 elecciones positivas y 3 negativas obligatorias** por participante, sin modificar el punto A02.
