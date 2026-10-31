@@ -32,7 +32,7 @@
     $('seleccionInfo').textContent = `Seleccionado: ${nombre(selected)}. Se resaltan sus conexiones visibles.`;
     const relations = data.links.filter(l => l.source === selected || l.target === selected);
     $('detalle').hidden = false;
-    $('detalle').replaceChildren(UI.el('h3', {}, nombre(selected)), UI.el('p', {}, `${node.recPos} positivas y ${node.recNeg} negativas recibidas. ${node.mutPos} pares positivos recíprocos. Respuesta ${node.respondida ? 'registrada' : 'pendiente'}.`),
+    $('detalle').replaceChildren(UI.el('div',{className:'detalle-cabecera'},FotosUI.avatar(data,selected,vista.seudonimos,'avatar-detalle'),UI.el('h3', {}, nombre(selected))), UI.el('p', {}, `${node.recPos} positivas y ${node.recNeg} negativas recibidas. ${node.mutPos} pares positivos recíprocos. Respuesta ${node.respondida ? 'registrada' : 'pendiente'}.`),
       UI.el('p', { className: 'hint' }, 'Todas sus elecciones registradas, incluidas las que oculta el filtro del mapa:'),
       relations.length ? UI.el('ul', {}, relations.map(l => UI.el('li', {}, `${nombre(l.source)} → ${nombre(l.target)}: ${l.type === '+' ? 'positiva (+)' : 'negativa (−)'}${l.reciproca ? ', recíproca' : ''}`))) : UI.el('p', {}, 'No hay elecciones registradas que impliquen a esta persona. Esto no demuestra aislamiento.'));
   }
@@ -41,7 +41,7 @@
     $('participante').replaceChildren(UI.el('option', { value: '' }, 'Todo el grupo'), ...data.nodes.map(v => UI.el('option', { value: v.id }, nombre(v.id))));
     Graficos.resumen(data, $('resumen')); Graficos.ranking(data, $('ranking'), vista.seudonimos);
     // Las barras accesibles aparecen en el ranking; el gráfico SVG redundante no se renderiza oculto.
-    AnalisisRelacional.grafico($('graficoRankingApp'),data,id=>{seleccionar(id);document.getElementById('graph').scrollIntoView({behavior:'smooth',block:'center'});}, n => nombre(n.id));
+    AnalisisRelacional.grafico($('graficoRankingApp'),data,id=>{seleccionar(id);document.getElementById('graph').scrollIntoView({behavior:'smooth',block:'center'});}, n => nombre(n.id), n => FotosUI.foto(data,n.id,vista.seudonimos));
     AnalisisRelacional.destacar($('graficoRankingApp'),selected);
     AnalisisRelacional.insertar($('descripcionApp'),data);
     $('relaciones').replaceChildren(UI.tabla(['Emisor', 'Destinatario', 'Elección', 'Recíproca del mismo signo'], data.links.map(l => [nombre(l.source), nombre(l.target), l.type === '+' ? 'Positiva (+)' : 'Negativa (−)', l.reciproca ? 'Sí' : 'No']), 'Relaciones dirigidas del estudio completo, sin aplicar los filtros del mapa.'));
