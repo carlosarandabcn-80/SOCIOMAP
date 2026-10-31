@@ -72,6 +72,7 @@
         version: 2,
         cohorte: igual ? prev.cohorte : crypto.randomUUID(),
         ids: igual ? prev.ids : Array.from({ length: n }, () => crypto.randomUUID()),
+        fotos: igual ? prev.fotos : {},
         respondidas: igual ? prev.respondidas : Array(n).fill(false),
         matriz: igual ? prev.matriz : Array.from({ length: n }, (_, i) =>
           Array.from({ length: n }, (_, j) => i === j ? '0' : null))
@@ -139,17 +140,59 @@
     guardar();
     mensaje('');
   }
+  async function cargarFoto(event, uid) {
+    const input=event.currentTarget, file=input.files?.[0]; if (!file) return;
+    const fotos=proyecto?.datos?.fotos, estudio=proyecto?.datos?.cohorte;
+    const anterior=fotos?.[uid];
+    try {
+      const miniatura=await FotosUI.procesar(file);
+      if (!proyecto || proyecto.datos.cohorte!==estudio || !proyecto.datos.ids.includes(uid))
+        throw new Error('El grupo ha cambiado mientras se procesaba la fotografía.');
+      proyecto.datos.fotos[uid]=miniatura;
+      if(!guardar()){
+        if(anterior)proyecto.datos.fotos[uid]=anterior;
+        else delete proyecto.datos.fotos[uid];
+        throw new Error('No se ha podido guardar la fotografía. Libera almacenamiento o utiliza otra imagen.');
+      }
+      dibujarPersona();
+      mensaje('Fotografía guardada en este navegador. Se mostrará en el sociograma al desactivar los códigos.');
+    } catch(error){ mensaje(error.message,true); }
+    finally { input.value=''; }
+  }
+  function retirarFoto(uid) {
+    if (!proyecto?.datos?.fotos?.[uid]) return;
+    const anterior=proyecto.datos.fotos[uid];
+    delete proyecto.datos.fotos[uid];
+    if(!guardar()){proyecto.datos.fotos[uid]=anterior; return;}
+    dibujarPersona();
+    mensaje('Fotografía retirada del estudio.');
+  }
   function dibujarPersona() {
     if (!proyecto) return;
     const d = proyecto.datos, nombre = d.nombres[indice];
     const positivos = votosDe('+', indice).slice(0, LIMITE);
-    const negativos = votosDe('-', indice).slice(0, LIMITE);
+    const negativos = votosDe('-', indice).slice(0, LIMITE), uid = d.ids[indice];
+    const inputFoto=UI.el('input',{type:'file',accept:'image/jpeg,image/png,image/webp',
+      id:'fotoParticipante',className:'foto-input','aria-label':'Añadir o cambiar fotografía de '+nombre});
+    inputFoto.addEventListener('change',event=>cargarFoto(event,uid));
+    const quitar=UI.el('button',{type:'button',className:'btn foto-quitar'},'Eliminar foto');
+    quitar.disabled=!d.fotos[uid];
+    quitar.addEventListener('click',()=>retirarFoto(uid));
+    const editorFoto=UI.el('div',{className:'editor-foto'},
+      FotosUI.avatar(d,indice,false,'avatar-editor'),
+      UI.el('div',{className:'foto-acciones'},
+        UI.el('label',{className:'foto-etiqueta',for:'fotoParticipante'},d.fotos[uid]?'Cambiar fotografía':'Añadir fotografía'),
+        inputFoto,
+        quitar,
+        UI.el('span',{className:'hint'},'Opcional · JPG, PNG o WebP · se guarda solo una miniatura.')
+      ));
     const card = UI.el('div', { className: 'person-card' },
       UI.el('div', { className: 'person-title' },
         UI.el('div', {}, UI.el('span', { className: 'eyebrow' }, 'Persona ' + (indice + 1) + ' de ' + d.nombres.length),
           UI.el('h3', {}, nombre)),
         UI.el('span', { className: 'person-state', id: 'estadoPersona' }, '')
       ),
+      editorFoto,
       UI.el('div', { className: 'choice-grid' },
         UI.el('fieldset', { className: 'choice-group positive-choice' },
           UI.el('legend', {}, '＋ 3 positivas'), UI.el('p', { className: 'hint' }, 'Con quién prefiere participar.'),
@@ -177,7 +220,7 @@
         type: 'button', className: 'person-pill' + (indice === i ? ' active' : '') + (completada(i) ? ' done' : ''),
         'aria-label': 'Persona ' + (i + 1) + ': ' + nombre + (completada(i) ? ', completa' : ', pendiente'),
         'aria-current': indice === i ? 'step' : null
-      }, String(i + 1));
+      }, FotosUI.avatar(d,i,false,'avatar-paso'), UI.el('span',{},String(i+1)));
       boton.addEventListener('click', () => { indice = i; dibujarPersona(); });
       return boton;
     }));
@@ -210,7 +253,7 @@
           [m.paresMutPos, 'Pares positivos recíprocos']].map(([num, titulo]) =>
           UI.el('div', { className: 'metric' }, UI.el('strong', {}, num), UI.el('span', {}, titulo)))));
       $('ranking').replaceChildren(UI.tabla(['Persona', '+ recibidas', '− recibidas'],
-        data.nodes.map(v => ['P' + (v.id + 1), v.recPos, v.recNeg]), 'Elecciones recibidas. Códigos por privacidad.'));
+        data.nodes.map(v => [FotosUI.persona(data,v.id,true), v.recPos, v.recNeg]), 'Elecciones recibidas. Fotografías ocultas por privacidad.'));
       $('resultadosPanel').hidden = false;
       const ok = guardar();
       $('btnSociograma').hidden = !ok;
