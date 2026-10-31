@@ -1,7 +1,7 @@
 name: Comprobaciones SOCIOMAP
 on:
   push:
-    branches: [main, 'codex/**']
+    branches: [main, 'codex/**', 'fix/**']
   pull_request:
 permissions:
   contents: read
