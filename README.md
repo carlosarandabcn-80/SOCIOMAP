@@ -61,7 +61,7 @@ npm run test:browser
 
 La suite de navegador inicia y cierra su propio servidor local y exige cero peticiones a otros orígenes y cero errores JavaScript o de consola. Comprueba recorridos de datos, edición, exportaciones, guardado, comparación y adaptación a 390 px. Los resultados no equivalen a una certificación formal de accesibilidad ni a una auditoría de todos los navegadores.
 
-Se puede indicar un navegador ya instalado con `CHROMIUM_EXECUTABLE_PATH` o un canal con `BROWSER_CHANNEL`. `QA_DIR` permite guardar capturas y archivos generados fuera del repositorio. GitHub Actions ejecuta ambas suites para ramas `main`, `codex/**` y pull requests.
+Se puede indicar un navegador ya instalado con `CHROMIUM_EXECUTABLE_PATH` o un canal con `BROWSER_CHANNEL`. `QA_DIR` permite guardar capturas y archivos generados fuera del repositorio. GitHub Actions ejecuta pruebas unitarias, recorridos de navegador y una revisión automática con axe-core en `main`, `codex/**`, `fix/**` y solicitudes de integración.
 
 ## Archivos principales
 
@@ -81,7 +81,15 @@ Se puede indicar un navegador ya instalado con `CHROMIUM_EXECUTABLE_PATH` o un c
 
 © 2026 Carlos Aranda · ARANDA TOOLS. Se conserva el régimen de uso indicado originalmente: uso educativo o interno; contactar con el autor para otros usos. `pdf-lib` conserva su licencia MIT en `vendor/pdf-lib.LICENSE.md`; el README y los metadatos originales de `@pdf-lib/fontkit` identifican su licencia MIT y autoría. Las fuentes DejaVu conservan su aviso en `vendor/DejaVu-LICENSE.txt`.
 
-## Estado de la auditoría y mejoras propuestas
+## Estado y documentación de auditoría
 
-El análisis actualizado está en `docs/AUDITORIA-INTEGRAL-2026-10-24.md`. Las modificaciones en `codex/auditoria-sociomap-20261024` son una propuesta sujeta a comprobación antes de fusionarse. La demo pública no escribe en el almacenamiento del estudio actual. SOCIOGRAMA ofrece análisis descriptivo y no realiza diagnósticos.
-\n## Auditoría correctiva · 31 de octubre de 2026\n\n- Se ha incorporado el ciclo longitudinal explícito: copia de seguridad JSON, validación estricta de fecha posterior, conservación de identificadores y vaciado íntegro de la matriz de la nueva medición. El formulario ya no permite asignar otra fecha a los votos anteriores.\n- La opción de almacenamiento persistente se conserva al editar el formulario y al crear una nueva medición. El borrado elimina asimismo `sociomap.config.pendiente` de ambos soportes.\n- Las pruebas automatizadas verifican exportaciones PNG, SVG, PDF, CSV y JSON, la privacidad de nombres y la comparación de dos mediciones.\n- El panel público continúa exigiendo 3+/3− exactos, sin añadir abstención ni recogida parcial (decisión expresa del titular).\n- En la aplicación se utiliza **SOCIOMAP** como nombre del producto; **sociograma** identifica el tipo de gráfico. Algunos recursos gráficos y documentos históricos conservan la denominación anterior \"SOCIOGRAMA\" como parte de su identidad original.\n- La auditoría automática de accesibilidad y seguridad reduce riesgos, pero **no sustituye** la revisión manual WCAG con NVDA/VoiceOver, el control de exportaciones PDF accesibles ni una auditoría de penetración.\n
+El informe `docs/AUDITORIA-INTEGRAL-2026-10-24.md` se conserva como registro histórico de una propuesta de mejora anterior. Los cambios y verificaciones vigentes se describen en `docs/AUDITORIA-CORRECTIVA-2026-10-31.md`. La demostración pública es ficticia y no modifica el almacenamiento del estudio actual. SOCIOMAP realiza análisis descriptivos sin atribuir diagnósticos personales.
+
+## Auditoría correctiva · 31 de octubre de 2026
+
+- Se ha incorporado el ciclo longitudinal explícito: copia de seguridad JSON, validación estricta de fecha posterior, conservación de identificadores y vaciado íntegro de la matriz de la nueva medición. El formulario ya no permite asignar otra fecha a los votos anteriores.
+- La opción de almacenamiento persistente se conserva al editar el formulario y al crear una nueva medición. El borrado elimina asimismo `sociomap.config.pendiente` de ambos soportes.
+- Las pruebas automatizadas verifican exportaciones PNG, SVG, PDF, CSV y JSON, la privacidad de nombres y la comparación de dos mediciones.
+- El panel público continúa exigiendo 3+/3− exactos, sin añadir abstención ni recogida parcial (decisión expresa del titular).
+- En la aplicación se utiliza **SOCIOMAP** como nombre del producto; **sociograma** identifica el tipo de gráfico. Algunos recursos gráficos y documentos históricos conservan la denominación anterior "SOCIOGRAMA" como parte de su identidad original.
+- La auditoría automática de accesibilidad y seguridad reduce riesgos, pero **no sustituye** la revisión manual WCAG con NVDA/VoiceOver, el control de exportaciones PDF accesibles ni una auditoría de penetración.
