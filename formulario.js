@@ -252,8 +252,11 @@
         [[m.participantes, 'Personas'], [m.totalPos, 'Positivas'], [m.totalNeg, 'Negativas'],
           [m.paresMutPos, 'Pares positivos recíprocos']].map(([num, titulo]) =>
           UI.el('div', { className: 'metric' }, UI.el('strong', {}, num), UI.el('span', {}, titulo)))));
-      $('ranking').replaceChildren(UI.tabla(['Persona', '+ recibidas', '− recibidas'],
-        data.nodes.map(v => [FotosUI.persona(data,v.id,true), v.recPos, v.recNeg]), 'Elecciones recibidas. Fotografías ocultas por privacidad.'));
+      const dibujarRanking=()=>$('ranking').replaceChildren(UI.tabla(['Persona', '+ recibidas', '− recibidas'],
+        data.nodes.map(v => [FotosUI.persona(data,v.id,!$('verFotosResumen').checked), v.recPos, v.recNeg]),
+        'Elecciones recibidas. Las fotografías solo se muestran si se autoriza expresamente.'));
+      dibujarRanking();
+      $('verFotosResumen').onchange=dibujarRanking;
       $('resultadosPanel').hidden = false;
       const ok = guardar();
       $('btnSociograma').hidden = !ok;
