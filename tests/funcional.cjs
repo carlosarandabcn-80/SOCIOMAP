@@ -252,6 +252,7 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#btnRanking').isEnabled(),true);
     await page.click('#btnRanking');await page.click('#btnSociograma');
     await page.locator('#compararArchivo').setInputFiles(beforePath);
+    await page.getByText('Mediciones compatibles. Comparación calculada.',{exact:true}).waitFor();
     assert.match(await page.locator('#mensajeComparacion').innerText(),/Mediciones compatibles/);
     assert.match(await page.locator('#comparacion').innerText(),/0 nuevas elecciones positivas/);
     console.log('PASS MEDICIONES: copia anterior, nueva fecha, matriz vacía, continuidad y comparación');
