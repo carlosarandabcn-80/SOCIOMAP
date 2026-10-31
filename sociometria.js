@@ -124,6 +124,19 @@
       densidadObservadaPos: totalPos / posiblesObservados, densidadObservadaNeg: totalNeg / posiblesObservados,
       componentesPos: componentes(weak), subgrupos: componentes(mutual).filter(g => g.length > 1) } };
   }
+  // Una nueva medición mantiene identidades y criterio; nunca reutiliza las elecciones previas.
+  // La copia histórica debe guardarse por separado antes de sustituir el estudio activo.
+  function nuevaMedicion(input, fecha) {
+    const anterior = validarDatos(input);
+    if (anterior.fechaNoRegistrada) fail('La medición anterior no tiene una fecha histórica acreditada. No se puede iniciar una comparación longitudinal a partir de ella.');
+    if (!anterior.respondidas.every(Boolean)) fail('Completa las seis elecciones de cada participante antes de iniciar una nueva medición.');
+    if (typeof fecha !== 'string' || fecha <= anterior.fecha) fail('La nueva fecha debe ser posterior a la de la medición anterior.');
+    const n = anterior.nombres.length;
+    return validarDatos({ ...anterior, fecha, fechaNoRegistrada: false,
+      respondidas: Array(n).fill(false),
+      matriz: Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? '0' : null))
+    }, { borrador: true });
+  }
   function comparar(actual, anterior) {
     const a = calcular(actual), b = calcular(anterior);
     if (a.cohorte !== b.cohorte || a.ids.length !== b.ids.length || a.ids.some(id => !b.ids.includes(id))) fail('La comparación necesita el mismo estudio y los mismos identificadores. Parte de una copia JSON del estudio original para registrar otra fecha.');
@@ -244,6 +257,6 @@
     });
   }
   const escaparHTML = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const api = { STORAGE_KEY, MAX_FILE, normalizarNombre, validarNombres, validarDatos, calcular, comparar, validarVista, validarProyecto, seudonimizar, aCSV, deCSV, parseCSV, importar, demo, demoPublica, escaparHTML, intermediacion, componentes };
+  const api = { STORAGE_KEY, MAX_FILE, normalizarNombre, validarNombres, validarDatos, calcular, nuevaMedicion, comparar, validarVista, validarProyecto, seudonimizar, aCSV, deCSV, parseCSV, importar, demo, demoPublica, escaparHTML, intermediacion, componentes };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sociometria = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
