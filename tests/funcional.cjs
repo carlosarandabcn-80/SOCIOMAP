@@ -227,6 +227,11 @@ const server = http.createServer((req, res) => {
     const namedSVG=fs.readFileSync(await download('#exportSVG','mapa-con-nombres.svg'),'utf8');
     assert.match(namedSVG,/Ana/);
     assert.match(namedSVG,/<image[^>]+href="data:image\//,'El SVG identificado contiene el retrato');
+    const namedPNG=fs.readFileSync(await download('#exportPNG','mapa-identificado.png'));
+    assert.equal(namedPNG.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    const namedPDF=await PDFDocument.load(fs.readFileSync(await download('#exportPDF','informe-con-fotos.pdf')));
+    assert.ok(namedPDF.getPageCount()>=4);
+    console.log('PASS FOTO EXPORT: SVG/PNG/PDF identificados con retrato embebido');
     await page.uncheck('#incluirNombres');
     console.log('PASS EXPORT: PNG, SVG, PDF, JSON, CSV y consentimiento explícito de nombres');
     console.log('PASS 3: sociograma y exportaciones conservados');
