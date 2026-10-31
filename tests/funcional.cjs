@@ -168,6 +168,12 @@ const server = http.createServer((req, res) => {
     await page.click('#btnRanking');
     assert.equal(await page.locator('#resultadosPanel').isVisible(), true);
     assert.equal(await page.locator('#ranking tbody tr').count(), 7);
+    assert.equal(await page.locator('#ranking img').count(),0,'Resumen reservado por defecto');
+    await page.check('#verFotosResumen');
+    assert.equal(await page.locator('#ranking img').count(),1,'Resumen identificado muestra retratos');
+    assert.match(await page.locator('#ranking tbody').innerText(),/Ana/);
+    await page.uncheck('#verFotosResumen');
+    assert.equal(await page.locator('#ranking img').count(),0);
     await page.click('#btnSociograma');
     await page.waitForURL('**/sociograma_interactivo.html');
     assert.equal(await page.locator('#graph .node').count(), 7);
