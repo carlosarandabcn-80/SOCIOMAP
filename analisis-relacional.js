@@ -25,7 +25,7 @@ window.AnalisisRelacional = (() => {
   function insertar(container, data) {
     container.replaceChildren(...resumen(data).map(t => UI.el('p', {}, t)));
   }
-  function grafico(container, data, seleccionar, nombre = etiqueta) {
+  function grafico(container, data, seleccionar, nombre = etiqueta, imagen = () => null) {
     const list = [...data.nodes].sort((a, b) => b.recPos - a.recPos || a.id - b.id);
     const max = Math.max(1, ...list.flatMap(n => [n.recPos, n.recNeg]));
     container.replaceChildren(...list.map(n => {
@@ -35,7 +35,8 @@ window.AnalisisRelacional = (() => {
         'aria-pressed': 'false',
         'aria-label': label + ' +' + n.recPos + ' −' + n.recNeg + '. Seleccionar participante con ' + n.recPos +
           ' elecciones positivas y ' + n.recNeg + ' negativas recibidas'
-      }, UI.el('span', { className: 'ranking-persona' }, label),
+      }, ...(imagen(n) ? [UI.el('img',{className:'avatar-ranking',src:imagen(n),alt:'',decoding:'async'})] : []),
+      UI.el('span', { className: 'ranking-persona' }, label),
       UI.el('span', { className: 'ranking-barras' },
         UI.el('span', { className: 'ranking-fila' },
           UI.el('span', { className: 'ranking-pista' },
