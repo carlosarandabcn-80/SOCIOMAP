@@ -274,3 +274,8 @@ html.a11y-contrast .ranking-relleno.negativa{background:#9c4000}
 .move-tools button.btn{min-width:44px;min-height:44px;padding:6px 10px;text-align:center;font-size:1.2rem;background:white;color:#143d7b}
 .move-tools button.btn:disabled{opacity:.45}
 html.a11y-contrast .move-tools{background:white;border:2px solid black}
+
+/* Auditoría WCAG 2.2 (31-10-2026): contraste del texto sobre fondo oscuro y notas claras. */
+.eyebrow{color:#b4d5ff}
+.prose a{color:#b4d5ff}
+.simple-site .simple-note{color:#33465f}
