@@ -23,7 +23,7 @@
   function borrar() {
     const errors = [];
     for (const type of ['sessionStorage', 'localStorage']) {
-      try { for (const item of [key, 'sociogramaData', 'grupoNombre']) root[type].removeItem(item); }
+      try { for (const item of [key, 'sociogramaData', 'grupoNombre', 'sociomap.config.pendiente']) root[type].removeItem(item); }
       catch (e) { errors.push(e.message); }
     }
     if (errors.length) throw new Error('El navegador ha bloqueado parte del borrado. Usa también sus ajustes para eliminar los datos de este sitio.');

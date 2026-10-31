@@ -1,7 +1,7 @@
 name: Comprobaciones SOCIOMAP
 on:
   push:
-    branches: [main, 'codex/**']
+    branches: [main, 'codex/**', 'fix/**']
   pull_request:
 permissions:
   contents: read
@@ -19,3 +19,7 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+      - name: Instalar axe-core para auditoría automática WCAG (solo CI)
+        run: npm install --no-save --no-package-lock @axe-core/playwright
+      - name: Analizar seis pantallas con axe-core
+        run: node tests/accesibilidad-browser.cjs

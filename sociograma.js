@@ -40,7 +40,7 @@
     $('grupoInfo').textContent = `${vista.seudonimos ? 'Grupo seudonimizado' : data.grupo} · ${UI.fecha(data.fecha, data.fechaNoRegistrada)} · ${data.nombres.length} participantes`;
     $('participante').replaceChildren(UI.el('option', { value: '' }, 'Todo el grupo'), ...data.nodes.map(v => UI.el('option', { value: v.id }, nombre(v.id))));
     Graficos.resumen(data, $('resumen')); Graficos.ranking(data, $('ranking'), vista.seudonimos);
-    $('chart').replaceChildren(Graficos.barras(data, vista.seudonimos));
+    // Las barras accesibles aparecen en el ranking; el gráfico SVG redundante no se renderiza oculto.
     AnalisisRelacional.grafico($('graficoRankingApp'),data,id=>{seleccionar(id);document.getElementById('graph').scrollIntoView({behavior:'smooth',block:'center'});}, n => nombre(n.id));
     AnalisisRelacional.destacar($('graficoRankingApp'),selected);
     AnalisisRelacional.insertar($('descripcionApp'),data);

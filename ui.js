@@ -48,12 +48,7 @@ window.UI = {
   },
   prepararComun() {
     document.querySelectorAll('[data-year]').forEach(node => { node.textContent = new Date().getFullYear(); });
-    document.querySelectorAll('[data-demo]').forEach(button => button.addEventListener('click', () => {
-      try {
-        if (Almacen.leer().proyecto && !confirm('La demostración sustituirá el estudio abierto. Exporta antes una copia si quieres conservarlo. ¿Continuar?')) return;
-        Almacen.guardar({ datos: Sociometria.demo() }); location.href = 'sociograma_interactivo.html';
-      } catch (e) { UI.mensaje('No se pudo abrir la demostración. ' + e.message, true); }
-    }));
+
   }
 };
 document.addEventListener('DOMContentLoaded', UI.prepararComun);

@@ -182,6 +182,23 @@ const server = http.createServer((req, res) => {
     assert.deepEqual(json.datos.nombres, Array.from({ length: 7 }, (_, i) => 'P' + (i + 1)));
     const csv = fs.readFileSync(await download('#exportCSV', 'matriz.csv'), 'utf8');
     assert.deepEqual(S.deCSV(csv).matriz, datos.matriz);
+    // A04: comprobar los cinco archivos realmente descargados y su contenido.
+    const png=fs.readFileSync(await download('#exportPNG','mapa-sociomap.png'));
+    assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    assert.ok(png.length>2000);
+    const svg=fs.readFileSync(await download('#exportSVG','mapa-sociomap.svg'),'utf8');
+    assert.match(svg,/<svg[^>]+/);assert.match(svg,/SOCIOMAP \/ SOCIOGRAMA/);
+    assert.match(svg,/P1/);assert.doesNotMatch(svg,/Ana/);
+    const report=await PDFDocument.load(fs.readFileSync(await download('#exportPDF','informe-sociomap.pdf')));
+    assert.ok(report.getPageCount()>=4);
+    assert.equal(report.getTitle(),'SOCIOMAP - Informe sociométrico');
+    await page.check('#incluirNombres');
+    const named=JSON.parse(fs.readFileSync(await download('#exportJSON','copia-con-nombres.json'),'utf8'));
+    assert.deepEqual(named.datos.nombres,names);
+    const namedSVG=fs.readFileSync(await download('#exportSVG','mapa-con-nombres.svg'),'utf8');
+    assert.match(namedSVG,/Ana/);
+    await page.uncheck('#incluirNombres');
+    console.log('PASS EXPORT: PNG, SVG, PDF, JSON, CSV y consentimiento explícito de nombres');
     console.log('PASS 3: sociograma y exportaciones conservados');
 
     await page.getByRole('link', { name: 'Editar respuestas', exact: true }).click();
@@ -191,6 +208,54 @@ const server = http.createServer((req, res) => {
     assert.equal((await state()).datos.matriz[0].filter(v => v === '+').length, 2);
     await page.selectOption('[data-sign="+"][data-slot="0"]', '1');
     assert.equal(await page.locator('#btnRanking').isEnabled(), true);
+    // A05: la elección de persistencia de la vista se conserva al editar en el formulario.
+    await page.click('#btnRanking');
+    await page.click('#btnSociograma');
+    await page.check('#recordar');
+    assert.equal(await page.evaluate(key=>sessionStorage.getItem(key),S.STORAGE_KEY),null);
+    assert.ok(await page.evaluate(key=>localStorage.getItem(key),S.STORAGE_KEY));
+    await page.getByRole('link',{name:'Editar respuestas',exact:true}).click();
+    await page.locator('.person-pill').first().click();
+    await page.selectOption('[data-sign="+"][data-slot="0"]','');
+    await page.selectOption('[data-sign="+"][data-slot="0"]','1');
+    assert.equal(await page.evaluate(key=>sessionStorage.getItem(key),S.STORAGE_KEY),null);
+    assert.ok(await page.evaluate(key=>localStorage.getItem(key),S.STORAGE_KEY));
+    // A01: una fecha distinta con «Crear grupo» no puede reciclar votos anteriores.
+    const nextDate=new Date(Date.parse(datos.fecha+'T12:00:00Z')+86400000).toISOString().slice(0,10);
+    await page.fill('#fecha',nextDate);
+    await page.click('#crearTabla');
+    assert.match(await page.locator('#mensaje').innerText(),/fecha ha cambiado/);
+    assert.equal((await state()).datos.fecha,datos.fecha);
+    assert.equal(await page.locator('#nuevaMedicion').isEnabled(),true);
+    const beforePath=await download('#nuevaMedicion','medicion-anterior.json');
+    const oldStudy=JSON.parse(fs.readFileSync(beforePath,'utf8'));
+    assert.equal(oldStudy.datos.fecha,datos.fecha);
+    assert.deepEqual(oldStudy.datos.matriz,datos.matriz);
+    assert.deepEqual(oldStudy.datos.ids,datos.ids);
+    const fresh=(await state()).datos;
+    assert.equal(fresh.fecha,nextDate);
+    assert.deepEqual(fresh.ids,datos.ids);
+    assert.equal(fresh.cohorte,datos.cohorte);
+    assert.ok(fresh.respondidas.every(v=>v===false));
+    assert.ok(fresh.matriz.every((row,i)=>row.every((v,j)=>v===(i===j?'0':null))));
+    assert.equal(await page.locator('#btnRanking').isDisabled(),true);
+    assert.equal(await page.evaluate(key=>sessionStorage.getItem(key),S.STORAGE_KEY),null);
+    assert.ok(await page.evaluate(key=>localStorage.getItem(key),S.STORAGE_KEY));
+    // Completar una segunda medición del mismo grupo sin alterar las reglas 3+/3−.
+    for(let i=0;i<datos.matriz.length;i++){
+      await page.locator('.person-pill').nth(i).click();
+      for(const [sign,slotValues] of [['+',datos.matriz[i].flatMap((v,j)=>v==='+'?[j]:[])],
+                                    ['-',datos.matriz[i].flatMap((v,j)=>v==='-'?[j]:[])]])
+        for(let slot=0;slot<3;slot++)
+          await page.selectOption('[data-sign="'+sign+'"][data-slot="'+slot+'"]',String(slotValues[slot]));
+    }
+    assert.equal(await page.locator('#btnRanking').isEnabled(),true);
+    await page.click('#btnRanking');await page.click('#btnSociograma');
+    await page.locator('#compararArchivo').setInputFiles(beforePath);
+    await page.getByText('Mediciones compatibles. Comparación calculada.',{exact:true}).waitFor();
+    assert.match(await page.locator('#mensajeComparacion').innerText(),/Mediciones compatibles/);
+    assert.match(await page.locator('#comparacion').innerText(),/0 nuevas elecciones positivas/);
+    console.log('PASS MEDICIONES: copia anterior, nueva fecha, matriz vacía, continuidad y comparación');
     console.log('PASS 4: corrección de votos sin perder los demás');
 
     await clean();
@@ -227,8 +292,15 @@ const server = http.createServer((req, res) => {
     }
     await phone.close();
     await page.goto(url + '/formulario.html');
+    await page.evaluate(() => {
+      sessionStorage.setItem('sociomap.config.pendiente','{"nombres":["P1"]}');
+      localStorage.setItem('sociomap.config.pendiente','{"nombres":["P1"]}');
+    });
     await page.click('#borrarDatos');
     assert.equal(await page.evaluate(key => sessionStorage.getItem(key), S.STORAGE_KEY), null);
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), S.STORAGE_KEY), null);
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('sociomap.config.pendiente')),null);
+    assert.equal(await page.evaluate(() => localStorage.getItem('sociomap.config.pendiente')),null);
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     assert.deepEqual(consoleErrors, []);

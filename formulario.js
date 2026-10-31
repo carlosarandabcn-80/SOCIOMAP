@@ -4,6 +4,7 @@
   const $ = id => document.getElementById(id);
   const LIMITE = 3;
   let proyecto = null;
+  let persistente = false;
   let indice = 0;
   let configuracionPendiente = false;
   let hayEstudioAnterior = false;
@@ -14,7 +15,7 @@
   function mensaje(texto, error) { UI.mensaje(texto, Boolean(error)); }
   function guardar() {
     try {
-      Almacen.guardar(proyecto, false);
+      Almacen.guardar(proyecto, persistente);
       return true;
     } catch (e) {
       mensaje('No se pueden guardar los datos en esta pestaña: ' + e.message, true);
@@ -59,8 +60,11 @@
     try {
       const cfg = leerConfig();
       const prev = proyecto && proyecto.datos;
-      const igual = prev && JSON.stringify(prev.nombres) === JSON.stringify(cfg.nombres) &&
-        prev.criterio === cfg.criterio && esCompatible(prev);
+      const mismoGrupo = prev && JSON.stringify(prev.nombres) === JSON.stringify(cfg.nombres) &&
+        prev.criterio === cfg.criterio && prev.grupo === cfg.grupo && esCompatible(prev);
+      if (mismoGrupo && prev.fecha !== cfg.fecha && !prev.fechaNoRegistrada)
+        throw new Error('La fecha ha cambiado. Utiliza «Guardar medición actual e iniciar otra fecha» para conservar las identidades y vaciar las respuestas; no se puede asignar una nueva fecha a votos antiguos.');
+      const igual = mismoGrupo && prev.fecha === cfg.fecha && !prev.fechaNoRegistrada;
       if ((prev && !igual || hayEstudioAnterior) &&
           !confirm('Se sustituirán las respuestas guardadas. ¿Crear este grupo?')) return;
       const n = cfg.nombres.length;
@@ -193,6 +197,7 @@
     $('barraProgreso').setAttribute('aria-valuenow', String(porcentaje));
     $('barraRelleno').style.width = porcentaje + '%';
     $('btnRanking').disabled = completadas !== n || configuracionPendiente;
+    $('nuevaMedicion').disabled = completadas !== n || proyecto.datos.fechaNoRegistrada;
     pintarNavegacion();
   }
   function resultados() {
@@ -226,6 +231,7 @@
       return;
     }
     proyecto = state.proyecto;
+    persistente = state.persistente;
     cargarConfig();
     $('matrizPanel').hidden = false;
     dibujarPersona();
@@ -245,6 +251,29 @@
       boton.textContent = 'Descargar plantilla PDF (2 por A4)';
     }
   });
+  function iniciarNuevaMedicion() {
+    try {
+      if (!proyecto) throw new Error('Crea primero un estudio y completa su recogida.');
+      const anterior = proyecto.datos, cfg = leerConfig();
+      if (JSON.stringify(cfg.nombres) !== JSON.stringify(anterior.nombres) ||
+          cfg.criterio !== anterior.criterio || cfg.grupo !== anterior.grupo)
+        throw new Error('Para una nueva medición deben mantenerse el grupo, los nombres y la pregunta. Modifica únicamente la fecha.');
+      const siguientes = S.nuevaMedicion(anterior, cfg.fecha);
+      if (!confirm('Se descargará una copia JSON con los nombres originales y todas las elecciones de ' + anterior.fecha +
+          '. Debes comprobar y conservar ese archivo de forma confidencial: el navegador no puede garantizar que se guarde. ¿Iniciar una nueva medición con las respuestas vacías?')) return;
+      const respaldo = S.validarProyecto(proyecto);
+      UI.descargar(JSON.stringify(respaldo, null, 2), 'sociomap-medicion-' + anterior.fecha + '.json', 'application/json');
+      const proximo = S.validarProyecto({ datos: siguientes, vista: { seudonimos: proyecto.vista.seudonimos } });
+      // Guardamos primero para que un error de almacenamiento no destruya el estudio visible.
+      Almacen.guardar(proximo, persistente);
+      proyecto = proximo;
+      indice = 0;
+      cargarConfig(); ocultarResultados(); dibujarPersona(); validar();
+      mensaje('Medición ' + cfg.fecha + ' creada con todas las respuestas pendientes. Comprueba la descarga de la medición anterior (' + anterior.fecha + ') antes de continuar.');
+      $('matrizPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { mensaje('No se ha iniciado una nueva medición. ' + e.message, true); }
+  }
+  $('nuevaMedicion').addEventListener('click', iniciarNuevaMedicion);
   $('crearTabla').addEventListener('click', crearGrupo);
   $('btnRanking').addEventListener('click', resultados);
   $('anterior').addEventListener('click', () => { if (indice > 0) { indice--; dibujarPersona(); } });

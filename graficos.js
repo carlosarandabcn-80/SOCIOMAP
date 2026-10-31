@@ -125,7 +125,7 @@ window.Graficos = (() => {
     data.nodes.forEach(v => {
       const p = vista.posiciones[v.uid], r = radio(data, v), name = nombre(data, v.id, vista.seudonimos), selectedNode = selected === v.id;
       const node = svg('g', { class: 'node', transform: `translate(${p.x},${p.y})`, 'data-node': v.id,
-        ...(interactivo ? { tabindex: 0, role: 'button', 'aria-label': `${name}; ${v.recPos} positivas, ${v.recNeg} negativas recibidas${p.fija ? '; posición fijada' : ''}`, 'aria-pressed': selectedNode } : {}) });
+        ...(interactivo ? { tabindex: 0, role: 'button', 'aria-label': `${name} +${v.recPos} / −${v.recNeg}. ${v.recPos} positivas y ${v.recNeg} negativas recibidas${p.fija ? '; posición fijada' : ''}`, 'aria-pressed': selectedNode } : {}) });
       node.append(svg('title', {}, `${name}: +${v.recPos}, −${v.recNeg}. ${p.fija ? 'Posición fijada.' : ''}`));
       node.append(svg('circle', { r, fill: selectedNode ? '#a6d5ff' : '#d3e8ff', stroke: selectedNode ? '#072f55' : '#3e668e', 'stroke-width': selectedNode ? 4 : 2 }));
       if (p.fija) node.append(svg('circle', { r: r - 5, fill: 'none', stroke: '#3e668e', 'stroke-width': 1.2, 'pointer-events': 'none' }));
