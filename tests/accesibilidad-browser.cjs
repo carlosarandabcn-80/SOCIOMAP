@@ -34,7 +34,7 @@ const server=http.createServer((req,res)=>{
    await page.waitForLoadState('networkidle');
    const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
    console.log('AXE',p,'violaciones',result.violations.length);
-   for(const v of result.violations)defects.push({page:p,id:v.id,impact:v.impact,targets:v.nodes.slice(0,4).map(n=>n.target.join(', '))});
+   for(const v of result.violations)defects.push({page:p,id:v.id,impact:v.impact,targets:v.nodes.slice(0,30).map(n=>({selector:n.target.join(', '),summary:n.failureSummary?.slice(0,220)}))});
   }
   await page.goto(url+'/formulario.html');
   await page.evaluate(({key,datos})=>sessionStorage.setItem(key,JSON.stringify({datos})),
@@ -44,7 +44,7 @@ const server=http.createServer((req,res)=>{
   await page.selectOption('#participante','0');
   const app=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
   console.log('AXE sociograma_interactivo.html violaciones',app.violations.length);
-  for(const v of app.violations)defects.push({page:'sociograma_interactivo.html',id:v.id,impact:v.impact,targets:v.nodes.slice(0,4).map(n=>n.target.join(', '))});
+  for(const v of app.violations)defects.push({page:'sociograma_interactivo.html',id:v.id,impact:v.impact,targets:v.nodes.slice(0,30).map(n=>({selector:n.target.join(', '),summary:n.failureSummary?.slice(0,220)}))});
   if(defects.length){
     console.error('HALLAZGOS AUTOMÁTICOS',JSON.stringify(defects,null,2));
     process.exitCode=1;
