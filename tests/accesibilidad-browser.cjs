@@ -24,7 +24,8 @@ const server=http.createServer((req,res)=>{
  const url='http://127.0.0.1:'+server.address().port;
  const chrome=process.env.CHROMIUM_EXECUTABLE_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined);
  const browser=await chromium.launch({headless:true,...(chrome?{executablePath:chrome}:{})});
- const page=await browser.newPage({viewport:{width:1365,height:900}});
+ const context=await browser.newContext({viewport:{width:1365,height:900}});
+ const page=await context.newPage();
  const defects=[];
  try{
   const pages=['index.html','acceso.html','formulario.html','demo.html','instrucciones.html'];
