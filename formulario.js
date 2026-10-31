@@ -23,6 +23,7 @@
     }
   }
   function ocultarResultados() {
+    $('verFotosResumen').checked = false;
     $('resultadosPanel').hidden = true;
     $('btnSociograma').hidden = true;
   }
