@@ -9,6 +9,19 @@
     return normalized;
   }
   const normalizarNombre = value => texto(value, 'Nombre', 80);
+  const FOTO_MAX = 18000; // caracteres de una miniatura base64; 40 retratos caben en la copia de 1 MB
+  function validarFotos(value, ids) {
+    if (value === undefined || value === null) return {};
+    if (!value || typeof value !== 'object' || Array.isArray(value)) fail('Las fotografías no tienen un formato válido.');
+    const result = {};
+    for (const [id, foto] of Object.entries(value)) {
+      if (!ids.includes(id) || typeof foto !== 'string' || foto.length > FOTO_MAX ||
+          !/^data:image\/(?:webp|jpeg|png);base64,[A-Za-z0-9+/]+={0,2}$/.test(foto))
+        fail('Fotografía inválida: solo miniaturas JPG, PNG o WebP del participante, sin contenido externo.');
+      result[id] = foto;
+    }
+    return result;
+  }
   function validarNombres(names) {
     if (!Array.isArray(names) || names.length < 2 || names.length > 40) fail('El grupo debe tener entre 2 y 40 participantes.');
     const result = Array.from(names, normalizarNombre);
@@ -44,7 +57,7 @@
     if (!r || !['exactos', 'maximos'].includes(r.modo) || !Number.isInteger(r.positivos) || !Number.isInteger(r.negativos) || r.positivos < 1 || r.negativos < 0 || r.positivos + r.negativos > n - 1) fail('Los límites de elección deben caber entre los demás participantes (al menos un positivo permitido).');
     const reglas = { positivos: r.positivos, negativos: r.negativos, modo: r.modo };
     if (!Array.isArray(data.respondidas) || data.respondidas.length !== n || Array.from(data.respondidas).some(v => typeof v !== 'boolean')) fail('El estado de las respuestas está incompleto.');
-    const respondidas = [...data.respondidas];
+    const respondidas = [...data.respondidas], fotos = validarFotos(data.fotos, ids);
     if (!Array.isArray(data.matriz) || data.matriz.length !== n) fail('La matriz está incompleta.');
     const matriz = Array.from(data.matriz, (row, i) => {
       if (!Array.isArray(row) || row.length !== n) fail('La matriz está incompleta.');
@@ -59,7 +72,7 @@
       }
       return values;
     });
-    return { version: 2, cohorte, grupo, nombres, ids, fecha: data.fecha, fechaNoRegistrada: data.fechaNoRegistrada === true, criterio, reglas, respondidas, matriz };
+    return { version: 2, cohorte, grupo, nombres, ids, fecha: data.fecha, fechaNoRegistrada: data.fechaNoRegistrada === true, criterio, reglas, respondidas, matriz, fotos };
   }
   function intermediacion(adj) {
     const n = adj.length, cb = Array(n).fill(0);
@@ -173,12 +186,12 @@
   }
   function seudonimizar(input) {
     const data = validarDatos(input, { borrador: true });
-    return { ...data, grupo: 'Grupo seudonimizado', nombres: data.ids.map((_, i) => `P${i + 1}`) };
+    return { ...data, grupo: 'Grupo seudonimizado', nombres: data.ids.map((_, i) => `P${i + 1}`), fotos: {} };
   }
   const csvText = value => /^[\s]*[=+\-@'\t\r]/.test(value) ? "'" + value : value;
   const csvCell = value => '"' + String(value ?? '').replace(/"/g, '""') + '"';
   function aCSV(input) {
-    const data = validarDatos(input, { borrador: true }), { matriz, respondidas, ...meta } = data;
+    const data = validarDatos(input, { borrador: true }), { matriz, respondidas, fotos, ...meta } = data; // CSV siempre sin fotografías
     const rows = [['SOCIOMAP', '2', JSON.stringify(meta)], ['De/A', ...data.nombres.map(csvText), 'Respuesta registrada'],
       ...matriz.map((row, i) => [csvText(data.nombres[i]), ...row, respondidas[i] ? '1' : '0'])];
     return '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n');
@@ -257,6 +270,6 @@
     });
   }
   const escaparHTML = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const api = { STORAGE_KEY, MAX_FILE, normalizarNombre, validarNombres, validarDatos, calcular, nuevaMedicion, comparar, validarVista, validarProyecto, seudonimizar, aCSV, deCSV, parseCSV, importar, demo, demoPublica, escaparHTML, intermediacion, componentes };
+  const api = { STORAGE_KEY, MAX_FILE, normalizarNombre, validarNombres, validarFotos, FOTO_MAX, validarDatos, calcular, nuevaMedicion, comparar, validarVista, validarProyecto, seudonimizar, aCSV, deCSV, parseCSV, importar, demo, demoPublica, escaparHTML, intermediacion, componentes };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sociometria = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

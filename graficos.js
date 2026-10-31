@@ -25,7 +25,7 @@ window.Graficos = (() => {
   }
   function ranking(data, container, aliases) {
     container.replaceChildren(UI.tabla(['Participante', 'Respuesta', '+ recibidos', '− recibidos', 'Entrada + relativa', 'Pares + recíprocos', 'Intermediación +'],
-      data.nodes.map(v => [nombre(data, v.id, aliases), v.respondida ? 'Registrada' : 'Pendiente', v.recPos, v.recNeg, UI.pct(v.popularidad), v.mutPos,
+      data.nodes.map(v => [FotosUI.persona(data, v.id, aliases), v.respondida ? 'Registrada' : 'Pendiente', v.recPos, v.recNeg, UI.pct(v.popularidad), v.mutPos,
         v.intermediacion.toLocaleString('es-ES', { maximumFractionDigits: 3 })]), 'Indicadores por participante. La entrada relativa usa los emisores observados. La intermediación usa caminos positivos dirigidos.'));
   }
   function barras(data, aliases) {
@@ -40,6 +40,14 @@ window.Graficos = (() => {
     }
     data.nodes.forEach((v, index) => {
       const y = 72 + index * 48;
+      const photo=!aliases && data.fotos?.[v.uid];
+      if(photo){
+        const id='barras-foto-'+index;
+        const clip=svg('clipPath',{id});clip.append(svg('circle',{cx:36,cy:y+17,r:16}));
+        result.append(clip);
+        result.append(svg('image',{href:photo,x:20,y:y+1,width:32,height:32,
+          'clip-path':'url(#'+id+')',preserveAspectRatio:'xMidYMid slice'}));
+      }
       result.append(svg('text', { x: 204, y: y + 19, 'text-anchor': 'end', fill: '#142b43', 'font-size': 14 }, recortar(nombre(data, v.id, aliases), 23)));
       for (const [value, offset, color, sign] of [[v.recPos, 0, POS, '+'], [v.recNeg, 18, NEG, '-']]) {
         result.append(svg('rect', { x: 220, y: y + offset, width: 810 * value / max, height: 13, fill: color }));
@@ -127,10 +135,31 @@ window.Graficos = (() => {
       const node = svg('g', { class: 'node', transform: `translate(${p.x},${p.y})`, 'data-node': v.id,
         ...(interactivo ? { tabindex: 0, role: 'button', 'aria-label': `${name} +${v.recPos} / −${v.recNeg}. ${v.recPos} positivas y ${v.recNeg} negativas recibidas${p.fija ? '; posición fijada' : ''}`, 'aria-pressed': selectedNode } : {}) });
       node.append(svg('title', {}, `${name}: +${v.recPos}, −${v.recNeg}. ${p.fija ? 'Posición fijada.' : ''}`));
-      node.append(svg('circle', { r, fill: selectedNode ? '#a6d5ff' : '#d3e8ff', stroke: selectedNode ? '#072f55' : '#3e668e', 'stroke-width': selectedNode ? 4 : 2 }));
-      if (p.fija) node.append(svg('circle', { r: r - 5, fill: 'none', stroke: '#3e668e', 'stroke-width': 1.2, 'pointer-events': 'none' }));
-      node.append(svg('text', { y: -3, 'text-anchor': 'middle', fill: '#102f4d', 'font-size': 13, 'font-family': 'Arial', 'font-weight': 700, 'pointer-events': 'none' }, recortar(name, 11)));
-      node.append(svg('text', { y: 13, 'text-anchor': 'middle', fill: '#183e60', 'font-size': 10, 'font-family': 'Arial', 'pointer-events': 'none' }, `+${v.recPos} / −${v.recNeg}`));
+      const photo = !vista.seudonimos && data.fotos?.[v.uid];
+      node.append(svg('circle',{r,fill: selectedNode?'#b8dfff':'#e7eef6',
+        stroke:selectedNode?'#0d4b7a':'#5d7994','stroke-width':selectedNode?4:2.5}));
+      if(photo){
+        const clipId=prefix+'-foto-'+v.id;
+        const clip=svg('clipPath',{id:clipId}); clip.append(svg('circle',{r:r-3}));
+        defs.append(clip);
+        node.append(svg('image',{href:photo,x:-(r-3),y:-(r-3),
+          width:2*(r-3),height:2*(r-3),
+          preserveAspectRatio:'xMidYMid slice',
+          'clip-path':'url(#'+clipId+')','pointer-events':'none'}));
+        node.append(svg('rect',{x:-Math.max(37,r+7),y:r+4,width:2*Math.max(37,r+7),height:34,rx:10,
+          fill:'#f8fbff',stroke:'#d6e3ee','pointer-events':'none'}));
+        node.append(svg('text',{y:r+18,'text-anchor':'middle',fill:'#15324d',
+          'font-size':12,'font-weight':700,'pointer-events':'none'},recortar(name,12)));
+        node.append(svg('text',{y:r+31,'text-anchor':'middle',fill:'#35536d',
+          'font-size':10,'pointer-events':'none'},`+${v.recPos} · −${v.recNeg}`));
+      } else {
+        node.append(svg('text', {y:-3,'text-anchor':'middle',fill:'#102f4d','font-size':13,
+          'font-family':'Arial','font-weight':700,'pointer-events':'none'}, recortar(name,11)));
+        node.append(svg('text',{y:13,'text-anchor':'middle',fill:'#183e60',
+          'font-size':10,'pointer-events':'none'},`+${v.recPos} / −${v.recNeg}`));
+      }
+      if(p.fija)node.append(svg('circle',{r:r+5,fill:'none',stroke:'#2c5d8a',
+        'stroke-width':1.5,'stroke-dasharray':'3 4','pointer-events':'none'}));
       nodes.append(node);
     });
   }

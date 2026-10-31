@@ -52,7 +52,9 @@ const server = http.createServer((req, res) => {
   try {
     await page.goto(url + '/demo.html');
     assert.equal(await page.locator('#grafoDemo [data-demo-node]').count(), 8);
+    assert.equal(await page.locator('#grafoDemo image').count(),8,'Demo con ocho retratos ficticios');
     assert.equal(await page.locator('#graficoRankingDemo .ranking-interactivo').count(), 8);
+    assert.equal(await page.locator('#graficoRankingDemo img.avatar-ranking').count(),8);
     assert.equal(await page.locator('#rankingDemo tbody tr').count(), 8);
     await page.locator('#graficoRankingDemo .ranking-interactivo').first().click();
     assert.match(await page.locator('#detalleDemo').innerText(), /elecciones positivas/);
@@ -131,6 +133,16 @@ const server = http.createServer((req, res) => {
     assert.match(await page.locator('#mensaje').innerText(), /dos papeletas/);
     console.log('PASS PDF: una hoja A4 universal para dos personas');
     await page.click('#crearTabla');
+    const portrait=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/TyQAAAAASUVORK5CYII=','base64');
+    await page.locator('#fotoParticipante').setInputFiles({name:'retrato.png',mimeType:'image/png',buffer:portrait});
+    await page.waitForFunction(key=>{
+      const saved=JSON.parse(sessionStorage.getItem(key));
+      return Object.values(saved?.datos?.fotos||{}).length===1;
+    },S.STORAGE_KEY);
+    assert.equal(await page.locator('.avatar-editor[src^="data:image/"]').count(),1);
+    assert.equal(await page.locator('.person-pill img').count(),1);
+    await page.reload();
+    assert.equal(await page.locator('.avatar-editor[src^="data:image/"]').count(),1);
     assert.equal(await page.locator('.vote-select').count(), 6);
     assert.equal(await page.locator('.person-pill').count(), 7);
     assert.equal((await state()).datos.respondidas.filter(Boolean).length, 0);
@@ -144,6 +156,7 @@ const server = http.createServer((req, res) => {
     }
     const datos = (await state()).datos;
     assert.equal(datos.nombres[0], 'Ana');
+    assert.ok(datos.fotos[datos.ids[0]]?.startsWith('data:image/'),'La fotografía sigue ligada al identificador estable');
     assert.ok(datos.respondidas.every(Boolean));
     assert.ok(datos.matriz.every((row, i) => row[i] === '0' && row.filter(v => v === '+').length === 3 && row.filter(v => v === '-').length === 3));
     assert.equal(await page.locator('#btnRanking').isEnabled(), true);
@@ -160,6 +173,19 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#graph .node').count(), 7);
     assert.equal(await page.locator('#graph .link').count(), 42);
     assert.equal(await page.locator('#graficoRankingApp .ranking-interactivo').count(), 7);
+    assert.equal(await page.locator('#graph image').count(),0,'Los códigos ocultan las fotografías');
+    assert.equal(await page.locator('#graficoRankingApp img').count(),0);
+    await page.uncheck('#seudonimos');
+    assert.equal(await page.locator('#graph image').count(),1);
+    assert.equal(await page.locator('#graficoRankingApp img').count(),1);
+    assert.equal(await page.locator('#ranking img').count(),1);
+    assert.equal(await page.locator('#detalle img').count(),0);
+    await page.selectOption('#participante','0');
+    assert.equal(await page.locator('#detalle img[src^="data:image/"]').count(),1);
+    await page.check('#seudonimos');
+    assert.equal(await page.locator('#graph image').count(),0);
+    assert.equal(await page.locator('#graficoRankingApp img').count(),0);
+    await page.selectOption('#participante','');
     assert.equal(await page.locator('.move-node:enabled').count(), 0);
     await page.selectOption('#participante', '0');
     assert.equal(await page.locator('.move-node:enabled').count(), 4);
@@ -180,8 +206,10 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#graficoRankingApp [data-rank-node="2"]').getAttribute('aria-pressed'),'true');
     const json = JSON.parse(fs.readFileSync(await download('#exportJSON', 'copia.json'), 'utf8'));
     assert.deepEqual(json.datos.nombres, Array.from({ length: 7 }, (_, i) => 'P' + (i + 1)));
+    assert.deepEqual(json.datos.fotos,{},'La copia seudonimizada nunca incluye fotos');
     const csv = fs.readFileSync(await download('#exportCSV', 'matriz.csv'), 'utf8');
     assert.deepEqual(S.deCSV(csv).matriz, datos.matriz);
+    assert.equal(Object.keys(S.deCSV(csv).fotos).length,0,'CSV sin retratos');
     // A04: comprobar los cinco archivos realmente descargados y su contenido.
     const png=fs.readFileSync(await download('#exportPNG','mapa-sociomap.png'));
     assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
@@ -195,8 +223,15 @@ const server = http.createServer((req, res) => {
     await page.check('#incluirNombres');
     const named=JSON.parse(fs.readFileSync(await download('#exportJSON','copia-con-nombres.json'),'utf8'));
     assert.deepEqual(named.datos.nombres,names);
+    assert.ok(named.datos.fotos[named.datos.ids[0]]?.startsWith('data:image/'));
     const namedSVG=fs.readFileSync(await download('#exportSVG','mapa-con-nombres.svg'),'utf8');
     assert.match(namedSVG,/Ana/);
+    assert.match(namedSVG,/<image[^>]+href="data:image\//,'El SVG identificado contiene el retrato');
+    const namedPNG=fs.readFileSync(await download('#exportPNG','mapa-identificado.png'));
+    assert.equal(namedPNG.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    const namedPDF=await PDFDocument.load(fs.readFileSync(await download('#exportPDF','informe-con-fotos.pdf')));
+    assert.ok(namedPDF.getPageCount()>=4);
+    console.log('PASS FOTO EXPORT: SVG/PNG/PDF identificados con retrato embebido');
     await page.uncheck('#incluirNombres');
     console.log('PASS EXPORT: PNG, SVG, PDF, JSON, CSV y consentimiento explícito de nombres');
     console.log('PASS 3: sociograma y exportaciones conservados');
@@ -232,9 +267,11 @@ const server = http.createServer((req, res) => {
     assert.equal(oldStudy.datos.fecha,datos.fecha);
     assert.deepEqual(oldStudy.datos.matriz,datos.matriz);
     assert.deepEqual(oldStudy.datos.ids,datos.ids);
+    assert.ok(oldStudy.datos.fotos[datos.ids[0]],'La copia longitudinal conserva la fotografía');
     const fresh=(await state()).datos;
     assert.equal(fresh.fecha,nextDate);
     assert.deepEqual(fresh.ids,datos.ids);
+    assert.equal(fresh.fotos[fresh.ids[0]],datos.fotos[datos.ids[0]],'La foto mantiene identidad entre fechas');
     assert.equal(fresh.cohorte,datos.cohorte);
     assert.ok(fresh.respondidas.every(v=>v===false));
     assert.ok(fresh.matriz.every((row,i)=>row.every((v,j)=>v===(i===j?'0':null))));
