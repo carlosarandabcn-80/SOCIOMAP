@@ -8,19 +8,17 @@
   let indice = 0;
   let configuracionPendiente = false;
   let hayEstudioAnterior = false;
+  let lecturaCopia = 0;
+  const fotosPendientes = new Map();
   for (let n = 7; n <= 40; n++) $('num').add(new Option(n, n));
   $('num').value = '7';
   $('fecha').value = UI.hoy();
 
   function mensaje(texto, error) { UI.mensaje(texto, Boolean(error)); }
-  function guardar() {
-    try {
-      Almacen.guardar(proyecto, persistente);
-      return true;
-    } catch (e) {
-      mensaje('No se pueden guardar los datos en esta pestaña: ' + e.message, true);
-      return false;
-    }
+  function mensajeFicha(texto, error) { UI.mensaje(texto, Boolean(error), 'mensajeFicha'); }
+  function guardar(candidato, recordar = persistente) {
+    proyecto = Almacen.guardar(candidato, recordar);
+    persistente = recordar;
   }
   function ocultarResultados() {
     $('verFotosResumen').checked = false;
@@ -31,17 +29,19 @@
     return datos.nombres.length >= 7 && datos.reglas.modo === 'exactos' &&
       datos.reglas.positivos === LIMITE && datos.reglas.negativos === LIMITE;
   }
-  function cargarConfig() {
-    const d = proyecto.datos;
+  const nombresPersonalizados = nombres => nombres.some((nombre, i) => nombre !== 'P' + (i + 1));
+  function cargarNombres(nombres) {
+    $('custom').checked = nombresPersonalizados(nombres);
+    $('namesBox').hidden = !$('custom').checked;
+    $('names').value = nombres.join('\n');
+  }
+  function cargarConfig(d) {
     $('grupo').value = d.grupo;
     $('num').value = String(d.nombres.length);
     $('fecha').value = d.fechaNoRegistrada ? UI.hoy() : d.fecha;
     $('criterio').value = d.criterio;
-    $('custom').checked = d.nombres.some((nombre, i) => nombre !== 'P' + (i + 1));
-    $('namesBox').hidden = !$('custom').checked;
-    $('names').value = d.nombres.join('\n');
+    cargarNombres(d.nombres);
     if ($('custom').checked) $('custom').closest('details').open = true;
-    configuracionPendiente = false;
   }
   function leerConfig() {
     const n = Number($('num').value);
@@ -57,38 +57,53 @@
       reglas: { positivos: LIMITE, negativos: LIMITE, modo: 'exactos' }
     };
   }
+  function mismoGrupo(a, b) {
+    return a.grupo === b.grupo && a.criterio === b.criterio &&
+      a.nombres.length === b.nombres.length && a.nombres.every((nombre, i) => nombre === b.nombres[i]);
+  }
+  function activar(nuevo, recordar) {
+    proyecto = nuevo;
+    persistente = recordar;
+    hayEstudioAnterior = false;
+    configuracionPendiente = false;
+    fotosPendientes.clear();
+    indice = 0;
+    cargarConfig(proyecto.datos);
+    ocultarResultados();
+    mensajeFicha('');
+    $('matrizPanel').hidden = false;
+    $('guardarCopia').disabled = false;
+    dibujarPersona();
+    validar();
+  }
   function crearGrupo() {
     try {
       const cfg = leerConfig();
-      const prev = proyecto && proyecto.datos;
-      const mismoGrupo = prev && JSON.stringify(prev.nombres) === JSON.stringify(cfg.nombres) &&
-        prev.criterio === cfg.criterio && prev.grupo === cfg.grupo && esCompatible(prev);
-      if (mismoGrupo && prev.fecha !== cfg.fecha && !prev.fechaNoRegistrada)
-        throw new Error('La fecha ha cambiado. Utiliza «Guardar medición actual e iniciar otra fecha» para conservar las identidades y vaciar las respuestas; no se puede asignar una nueva fecha a votos antiguos.');
-      const igual = mismoGrupo && prev.fecha === cfg.fecha && !prev.fechaNoRegistrada;
-      if ((prev && !igual || hayEstudioAnterior) &&
-          !confirm('Se sustituirán las respuestas guardadas. ¿Crear este grupo?')) return;
-      const n = cfg.nombres.length;
+      const prev = proyecto?.datos, n = cfg.nombres.length;
       const datos = S.validarDatos(Object.assign({}, cfg, {
-        version: 2,
-        cohorte: igual ? prev.cohorte : crypto.randomUUID(),
-        ids: igual ? prev.ids : Array.from({ length: n }, () => crypto.randomUUID()),
-        fotos: igual ? prev.fotos : {},
-        respondidas: igual ? prev.respondidas : Array(n).fill(false),
-        matriz: igual ? prev.matriz : Array.from({ length: n }, (_, i) =>
+        version: 2, cohorte: crypto.randomUUID(),
+        ids: Array.from({ length: n }, () => crypto.randomUUID()),
+        respondidas: Array(n).fill(false),
+        matriz: Array.from({ length: n }, (_, i) =>
           Array.from({ length: n }, (_, j) => i === j ? '0' : null))
       }), { borrador: true });
-      proyecto = S.validarProyecto({ datos, vista: igual ? proyecto.vista : {} });
-      hayEstudioAnterior = false;
-      indice = 0;
-      cargarConfig();
-      ocultarResultados();
-      $('matrizPanel').hidden = false;
-      dibujarPersona();
-      validar();
-      guardar();
-      mensaje(igual ? 'Grupo actualizado. Se han conservado las elecciones.' : 'Grupo creado. Empieza por la primera persona.');
-      $('matrizPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const mismo = prev && mismoGrupo(prev, datos);
+      if (mismo && !prev.fechaNoRegistrada) {
+        if (prev.fecha !== datos.fecha)
+          throw new Error('La fecha ha cambiado. Usa «Guardar medición actual e iniciar otra fecha» para conservar las identidades y empezar con las respuestas vacías.');
+        configuracionPendiente = false;
+        cargarConfig(prev);
+        ocultarResultados();
+        validar();
+        mensaje('Grupo recuperado con sus respuestas y fotografías.');
+      } else {
+        if ((prev || hayEstudioAnterior) &&
+            !confirm('Crear otro grupo sustituye el estudio activo, con sus respuestas y fotos. ¿Continuar?')) return;
+        guardar({ datos }, false);
+        activar(proyecto, persistente);
+        mensaje('Grupo creado. Empieza por la primera persona.');
+      }
+      UI.desplazar($('matrizPanel'));
     } catch (e) { mensaje(e.message, true); }
   }
   function votosDe(signo, i) {
@@ -125,67 +140,117 @@
     if (new Set(usadas).size !== usadas.length) {
       e.target.value = '';
       refrescarOpciones();
-      mensaje('Cada persona solo puede aparecer una vez.', true);
+      mensajeFicha('Cada persona solo puede aparecer una vez.', true);
       return;
     }
     const d = proyecto.datos, i = indice;
-    const completo = usadas.length > 0;
-    d.respondidas[i] = completo;
-    d.matriz[i] = Array.from({ length: d.nombres.length }, (_, j) => i === j || completo ? '0' : null);
+    const registrada = usadas.length > 0, respondidas = [...d.respondidas], matriz = [...d.matriz];
+    respondidas[i] = registrada;
+    matriz[i] = Array.from({ length: d.nombres.length }, (_, j) => i === j || registrada ? '0' : null);
     for (const sel of selects) {
-      if (sel.value !== '') d.matriz[i][Number(sel.value)] = sel.dataset.sign;
+      if (sel.value !== '') matriz[i][Number(sel.value)] = sel.dataset.sign;
     }
-    ocultarResultados();
-    refrescarOpciones();
-    validar();
-    guardar();
-    mensaje('');
+    try {
+      guardar({ ...proyecto, datos: { ...d, respondidas, matriz } });
+      ocultarResultados();
+      refrescarOpciones();
+      pintarNavegacion();
+      validar();
+      mensajeFicha('');
+    } catch (error) {
+      const foco = `[data-sign="${e.target.dataset.sign}"][data-slot="${e.target.dataset.slot}"]`;
+      dibujarPersona();
+      $('votacion').querySelector(foco)?.focus({ preventScroll: true });
+      mensajeFicha('No se guardó el cambio en la respuesta. ' + error.message, true);
+    }
+  }
+  function guardarNombre(event) {
+    event.preventDefault();
+    const d = proyecto.datos, input = $('nombreParticipante'), nombres = [...d.nombres];
+    const codigo = 'P' + (indice + 1);
+    try {
+      nombres[indice] = input.value.trim() ? S.normalizarNombre(input.value) : codigo;
+      if (nombres[indice] !== d.nombres[indice]) {
+        guardar({ ...proyecto, datos: { ...d, nombres } });
+        if ($('names').value === d.nombres.join('\n') && $('custom').checked === nombresPersonalizados(d.nombres))
+          cargarNombres(proyecto.datos.nombres);
+        ocultarResultados();
+        dibujarPersona();
+        $('nombreParticipante').focus({ preventScroll: true });
+      }
+      mensajeFicha(nombres[indice] === codigo ? 'Código ' + codigo + ' guardado.' : 'Nombre guardado. Sus respuestas se conservan.');
+    } catch (error) { mensajeFicha(error.message, true); }
+  }
+  function actualizarFoto(uid) {
+    pintarNavegacion();
+    const d = proyecto.datos;
+    if (d.ids[indice] !== uid) return;
+    const editor = $('editorFoto');
+    editor.querySelector('.avatar-editor').replaceWith(FotosUI.avatar(d, indice, false, 'avatar-editor'));
+    $('quitarFoto').disabled = !d.fotos[uid];
+    editor.setAttribute('aria-busy', String(fotosPendientes.has(uid)));
   }
   async function cargarFoto(event, uid) {
-    const input=event.currentTarget, file=input.files?.[0]; if (!file) return;
-    const fotos=proyecto?.datos?.fotos, estudio=proyecto?.datos?.cohorte;
-    const anterior=fotos?.[uid];
+    const input = event.currentTarget, file = input.files?.[0];
+    if (!file) return;
+    const carga = Symbol();
+    fotosPendientes.set(uid, carga);
+    $('editorFoto').setAttribute('aria-busy', 'true');
+    mensajeFicha('Preparando la fotografía…');
     try {
-      const miniatura=await FotosUI.procesar(file);
-      if (!proyecto || proyecto.datos.cohorte!==estudio || !proyecto.datos.ids.includes(uid))
-        throw new Error('El grupo ha cambiado mientras se procesaba la fotografía.');
-      proyecto.datos.fotos[uid]=miniatura;
-      if(!guardar()){
-        if(anterior)proyecto.datos.fotos[uid]=anterior;
-        else delete proyecto.datos.fotos[uid];
-        throw new Error('No se ha podido guardar la fotografía. Libera almacenamiento o utiliza otra imagen.');
+      const miniatura = await FotosUI.procesar(file);
+      if (fotosPendientes.get(uid) !== carga) return;
+      const d = proyecto.datos;
+      guardar({ ...proyecto, datos: { ...d, fotos: { ...d.fotos, [uid]: miniatura } } });
+      ocultarResultados();
+      mensajeFicha('Fotografía de P' + (d.ids.indexOf(uid) + 1) + ' guardada en este navegador.');
+    } catch (error) {
+      if (fotosPendientes.get(uid) === carga) mensajeFicha('No se guardó la fotografía. ' + error.message, true);
+    } finally {
+      if (fotosPendientes.get(uid) === carga) {
+        fotosPendientes.delete(uid);
+        actualizarFoto(uid);
+        input.value = '';
       }
-      dibujarPersona();
-      mensaje('Fotografía guardada en este navegador. Se mostrará en el sociograma al desactivar los códigos.');
-    } catch(error){ mensaje(error.message,true); }
-    finally { input.value=''; }
+    }
   }
   function retirarFoto(uid) {
-    if (!proyecto?.datos?.fotos?.[uid]) return;
-    const anterior=proyecto.datos.fotos[uid];
-    delete proyecto.datos.fotos[uid];
-    if(!guardar()){proyecto.datos.fotos[uid]=anterior; return;}
-    dibujarPersona();
-    mensaje('Fotografía retirada del estudio.');
+    const d = proyecto.datos, fotos = { ...d.fotos };
+    delete fotos[uid];
+    try {
+      guardar({ ...proyecto, datos: { ...d, fotos } });
+      fotosPendientes.delete(uid);
+      ocultarResultados();
+      actualizarFoto(uid);
+      $('fotoParticipante').value = '';
+      $('fotoParticipante').focus({ preventScroll: true });
+      mensajeFicha('Fotografía retirada del estudio.');
+    } catch (error) { mensajeFicha('No se retiró la fotografía. ' + error.message, true); }
   }
   function dibujarPersona() {
     if (!proyecto) return;
     const d = proyecto.datos, nombre = d.nombres[indice];
     const positivos = votosDe('+', indice).slice(0, LIMITE);
     const negativos = votosDe('-', indice).slice(0, LIMITE), uid = d.ids[indice];
-    const inputFoto=UI.el('input',{type:'file',accept:'image/jpeg,image/png,image/webp',
-      id:'fotoParticipante',className:'foto-input','aria-label':'Añadir o cambiar fotografía de '+nombre});
-    inputFoto.addEventListener('change',event=>cargarFoto(event,uid));
-    const quitar=UI.el('button',{type:'button',className:'btn foto-quitar'},'Eliminar foto');
-    quitar.disabled=!d.fotos[uid];
-    quitar.addEventListener('click',()=>retirarFoto(uid));
-    const editorFoto=UI.el('div',{className:'editor-foto'},
-      FotosUI.avatar(d,indice,false,'avatar-editor'),
-      UI.el('div',{className:'foto-acciones'},
-        UI.el('label',{className:'foto-etiqueta',for:'fotoParticipante'},d.fotos[uid]?'Cambiar fotografía':'Añadir fotografía'),
-        inputFoto,
-        quitar,
-        UI.el('span',{className:'hint'},'Opcional · JPG, PNG o WebP · se guarda solo una miniatura.')
+    const codigo = 'P' + (indice + 1);
+    const campoNombre = UI.el('input', { id: 'nombreParticipante', maxlength: 80,
+      value: nombre === codigo ? '' : nombre, placeholder: codigo, autocomplete: 'off', 'aria-describedby': 'ayudaNombre' });
+    const editorNombre = UI.el('form', { className: 'editor-nombre' },
+      UI.el('label', { for: 'nombreParticipante' }, 'Nombre o alias (opcional)'),
+      UI.el('div', { className: 'nombre-acciones' }, campoNombre, UI.el('button', { className: 'btn', type: 'submit' }, 'Guardar nombre')),
+      UI.el('p', { className: 'hint', id: 'ayudaNombre' }, 'Deja el campo vacío para usar ' + codigo + '.'));
+    editorNombre.addEventListener('submit', guardarNombre);
+    const inputFoto = UI.el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp',
+      id: 'fotoParticipante', className: 'foto-input', 'aria-describedby': 'ayudaFoto' });
+    inputFoto.addEventListener('change', event => cargarFoto(event, uid));
+    const quitar = UI.el('button', { type: 'button', className: 'btn foto-quitar', id: 'quitarFoto', disabled: !d.fotos[uid] }, 'Retirar foto');
+    quitar.addEventListener('click', () => retirarFoto(uid));
+    const editorFoto = UI.el('div', { className: 'editor-foto', id: 'editorFoto', 'aria-busy': String(fotosPendientes.has(uid)) },
+      FotosUI.avatar(d, indice, false, 'avatar-editor'),
+      UI.el('div', { className: 'campo-foto' },
+        UI.el('label', { for: 'fotoParticipante' }, 'Fotografía (opcional)'),
+        UI.el('div', { className: 'foto-acciones' }, inputFoto, quitar),
+        UI.el('p', { className: 'hint', id: 'ayudaFoto' }, 'JPG, PNG o WebP · Hasta 6 MB. Se guarda una miniatura local.')
       ));
     const card = UI.el('div', { className: 'person-card' },
       UI.el('div', { className: 'person-title' },
@@ -193,7 +258,7 @@
           UI.el('h3', {}, nombre)),
         UI.el('span', { className: 'person-state', id: 'estadoPersona' }, '')
       ),
-      editorFoto,
+      UI.el('div', { className: 'editor-perfil' }, editorNombre, editorFoto),
       UI.el('div', { className: 'choice-grid' },
         UI.el('fieldset', { className: 'choice-group positive-choice' },
           UI.el('legend', {}, '＋ 3 positivas'), UI.el('p', { className: 'hint' }, 'Con quién prefiere participar.'),
@@ -210,21 +275,23 @@
     pintarNavegacion();
   }
   function completada(i) {
-    const d = proyecto.datos;
-    return d.respondidas[i] && votosDe('+', i).length === LIMITE && votosDe('-', i).length === LIMITE;
+    return S.respuestaCompleta(proyecto.datos, i);
   }
   function pintarNavegacion() {
     if (!proyecto) return;
     const d = proyecto.datos;
-    $('pasos').replaceChildren(...d.nombres.map((nombre, i) => {
+    const pasos = $('pasos'), focused = Array.from(pasos.children).indexOf(document.activeElement);
+    pasos.replaceChildren(...d.nombres.map((nombre, i) => {
       const boton = UI.el('button', {
         type: 'button', className: 'person-pill' + (indice === i ? ' active' : '') + (completada(i) ? ' done' : ''),
         'aria-label': 'Persona ' + (i + 1) + ': ' + nombre + (completada(i) ? ', completa' : ', pendiente'),
         'aria-current': indice === i ? 'step' : null
-      }, FotosUI.avatar(d,i,false,'avatar-paso'), UI.el('span',{},String(i+1)));
-      boton.addEventListener('click', () => { indice = i; dibujarPersona(); });
+      }, FotosUI.avatar(d,i,false,'avatar-paso'), UI.el('span', { 'aria-hidden': 'true' },
+        String(i + 1) + (completada(i) ? ' ✓' : '')));
+      boton.addEventListener('click', () => { indice = i; mensajeFicha(''); dibujarPersona(); });
       return boton;
     }));
+    if (focused >= 0) pasos.children[focused]?.focus({ preventScroll: true });
     const p = votosDe('+', indice).length, m = votosDe('-', indice).length;
     const estado = $('estadoPersona');
     if (estado) {
@@ -242,7 +309,6 @@
     $('barraRelleno').style.width = porcentaje + '%';
     $('btnRanking').disabled = completadas !== n || configuracionPendiente;
     $('nuevaMedicion').disabled = completadas !== n || proyecto.datos.fechaNoRegistrada;
-    pintarNavegacion();
   }
   function resultados() {
     ocultarResultados();
@@ -253,22 +319,21 @@
         [[m.participantes, 'Personas'], [m.totalPos, 'Positivas'], [m.totalNeg, 'Negativas'],
           [m.paresMutPos, 'Pares positivos recíprocos']].map(([num, titulo]) =>
           UI.el('div', { className: 'metric' }, UI.el('strong', {}, num), UI.el('span', {}, titulo)))));
-      const dibujarRanking=()=>$('ranking').replaceChildren(UI.tabla(['Persona', '+ recibidas', '− recibidas'],
-        data.nodes.map(v => [FotosUI.persona(data,v.id,!$('verFotosResumen').checked), v.recPos, v.recNeg]),
-        'Elecciones recibidas. Las fotografías solo se muestran si se autoriza expresamente.'));
+      const dibujarRanking = () => $('ranking').replaceChildren(UI.tabla(['Persona', '+ recibidas', '− recibidas'],
+        UI.ordenarElecciones(data.nodes).map(v => [FotosUI.persona(data, v.id, !$('verFotosResumen').checked), v.recPos, v.recNeg]),
+        'Orden por elecciones positivas recibidas. Los empates siguen el orden de registro.'));
       dibujarRanking();
       $('verFotosResumen').onchange=dibujarRanking;
       $('resultadosPanel').hidden = false;
-      const ok = guardar();
-      $('btnSociograma').hidden = !ok;
-      if (!ok) mensaje('Resultados calculados, pero no se han podido guardar para abrir los mapas.', true);
-      else mensaje('Resultados listos.');
-      $('resultadosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('btnSociograma').hidden = false;
+      mensaje('Resultados listos.');
+      UI.desplazar($('resultadosPanel'));
     } catch (e) { mensaje(e.message, true); }
   }
   function recuperar() {
     const state = Almacen.leer();
     if (!state.proyecto) {
+      hayEstudioAnterior = state.error?.startsWith('No se pudo recuperar el estudio:') ?? false;
       if (state.error) mensaje(state.error, true);
       return;
     }
@@ -277,13 +342,35 @@
       mensaje('Los datos anteriores usan otras reglas. Crea un grupo nuevo para registrar 3 positivas y 3 negativas por persona.', true);
       return;
     }
-    proyecto = state.proyecto;
-    persistente = state.persistente;
-    cargarConfig();
-    $('matrizPanel').hidden = false;
-    dibujarPersona();
-    validar();
+    activar(state.proyecto, state.persistente);
   }
+  $('guardarCopia').addEventListener('click', () => {
+    if (!proyecto) return;
+    const copia = S.validarProyecto({ ...proyecto, vista: { ...proyecto.vista, seudonimos: true } });
+    UI.descargar(JSON.stringify(copia, null, 2), 'sociomap-copia-' + copia.datos.fecha + '.json', 'application/json');
+    mensaje('Copia privada preparada. Comprueba la descarga y conserva el archivo de forma confidencial.');
+  });
+  $('restaurarCopia').addEventListener('change', async event => {
+    const input = event.currentTarget, file = input.files[0];
+    if (!file) return;
+    const lectura = ++lecturaCopia, anterior = proyecto;
+    try {
+      if (!/\.json$/i.test(file.name)) throw new Error('Selecciona una copia JSON de SOCIOMAP.');
+      const copia = await UI.archivo(file);
+      if (lectura !== lecturaCopia) return;
+      if (proyecto !== anterior) throw new Error('El estudio activo cambió durante la lectura. Vuelve a seleccionar la copia.');
+      if (!esCompatible(copia.datos)) throw new Error('La copia debe corresponder a un grupo de 7 a 40 personas con 3 positivas y 3 negativas exactas.');
+      if ((proyecto || hayEstudioAnterior) && !confirm('Restaurar «' + copia.datos.grupo + '» sustituirá el estudio activo, con sus respuestas y fotos. ¿Continuar?')) return;
+      copia.vista.seudonimos = true;
+      guardar(copia, false);
+      activar(proyecto, persistente);
+      mensaje('Copia restaurada en esta pestaña.');
+    } catch (error) {
+      if (lectura === lecturaCopia) mensaje('No se restauró la copia. ' + error.message, true);
+    } finally {
+      if (lectura === lecturaCopia) input.value = '';
+    }
+  });
   $('descargarCuestionarios').addEventListener('click', async () => {
     const boton = $('descargarCuestionarios');
     try {
@@ -302,34 +389,29 @@
     try {
       if (!proyecto) throw new Error('Crea primero un estudio y completa su recogida.');
       const anterior = proyecto.datos, cfg = leerConfig();
-      if (JSON.stringify(cfg.nombres) !== JSON.stringify(anterior.nombres) ||
-          cfg.criterio !== anterior.criterio || cfg.grupo !== anterior.grupo)
+      if (!mismoGrupo(cfg, anterior))
         throw new Error('Para una nueva medición deben mantenerse el grupo, los nombres y la pregunta. Modifica únicamente la fecha.');
       const siguientes = S.nuevaMedicion(anterior, cfg.fecha);
-      if (!confirm('Se descargará una copia JSON con los nombres originales y todas las elecciones de ' + anterior.fecha +
+      if (!confirm('Se descargará una copia JSON con los nombres, las fotos y las elecciones de ' + anterior.fecha +
           '. Debes comprobar y conservar ese archivo de forma confidencial: el navegador no puede garantizar que se guarde. ¿Iniciar una nueva medición con las respuestas vacías?')) return;
-      const respaldo = S.validarProyecto(proyecto);
+      const respaldo = S.validarProyecto({ ...proyecto, vista: { ...proyecto.vista, seudonimos: true } });
       UI.descargar(JSON.stringify(respaldo, null, 2), 'sociomap-medicion-' + anterior.fecha + '.json', 'application/json');
-      const proximo = S.validarProyecto({ datos: siguientes, vista: { seudonimos: proyecto.vista.seudonimos } });
-      // Guardamos primero para que un error de almacenamiento no destruya el estudio visible.
-      Almacen.guardar(proximo, persistente);
-      proyecto = proximo;
-      indice = 0;
-      cargarConfig(); ocultarResultados(); dibujarPersona(); validar();
+      guardar({ datos: siguientes });
+      activar(proyecto, persistente);
       mensaje('Medición ' + cfg.fecha + ' creada con todas las respuestas pendientes. Comprueba la descarga de la medición anterior (' + anterior.fecha + ') antes de continuar.');
-      $('matrizPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      UI.desplazar($('matrizPanel'));
     } catch (e) { mensaje('No se ha iniciado una nueva medición. ' + e.message, true); }
   }
   $('nuevaMedicion').addEventListener('click', iniciarNuevaMedicion);
   $('crearTabla').addEventListener('click', crearGrupo);
   $('btnRanking').addEventListener('click', resultados);
-  $('anterior').addEventListener('click', () => { if (indice > 0) { indice--; dibujarPersona(); } });
+  $('anterior').addEventListener('click', () => { if (indice > 0) { indice--; mensajeFicha(''); dibujarPersona(); } });
   $('siguiente').addEventListener('click', () => {
-    if (proyecto && indice < proyecto.datos.nombres.length - 1) { indice++; dibujarPersona(); }
+    if (proyecto && indice < proyecto.datos.nombres.length - 1) { indice++; mensajeFicha(''); dibujarPersona(); }
   });
   $('custom').addEventListener('change', () => { $('namesBox').hidden = !$('custom').checked; });
   for (const id of ['grupo', 'num', 'fecha', 'criterio', 'names', 'custom']) {
-    $(id).addEventListener('change', () => {
+    $(id).addEventListener('input', () => {
       if (proyecto) { configuracionPendiente = true; ocultarResultados(); validar(); }
     });
   }
@@ -338,7 +420,7 @@
     try { Almacen.borrar(); location.reload(); }
     catch (e) { mensaje(e.message, true); }
   });
-  window.addEventListener('pageshow', e => { if (e.persisted) { ocultarResultados(); recuperar(); } });
+  window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
   window.addEventListener('storage', e => { if ([S.STORAGE_KEY, null].includes(e.key)) location.reload(); });
   recuperar();
   try{
@@ -346,18 +428,16 @@
     if(raw){
       sessionStorage.removeItem('sociomap.config.pendiente');
       const cfg=JSON.parse(raw);
-      if(!proyecto || !proyecto.datos.respondidas.some(Boolean)){
-        $('grupo').value=cfg.grupo;
-        $('num').value=String(cfg.nombres.length);
-        $('fecha').value=cfg.fecha;
-        $('criterio').value=cfg.criterio;
-        const custom=cfg.nombres.some((name,i)=>name!=='P'+(i+1));
-        $('custom').checked=custom;
-        $('namesBox').hidden=!custom;
-        if(custom){$('names').value=cfg.nombres.join('\n');$('custom').closest('details').open=true;}
-        crearGrupo();
+      cargarConfig(cfg);
+      if (!proyecto && !hayEstudioAnterior) crearGrupo();
+      else if (proyecto && mismoGrupo(proyecto.datos, cfg) &&
+               (proyecto.datos.fecha === cfg.fecha || proyecto.datos.fechaNoRegistrada)) {
+        cargarConfig(proyecto.datos);
+        mensaje('Has recuperado el estudio guardado en este navegador.');
       } else {
-        UI.mensaje('Ya hay respuestas guardadas. Para crear otro grupo, revisa los datos antes de pulsar «Crear grupo».');
+        configuracionPendiente = true;
+        validar();
+        mensaje('Hay un estudio guardado. Revisa la configuración nueva antes de aplicarla o recarga para continuar el estudio anterior.');
       }
     }
   }catch(e){UI.mensaje('No se pudo trasladar la configuración: '+e.message,true);}

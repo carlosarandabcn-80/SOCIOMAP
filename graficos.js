@@ -1,8 +1,12 @@
 'use strict';
 window.Graficos = (() => {
-  const W = 1100, H = 690, POS = '#1768b2', NEG = '#b94a0a', svg = (...args) => UI.svg(...args);
+  const W = 1100, H = 690, C = UI.colores, POS = C.azulOscuro, NEG = C.tinta;
+  const svg = (...args) => UI.svg(...args);
   const nombre = (data, i, aliases) => UI.nombre(data, i, aliases);
-  const recortar = (s, n) => s.length > n ? s.slice(0, n - 1) + '…' : s;
+  const recortar = (s, n) => {
+    const caracteres = Array.from(s);
+    return caracteres.length > n ? caracteres.slice(0, n - 1).join('') + '…' : s;
+  };
   const metodotexto = data => [
     `${data.reglas.modo === 'exactos' ? 'Cuota exacta' : 'Máximo'}: ${data.reglas.positivos} positivas y ${data.reglas.negativos} negativas por respuesta.`,
     'Entrada positiva relativa = positivos recibidos / posibles emisores que han respondido (sin incluirse a sí mismo).',
@@ -25,20 +29,20 @@ window.Graficos = (() => {
   }
   function ranking(data, container, aliases) {
     container.replaceChildren(UI.tabla(['Participante', 'Respuesta', '+ recibidos', '− recibidos', 'Entrada + relativa', 'Pares + recíprocos', 'Intermediación +'],
-      data.nodes.map(v => [FotosUI.persona(data, v.id, aliases), v.respondida ? 'Registrada' : 'Pendiente', v.recPos, v.recNeg, UI.pct(v.popularidad), v.mutPos,
+      UI.ordenarElecciones(data.nodes).map(v => [FotosUI.persona(data, v.id, aliases), v.respondida ? 'Registrada' : 'Pendiente', v.recPos, v.recNeg, UI.pct(v.popularidad), v.mutPos,
         v.intermediacion.toLocaleString('es-ES', { maximumFractionDigits: 3 })]), 'Indicadores por participante. La entrada relativa usa los emisores observados. La intermediación usa caminos positivos dirigidos.'));
   }
-  function barras(data, aliases) {
-    const n = data.nodes.length, height = 85 + n * 48, max = Math.max(1, ...data.nodes.flatMap(v => [v.recPos, v.recNeg]));
+  function barras(data, aliases, participantes = data.nodes) {
+    const height = 85 + participantes.length * 48, max = Math.max(1, ...data.nodes.flatMap(v => [v.recPos, v.recNeg]));
     const result = svg('svg', { viewBox: `0 0 1100 ${height}`, class: 'bars', role: 'img', 'aria-label': 'Barras de elecciones recibidas. Los mismos valores están disponibles en la tabla.' });
-    result.append(svg('rect', { width: 1100, height, fill: '#f5f8fd' }));
-    result.append(svg('text', { x: 24, y: 28, fill: '#18334f', 'font-size': 16, 'font-family': 'Arial' }, 'Elecciones recibidas: positivas (+ azul) y negativas (- naranja)'));
+    result.append(svg('rect', { width: 1100, height, fill: C.fondo }));
+    result.append(svg('text', { x: 24, y: 28, fill: C.tinta, 'font-size': 16, 'font-family': 'Arial' }, 'Elecciones recibidas · + Azul · − Gris carbón'));
     for (let i = 0; i <= Math.min(max, 6); i++) {
       const tick = max * i / Math.min(max, 6), x = 220 + 810 * tick / max;
-      result.append(svg('line', { x1: x, x2: x, y1: 62, y2: height - 15, stroke: '#cad5e2' }));
-      result.append(svg('text', { x, y: 55, fill: '#334155', 'font-size': 12, 'text-anchor': 'middle' }, Number.isInteger(tick) ? tick : tick.toFixed(1)));
+      result.append(svg('line', { x1: x, x2: x, y1: 62, y2: height - 15, stroke: C.borde }));
+      result.append(svg('text', { x, y: 55, fill: C.gris, 'font-size': 12, 'text-anchor': 'middle' }, Number.isInteger(tick) ? tick : tick.toFixed(1)));
     }
-    data.nodes.forEach((v, index) => {
+    participantes.forEach((v, index) => {
       const y = 72 + index * 48;
       const photo=!aliases && data.fotos?.[v.uid];
       if(photo){
@@ -48,10 +52,10 @@ window.Graficos = (() => {
         result.append(svg('image',{href:photo,x:20,y:y+1,width:32,height:32,
           'clip-path':'url(#'+id+')',preserveAspectRatio:'xMidYMid slice'}));
       }
-      result.append(svg('text', { x: 204, y: y + 19, 'text-anchor': 'end', fill: '#142b43', 'font-size': 14 }, recortar(nombre(data, v.id, aliases), 23)));
-      for (const [value, offset, color, sign] of [[v.recPos, 0, POS, '+'], [v.recNeg, 18, NEG, '-']]) {
+      result.append(svg('text', { x: 204, y: y + 19, 'text-anchor': 'end', fill: C.tinta, 'font-size': 14 }, recortar(nombre(data, v.id, aliases), 23)));
+      for (const [value, offset, color, sign] of [[v.recPos, 0, POS, '+'], [v.recNeg, 18, NEG, '−']]) {
         result.append(svg('rect', { x: 220, y: y + offset, width: 810 * value / max, height: 13, fill: color }));
-        result.append(svg('text', { x: 228 + 810 * value / max, y: y + offset + 11, fill: '#142b43', 'font-size': 12 }, `${sign}${value}`));
+        result.append(svg('text', { x: 228 + 810 * value / max, y: y + offset + 11, fill: C.tinta, 'font-size': 12 }, `${sign}${value}`));
       }
     });
     return result;
@@ -67,6 +71,7 @@ window.Graficos = (() => {
         : { x: W / 2 + 420 * Math.cos(angle), y: H / 2 + 245 * Math.sin(angle), fija: false };
     });
     if (vista.disposicion === 'automatico' && (force || Object.keys(vista.posiciones).length < n)) {
+      const positivas = data.links.filter(l => l.type === '+');
       for (let step = 0; step < 180; step++) {
         const shifts = data.nodes.map(() => ({ x: 0, y: 0 }));
         for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
@@ -75,7 +80,7 @@ window.Graficos = (() => {
           shifts[i].x += dx * f / Math.sqrt(sq); shifts[i].y += dy * f / Math.sqrt(sq);
           shifts[j].x -= dx * f / Math.sqrt(sq); shifts[j].y -= dy * f / Math.sqrt(sq);
         }
-        data.links.filter(l => l.type === '+').forEach(l => {
+        positivas.forEach(l => {
           const a = result[data.ids[l.source]], b = result[data.ids[l.target]], dx = b.x - a.x, dy = b.y - a.y, distance = Math.hypot(dx, dy) || 1;
           const f = (distance - 175) * .008;
           shifts[l.source].x += dx / distance * f; shifts[l.source].y += dy / distance * f;
@@ -101,10 +106,19 @@ window.Graficos = (() => {
     }
     return result;
   }
+  function encuadre(vista) {
+    const puntos = Object.values(vista.posiciones);
+    if (!puntos.length) return [0, 0, W, H];
+    const xs = puntos.map(p => p.x), ys = puntos.map(p => p.y);
+    const izq = Math.min(...xs) - 66, der = Math.max(...xs) + 66;
+    const arriba = Math.min(...ys) - 55, abajo = Math.max(...ys) + 87;
+    const width = Math.max(350, der - izq, (abajo - arriba) * W / H), height = width * H / W;
+    return [(izq + der - width) / 2, (arriba + abajo - height) / 2, width, height];
+  }
   const radio = (data, node) => 22 + 16 * Math.sqrt(node.recPos / Math.max(1, data.nodes.length - 1));
   function grafo(container, data, vista, { selected = null, interactivo = false, prefix = 'g' } = {}) {
     const title = svg('title', { id: prefix + '-title' }, 'Mapa de elecciones sociométricas');
-    const desc = svg('desc', { id: prefix + '-desc' }, 'Flechas del emisor al destinatario. Positivas continuas azules y negativas discontinuas naranjas. Los valores equivalentes aparecen en las tablas.');
+    const desc = svg('desc', { id: prefix + '-desc' }, 'Flechas del emisor al destinatario. Líneas azules continuas para elecciones positivas y grises discontinuas para negativas. Los valores aparecen en las tablas.');
     container.replaceChildren(title, desc);
     container.setAttribute('aria-labelledby', `${prefix}-title ${prefix}-desc`);
     container.setAttribute('role', interactivo ? 'group' : 'img');
@@ -136,8 +150,8 @@ window.Graficos = (() => {
         ...(interactivo ? { tabindex: 0, role: 'button', 'aria-label': `${name} +${v.recPos} / −${v.recNeg}. ${v.recPos} positivas y ${v.recNeg} negativas recibidas${p.fija ? '; posición fijada' : ''}`, 'aria-pressed': selectedNode } : {}) });
       node.append(svg('title', {}, `${name}: +${v.recPos}, −${v.recNeg}. ${p.fija ? 'Posición fijada.' : ''}`));
       const photo = !vista.seudonimos && data.fotos?.[v.uid];
-      node.append(svg('circle',{r,fill: selectedNode?'#b8dfff':'#e7eef6',
-        stroke:selectedNode?'#0d4b7a':'#5d7994','stroke-width':selectedNode?4:2.5}));
+      node.append(svg('circle', { r, fill: selectedNode ? C.claro : C.blanco,
+        stroke: selectedNode ? C.azulOscuro : C.gris, 'stroke-width': selectedNode ? 4 : 2.5 }));
       if(photo){
         const clipId=prefix+'-foto-'+v.id;
         const clip=svg('clipPath',{id:clipId}); clip.append(svg('circle',{r:r-3}));
@@ -147,18 +161,18 @@ window.Graficos = (() => {
           preserveAspectRatio:'xMidYMid slice',
           'clip-path':'url(#'+clipId+')','pointer-events':'none'}));
         node.append(svg('rect',{x:-Math.max(37,r+7),y:r+4,width:2*Math.max(37,r+7),height:34,rx:10,
-          fill:'#f8fbff',stroke:'#d6e3ee','pointer-events':'none'}));
-        node.append(svg('text',{y:r+18,'text-anchor':'middle',fill:'#15324d',
+          fill:C.blanco,stroke:C.borde}));
+        node.append(svg('text',{y:r+18,'text-anchor':'middle',fill:C.tinta,
           'font-size':12,'font-weight':700,'pointer-events':'none'},recortar(name,12)));
-        node.append(svg('text',{y:r+31,'text-anchor':'middle',fill:'#35536d',
+        node.append(svg('text',{y:r+31,'text-anchor':'middle',fill:C.gris,
           'font-size':10,'pointer-events':'none'},`+${v.recPos} · −${v.recNeg}`));
       } else {
-        node.append(svg('text', {y:-3,'text-anchor':'middle',fill:'#102f4d','font-size':13,
+        node.append(svg('text', {y:-3,'text-anchor':'middle',fill:C.tinta,'font-size':13,
           'font-family':'Arial','font-weight':700,'pointer-events':'none'}, recortar(name,11)));
-        node.append(svg('text',{y:13,'text-anchor':'middle',fill:'#183e60',
+        node.append(svg('text',{y:13,'text-anchor':'middle',fill:C.gris,
           'font-size':10,'pointer-events':'none'},`+${v.recPos} / −${v.recNeg}`));
       }
-      if(p.fija)node.append(svg('circle',{r:r+5,fill:'none',stroke:'#2c5d8a',
+      if(p.fija)node.append(svg('circle',{r:r+5,fill:'none',stroke:C.azulOscuro,
         'stroke-width':1.5,'stroke-dasharray':'3 4','pointer-events':'none'}));
       nodes.append(node);
     });
@@ -188,5 +202,5 @@ window.Graficos = (() => {
     }));
     return result;
   }
-  return { W, H, POS, NEG, resumen, ranking, barras, posiciones, grafo, heatmap, heatmapSVG, metodotexto };
+  return { W, H, POS, NEG, resumen, ranking, barras, posiciones, encuadre, grafo, heatmap, heatmapSVG, metodotexto };
 })();

@@ -56,6 +56,7 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#graficoRankingDemo .ranking-interactivo').count(), 8);
     assert.equal(await page.locator('#graficoRankingDemo img.avatar-ranking').count(),8);
     assert.equal(await page.locator('#rankingDemo tbody tr').count(), 8);
+    await page.screenshot({ path: path.join(qa, 'demo-sociomap.png') });
     await page.locator('#graficoRankingDemo .ranking-interactivo').first().click();
     assert.match(await page.locator('#detalleDemo').innerText(), /elecciones positivas/);
     assert.equal(await page.locator('#graficoRankingDemo [aria-pressed="true"]').count(), 1);
@@ -83,6 +84,8 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#grafoDemo line').count(), 24);
     await page.selectOption('#filtroDemo', '-');
     assert.equal(await page.locator('#grafoDemo line').count(), 24);
+    await page.selectOption('#filtroDemo', 'mutuas');
+    assert.equal(await page.locator('#grafoDemo line').count(), 12);
     assert.equal(await page.locator('#descripcionDemo p').count(), 4);
     await page.goto(url + '/index.html');
     assert.equal(await page.locator('.nav-links:visible').count(),0);
@@ -100,7 +103,7 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#panelAccesibilidad').isVisible(),false);
     assert.equal(await page.locator('.brand-image img').count(), 1);
     assert.equal(await page.getByRole('link', { name: /Acceso a la app/ }).count(), 1);
-    assert.equal(await page.locator('.logo-intro img[src="logo-sociograma.webp"]').count(), 1);
+    assert.equal(await page.locator('.logo-intro').count(), 0, 'El inicio se puede usar de inmediato');
     assert.equal(await page.getByRole('link', { name: 'Mapa de calor' }).count(), 0);
     await page.getByRole('link', { name: /Acceso a la app/ }).click();
     await page.waitForURL('**/acceso.html');
@@ -113,12 +116,12 @@ const server = http.createServer((req, res) => {
     assert.equal((await PdfAcceso.load(fs.readFileSync(pdfPrevio))).getPageCount(),1);
     await page.getByRole('button', { name: /Acceder a tabla sociométrica/ }).click();
     await page.waitForURL('**/formulario.html');
-    assert.equal(await page.locator('#importar').count(), 0);
+    assert.equal(await page.locator('#restaurarCopia').count(), 1);
     assert.equal(await page.locator('#positivos').count(), 0);
     assert.equal(await page.locator('#negativos').count(), 0);
     assert.equal(await page.locator('#num option').count(), 34);
     assert.equal(await page.locator('.brand-image img').count(), 1);
-    console.log('PASS 1: home y formulario simplificados, logo en cabecera, sin importación');
+    console.log('PASS 1: inicio y formulario, logotipo y recuperación JSON');
 
     await page.fill('#grupo', 'Prueba funcional');
     await page.locator('.simple-details summary').click();
@@ -133,6 +136,8 @@ const server = http.createServer((req, res) => {
     assert.match(await page.locator('#mensaje').innerText(), /dos papeletas/);
     console.log('PASS PDF: una hoja A4 universal para dos personas');
     await page.click('#crearTabla');
+    await page.locator('#votacion').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(qa, 'ficha-participante.png') });
     const portrait=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/TyQAAAAASUVORK5CYII=','base64');
     await page.locator('#fotoParticipante').setInputFiles({name:'retrato.png',mimeType:'image/png',buffer:portrait});
     await page.waitForFunction(key=>{
@@ -141,6 +146,10 @@ const server = http.createServer((req, res) => {
     },S.STORAGE_KEY);
     assert.equal(await page.locator('.avatar-editor[src^="data:image/"]').count(),1);
     assert.equal(await page.locator('.person-pill img').count(),1);
+    const fotoOriginal = (await state()).datos.fotos;
+    await page.locator('#fotoParticipante').setInputFiles({name:'invalida.png', mimeType:'image/png', buffer:Buffer.from('No es una fotografía')});
+    await page.getByText(/Selecciona una imagen JPG, PNG o WebP válida/).waitFor();
+    assert.deepEqual((await state()).datos.fotos, fotoOriginal);
     await page.reload();
     assert.equal(await page.locator('.avatar-editor[src^="data:image/"]').count(),1);
     assert.equal(await page.locator('.vote-select').count(), 6);
@@ -163,7 +172,25 @@ const server = http.createServer((req, res) => {
     assert.match(await page.locator('#progreso').innerText(), /7 de 7/);
     await page.reload();
     assert.equal(await page.locator('.person-pill.done').count(), 7);
+    const campoNombre = page.locator('#nombreParticipante');
+    const guardarNombre = page.getByRole('button', { name: 'Guardar nombre' });
+    await campoNombre.fill('Alba Luna');
+    await guardarNombre.click();
+    assert.equal((await state()).datos.nombres[0], 'Alba Luna');
+    assert.deepEqual((await state()).datos.ids, datos.ids);
+    assert.deepEqual((await state()).datos.matriz, datos.matriz);
+    assert.deepEqual((await state()).datos.fotos, datos.fotos);
+    await campoNombre.fill(' Beto ');
+    await guardarNombre.click();
+    assert.match(await page.locator('#mensajeFicha').innerText(), /duplicados/);
+    assert.equal((await state()).datos.nombres[0], 'Alba Luna');
+    await campoNombre.fill('');
+    await campoNombre.press('Enter');
+    assert.equal((await state()).datos.nombres[0], 'P1');
+    await campoNombre.fill('Ana');
+    await guardarNombre.click();
     console.log('PASS 2: seis selecciones distintas por persona y recuperación de sesión');
+    console.log('PASS PERFIL: nombre y foto vinculados a la misma identidad sin perder votos');
 
     await page.click('#btnRanking');
     assert.equal(await page.locator('#resultadosPanel').isVisible(), true);
@@ -181,14 +208,20 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator('#graficoRankingApp .ranking-interactivo').count(), 7);
     assert.equal(await page.locator('#graph image').count(),0,'Los códigos ocultan las fotografías');
     assert.equal(await page.locator('#graficoRankingApp img').count(),0);
+    await page.screenshot({ path: path.join(qa, 'interfaz-mapa.png') });
     await page.uncheck('#seudonimos');
     assert.equal(await page.locator('#graph image').count(),1);
     assert.equal(await page.locator('#graficoRankingApp img').count(),1);
+    assert.equal(await page.locator('#graficoRankingApp .avatar-ranking').count(), 7, 'Misma escala visual con o sin retrato');
     assert.equal(await page.locator('#ranking img').count(),1);
     assert.equal(await page.locator('#detalle img').count(),0);
     await page.selectOption('#participante','0');
     assert.equal(await page.locator('#detalle img[src^="data:image/"]').count(),1);
-    await page.check('#seudonimos');
+    await page.selectOption('#filtro', '+');
+    assert.equal((await state()).vista.seudonimos, true, 'El permiso visual nunca se guarda');
+    await page.reload();
+    assert.equal(await page.locator('#seudonimos').isChecked(), true);
+    await page.selectOption('#filtro', 'todos');
     assert.equal(await page.locator('#graph image').count(),0);
     assert.equal(await page.locator('#graficoRankingApp img').count(),0);
     await page.selectOption('#participante','');
@@ -204,7 +237,7 @@ const server = http.createServer((req, res) => {
     await page.locator('[data-pan="left"]').click();
     assert.notEqual(await page.locator('#graph').getAttribute('viewBox'),initialAppView);
     await page.locator('#ajustar').click();
-    assert.equal(await page.locator('#graph').getAttribute('viewBox'),'0 0 1100 690');
+    assert.ok(Number((await page.locator('#graph').getAttribute('viewBox')).split(' ')[2]) < 1100, 'Ajustar enmarca los nodos, incluso en un grupo compacto');
 
     await page.locator('#graficoRankingApp [data-rank-node="0"]').click();
     assert.equal(await page.locator('#graficoRankingApp [data-rank-node="0"]').getAttribute('aria-pressed'),'true');
@@ -227,6 +260,10 @@ const server = http.createServer((req, res) => {
     assert.ok(report.getPageCount()>=4);
     assert.equal(report.getTitle(),'SOCIOMAP - Informe sociométrico');
     await page.check('#incluirNombres');
+    const soloNombres = JSON.parse(fs.readFileSync(await download('#exportJSON', 'copia-solo-nombres.json'), 'utf8'));
+    assert.deepEqual(soloNombres.datos.nombres, names);
+    assert.deepEqual(soloNombres.datos.fotos, {});
+    await page.check('#incluirFotos');
     const named=JSON.parse(fs.readFileSync(await download('#exportJSON','copia-con-nombres.json'),'utf8'));
     assert.deepEqual(named.datos.nombres,names);
     assert.ok(named.datos.fotos[named.datos.ids[0]]?.startsWith('data:image/'));
@@ -239,6 +276,8 @@ const server = http.createServer((req, res) => {
     assert.ok(namedPDF.getPageCount()>=4);
     console.log('PASS FOTO EXPORT: SVG/PNG/PDF identificados con retrato embebido');
     await page.uncheck('#incluirNombres');
+    assert.equal(await page.locator('#incluirFotos').isChecked(), false);
+    assert.equal(await page.locator('#incluirFotos').isDisabled(), true);
     console.log('PASS EXPORT: PNG, SVG, PDF, JSON, CSV y consentimiento explícito de nombres');
     console.log('PASS 3: sociograma y exportaciones conservados');
 
@@ -247,7 +286,20 @@ const server = http.createServer((req, res) => {
     await page.selectOption('[data-sign="+"][data-slot="0"]', '');
     assert.equal(await page.locator('#btnRanking').isDisabled(), true);
     assert.equal((await state()).datos.matriz[0].filter(v => v === '+').length, 2);
-    await page.selectOption('[data-sign="+"][data-slot="0"]', '1');
+    await page.goto(url + '/sociograma_interactivo.html');
+    assert.match(await page.locator('#estudio').innerText(), /Completa las respuestas/);
+    await page.goto(url + '/formulario.html');
+    await page.locator('.study-options summary').click();
+    const borrador = await download('#guardarCopia', 'borrador-privado.json');
+    await page.selectOption('[data-sign="+"][data-slot="2"]', '1');
+    assert.equal(await page.locator('#btnRanking').isEnabled(), true);
+    await page.locator('#restaurarCopia').setInputFiles(borrador);
+    await page.getByText('Copia restaurada en esta pestaña.', { exact: true }).waitFor();
+    assert.equal(await page.locator('#btnRanking').isDisabled(), true);
+    assert.equal((await state()).datos.matriz[0].filter(v => v === '+').length, 2);
+    assert.deepEqual((await state()).datos.fotos, datos.fotos);
+    assert.deepEqual((await state()).datos.ids, datos.ids);
+    await page.selectOption('[data-sign="+"][data-slot="2"]', '1');
     assert.equal(await page.locator('#btnRanking').isEnabled(), true);
     // A05: la elección de persistencia de la vista se conserva al editar en el formulario.
     await page.click('#btnRanking');
@@ -268,6 +320,7 @@ const server = http.createServer((req, res) => {
     assert.match(await page.locator('#mensaje').innerText(),/fecha ha cambiado/);
     assert.equal((await state()).datos.fecha,datos.fecha);
     assert.equal(await page.locator('#nuevaMedicion').isEnabled(),true);
+    await page.locator('.study-options summary').click();
     const beforePath=await download('#nuevaMedicion','medicion-anterior.json');
     const oldStudy=JSON.parse(fs.readFileSync(beforePath,'utf8'));
     assert.equal(oldStudy.datos.fecha,datos.fecha);
@@ -298,6 +351,10 @@ const server = http.createServer((req, res) => {
     await page.getByText('Mediciones compatibles. Comparación calculada.',{exact:true}).waitFor();
     assert.match(await page.locator('#mensajeComparacion').innerText(),/Mediciones compatibles/);
     assert.match(await page.locator('#comparacion').innerText(),/0 nuevas elecciones positivas/);
+    await page.getByRole('link', { name: 'Editar respuestas', exact: true }).click();
+    await page.locator('#quitarFoto').click();
+    assert.deepEqual((await state()).datos.fotos, {}, 'Retirar una foto preserva las respuestas');
+    assert.deepEqual((await state()).datos.matriz, datos.matriz);
     console.log('PASS MEDICIONES: copia anterior, nueva fecha, matriz vacía, continuidad y comparación');
     console.log('PASS 4: corrección de votos sin perder los demás');
 
@@ -328,11 +385,18 @@ const server = http.createServer((req, res) => {
 
     const phone = await context.newPage();
     await phone.setViewportSize({ width: 390, height: 844 });
-    for (const file of ['index.html','formulario.html','sociograma_interactivo.html','instrucciones.html']) {
+    await phone.goto(url + '/index.html');
+    await phone.evaluate(({ key, datos }) => sessionStorage.setItem(key, JSON.stringify({ datos })),
+      { key: S.STORAGE_KEY, datos: { ...datos, nombres: ['NombreExtenso'.repeat(6), ...datos.nombres.slice(1)] } });
+    for (const file of ['index.html', 'acceso.html', 'formulario.html', 'sociograma_interactivo.html', 'demo.html', 'instrucciones.html']) {
       await phone.goto(url + '/' + file);
       assert.ok(await phone.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'Desbordamiento horizontal en ' + file);
       await phone.screenshot({ path: path.join(qa, 'movil-' + file.replace('.html', '') + '.png'), fullPage: true });
     }
+    await phone.setViewportSize({ width: 320, height: 720 });
+    await phone.goto(url + '/sociograma_interactivo.html');
+    await phone.uncheck('#seudonimos');
+    assert.ok(await phone.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'Desbordamiento con nombre largo a 320 px');
     await phone.close();
     await page.goto(url + '/formulario.html');
     await page.evaluate(() => {

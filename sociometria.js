@@ -28,6 +28,12 @@
     if (new Set(result.map(n => n.toLocaleLowerCase('es'))).size !== result.length) fail('No se permiten nombres duplicados, tampoco con distintas mayúsculas o espacios.');
     return result;
   }
+  function respuestaCompleta(data, i) {
+    const { positivos, negativos, modo } = data.reglas;
+    return data.respondidas[i] && (modo !== 'exactos' ||
+      data.matriz[i].filter(v => v === '+').length === positivos &&
+      data.matriz[i].filter(v => v === '-').length === negativos);
+  }
   function hash(text) {
     let h = 2166136261;
     for (const c of text) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
@@ -66,9 +72,11 @@
         else if (respondidas[i] ? !['0', '+', '-'].includes(v) : v !== null) fail(`La fila de ${nombres[i]} contiene votos inválidos o confunde ausencia de respuesta con cero elecciones.`);
         return v;
       });
-      if (!borrador && respondidas[i]) {
+      if (respondidas[i]) {
         const p = values.filter(v => v === '+').length, m = values.filter(v => v === '-').length;
-        if ((r.modo === 'exactos' && (p !== r.positivos || m !== r.negativos)) || p > r.positivos || m > r.negativos) fail(`La fila de ${nombres[i]} debe tener ${r.modo === 'exactos' ? 'exactamente' : 'como máximo'} ${r.positivos} + y ${r.negativos} − (ahora ${p} + y ${m} −).`);
+        const exacta = !borrador && r.modo === 'exactos';
+        if (p > r.positivos || m > r.negativos || (exacta && (p !== r.positivos || m !== r.negativos)))
+          fail(`La fila de ${nombres[i]} debe tener ${exacta ? 'exactamente' : 'como máximo'} ${r.positivos} + y ${r.negativos} − (ahora ${p} + y ${m} −).`);
       }
       return values;
     });
@@ -270,6 +278,6 @@
     });
   }
   const escaparHTML = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const api = { STORAGE_KEY, MAX_FILE, normalizarNombre, validarNombres, validarFotos, FOTO_MAX, validarDatos, calcular, nuevaMedicion, comparar, validarVista, validarProyecto, seudonimizar, aCSV, deCSV, parseCSV, importar, demo, demoPublica, escaparHTML, intermediacion, componentes };
+  const api = { STORAGE_KEY, MAX_FILE, normalizarNombre, validarNombres, validarFotos, FOTO_MAX, validarDatos, respuestaCompleta, calcular, nuevaMedicion, comparar, validarVista, validarProyecto, seudonimizar, aCSV, deCSV, parseCSV, importar, demo, demoPublica, escaparHTML, intermediacion, componentes };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sociometria = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

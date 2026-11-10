@@ -1,5 +1,9 @@
 'use strict';
 window.UI = {
+  colores: {
+    azul: '#0098cd', azulOscuro: '#006c8f', tinta: '#333333', gris: '#555555',
+    fondo: '#f6fafb', claro: '#e9f6fa', borde: '#ccdce2', blanco: '#ffffff'
+  },
   el(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
     for (const [key, value] of Object.entries(attrs)) {
@@ -20,6 +24,14 @@ window.UI = {
   fecha(value, desconocida = false) { return desconocida ? 'Fecha no registrada' : new Date(value + 'T12:00:00').toLocaleDateString('es-ES'); },
   hoy() { const now = new Date(); return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-'); },
   nombre(data, i, aliases) { return aliases ? `P${i + 1}` : data.nombres[i]; },
+  ordenarElecciones(nodes) {
+    return [...nodes].sort((a, b) => b.recPos - a.recPos || a.id - b.id);
+  },
+  desplazar(node, block = 'start') {
+    const reducido = document.documentElement.classList.contains('a11y-motion') ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches;
+    node.scrollIntoView({ behavior: reducido ? 'instant' : 'smooth', block });
+  },
   mensaje(text, error = false, id = 'mensaje') {
     const node = document.getElementById(id);
     if (!node) return;

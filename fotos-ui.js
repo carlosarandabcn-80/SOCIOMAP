@@ -2,13 +2,17 @@
 /* Miniaturas locales, sin EXIF, metadatos ni subidas a servidores. */
 window.FotosUI = (() => {
   const MAX_ORIGEN = 6 * 1024 * 1024;
-  function aceptar(file) {
-    if (!file || !['image/jpeg','image/png','image/webp'].includes(file.type))
-      throw new Error('Selecciona una imagen JPG, PNG o WebP.');
+  async function aceptar(file) {
     if (file.size > MAX_ORIGEN) throw new Error('La fotografía original supera 6 MB.');
+    const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+    const jpg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    const png = [137, 80, 78, 71, 13, 10, 26, 10].every((byte, i) => bytes[i] === byte);
+    const webp = String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' &&
+      String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
+    if (!jpg && !png && !webp) throw new Error('Selecciona una imagen JPG, PNG o WebP válida.');
   }
   async function procesar(file) {
-    aceptar(file);
+    await aceptar(file);
     const url = URL.createObjectURL(file);
     let imagen;
     try {

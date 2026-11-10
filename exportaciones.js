@@ -1,6 +1,7 @@
 'use strict';
 window.Exportaciones = (() => {
   let pdfReady = null, logoReady = null;
+  const C = UI.colores;
   const tipo = filtro => ({ todos: 'positivas y negativas', '+': 'solo positivas', '-': 'solo negativas', mutuas: 'positivas recíprocas' }[filtro]);
   function lineas(text, max) {
     const result = []; let line = '';
@@ -8,7 +9,8 @@ window.Exportaciones = (() => {
       if (line.length + word.length + 1 > max && line) { result.push(line); line = ''; }
       if (word.length > max) {
         if (line) { result.push(line); line = ''; }
-        for (let i = 0; i < word.length; i += max) result.push(word.slice(i, i + max));
+        const caracteres = Array.from(word);
+        for (let i = 0; i < caracteres.length; i += max) result.push(caracteres.slice(i, i + max).join(''));
       } else line += (line ? ' ' : '') + word;
     }
     if (line) result.push(line);
@@ -38,9 +40,10 @@ window.Exportaciones = (() => {
   }
   function graficoBase(data, vista, heatmap = false) {
     if (heatmap) return Graficos.heatmapSVG(data, false);
-    const base = UI.svg('svg', { viewBox: '0 0 1100 690' });
+    const [x, y, width, height] = Graficos.encuadre(vista);
+    const base = UI.svg('svg', { viewBox: [x, y, width, height].join(' ') });
     Graficos.grafo(base, data, { ...vista, seudonimos: false }, { prefix: 'exp' });
-    base.prepend(UI.svg('rect', { width: 1100, height: 690, fill: '#f5f8fd' }));
+    base.prepend(UI.svg('rect', { x, y, width, height, fill: C.fondo }));
     return base;
   }
   async function svgExport(data, vista, heatmap = false) {
@@ -50,7 +53,7 @@ window.Exportaciones = (() => {
     const root = UI.svg('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: `0 0 ${width} ${height}`, width, height, role: 'img' });
     root.append(UI.svg('title', {}, `${heatmap ? 'Matriz visual' : 'Sociograma'} de ${data.grupo}`), UI.svg('desc', {}, 'Exportación descriptiva de elecciones sociométricas. + positiva, - negativa, 0 no elegida, ? pendiente.'));
     root.append(UI.svg('rect', { width, height, fill: '#fff' }));
-    const text = (value, y, size = 16, weight = 'normal') => root.append(UI.svg('text', { x: 24, y, fill: '#152e49', 'font-family': 'Arial, sans-serif', 'font-size': size, 'font-weight': weight }, value));
+    const text = (value, y, size = 16, weight = 'normal') => root.append(UI.svg('text', { x: 24, y, fill: C.tinta, 'font-family': 'Arial, sans-serif', 'font-size': size, 'font-weight': weight }, value));
     text(heatmap ? 'SOCIOMAP / MAPA DE CALOR' : 'SOCIOMAP / SOCIOGRAMA', 43, 29, 'bold');
     let y = 78; for (const l of group) { text(l, y, 22); y += 26; }
     text(`Medición: ${UI.fecha(data.fecha, data.fechaNoRegistrada)} · Respuestas: ${data.metricas.respuestas}/${data.nombres.length}`, y + 5); y += 34;
@@ -58,7 +61,7 @@ window.Exportaciones = (() => {
     text(heatmap ? 'Fila: emisor → columna: destinatario.' : `Vista: ${tipo(vista.filtro)}. Flechas: emisor → destinatario.`, y + 5, 14);
     base.setAttribute('x', 24); base.setAttribute('y', head); base.setAttribute('width', width - 48); base.setAttribute('height', body); root.append(base);
     y = head + body + 28;
-    text(heatmap ? '+ Positiva · − Negativa · 0 No elegida · ? Pendiente · — Diagonal' : '+ Azul continua: positiva · − Naranja discontinua: negativa · Tamaño: positivos recibidos', y, 15);
+    text(heatmap ? '+ Positiva · − Negativa · 0 No elegida · ? Pendiente · — Diagonal' : '+ Línea azul continua: positiva · − Línea gris discontinua: negativa · Tamaño: positivos recibidos', y, 15);
     text(`Regla: ${data.reglas.modo === 'exactos' ? 'cuota exacta' : 'máximo'} ${data.reglas.positivos} + y ${data.reglas.negativos} − por respuesta.`, y + 27, 14);
     text('Lectura descriptiva. No establece diagnósticos, etiquetas personales ni efectos causales.', y + 51, 14);
     text('ARANDA TOOLS · Datos tratados en el navegador', y + 81, 12);
@@ -92,7 +95,7 @@ window.Exportaciones = (() => {
     }));
     const normal = await doc.embedFont(fontBytes[0], { subset: true }), bold = await doc.embedFont(fontBytes[1], { subset: true });
     const caracteres = new Set(normal.getCharacterSet());
-    const ink = lib.rgb(.07, .16, .26), muted = lib.rgb(.25, .32, .4);
+    const ink = lib.rgb(.2, .2, .2), muted = lib.rgb(1 / 3, 1 / 3, 1 / 3);
     let page, y, count = 0;
     const clean = str => String(str).replace(/−/g, '-').replace(/→/g, '->').replace(/\u202f|\u00a0/g, ' ');
     const newPage = title => { page = doc.addPage([595.28, 841.89]); y = 790; count++;
@@ -108,7 +111,7 @@ window.Exportaciones = (() => {
         // Conserva nombres Unicode que las fuentes PDF estándar no pueden codificar.
         ctx.font = `${isBold ? 'bold ' : ''}${size * 3}px Arial`;
         const w = Math.ceil(ctx.measureText(text).width + 6); canvas.width = w; canvas.height = Math.ceil(size * 4.5);
-        ctx.font = `${isBold ? 'bold ' : ''}${size * 3}px Arial`; ctx.fillStyle = '#132b42'; ctx.textBaseline = 'top'; ctx.fillText(text, 0, 0);
+        ctx.font = `${isBold ? 'bold ' : ''}${size * 3}px Arial`; ctx.fillStyle = C.tinta; ctx.textBaseline = 'top'; ctx.fillText(text, 0, 0);
         const image = await doc.embedPng(canvas.toDataURL('image/png'));
         page.drawImage(image, { x, y: yy - size * .3, width: w / 3, height: canvas.height / 3 });
       }
@@ -146,7 +149,7 @@ window.Exportaciones = (() => {
     await para(`Criterio: ${data.criterio}`);
     await para(`Vista del mapa: ${tipo(vista.filtro)}. Flechas del emisor al destinatario.`, { size: 10 });
     await picture(graficoBase(data, vista), Math.min(320, y - 250));
-    await para('+ Azul continua: positiva. - Naranja discontinua: negativa. Tamaño: positivos recibidos.', { size: 9 });
+    await para('+ Línea azul continua: positiva. - Línea gris discontinua: negativa. Tamaño: positivos recibidos.', { size: 9 });
     const m = data.metricas;
     await para(`Cobertura: ${UI.pct(m.cobertura)}. Positivas: ${m.totalPos}. Negativas: ${m.totalNeg}. Pares positivos recíprocos: ${m.paresMutPos}.`);
     await para(`Reciprocidad positiva: ${UI.pct(m.reciprocidadPos)}. Densidad positiva: ${UI.pct(m.densidadPos)}. Densidad sobre filas observadas: ${UI.pct(m.densidadObservadaPos)}.`);
@@ -165,8 +168,8 @@ window.Exportaciones = (() => {
     }
     for (let start = 0; start < data.nodes.length; start += 12) {
       newPage('Gráfico de elecciones recibidas');
-      await para('Los valores corresponden al grupo completo, independientemente del filtro del mapa.', { size: 10 });
-      await picture(Graficos.barras({ ...data, nodes: data.nodes.slice(start, start + 12) }, false), 620);
+      await para('Los valores corresponden al grupo completo, independientemente del filtro del mapa. Las páginas comparten la misma escala.', { size: 10 });
+      await picture(Graficos.barras(data, false, data.nodes.slice(start, start + 12)), 620);
     }
     newPage('Criterios y límites del análisis');
     await para(`Pregunta: ${data.criterio}`);

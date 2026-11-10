@@ -14,9 +14,17 @@
   }
   function guardar(input, persistente = false) {
     const proyecto = S.validarProyecto(input), json = JSON.stringify(proyecto);
-    // Escribir antes de retirar el otro soporte: un fallo de cuota no destruye la copia anterior.
-    if (persistente) { localStorage.setItem(key, json); sessionStorage.removeItem(key); }
-    else { sessionStorage.setItem(key, json); localStorage.removeItem(key); }
+    const destino = persistente ? localStorage : sessionStorage;
+    const otro = persistente ? sessionStorage : localStorage;
+    const anterior = destino.getItem(key);
+    // La copia anterior sigue disponible si falla la escritura o el cambio de soporte.
+    destino.setItem(key, json);
+    try { otro.removeItem(key); }
+    catch (error) {
+      if (anterior === null) destino.removeItem(key);
+      else destino.setItem(key, anterior);
+      throw error;
+    }
     localStorage.removeItem('sociogramaData'); localStorage.removeItem('grupoNombre');
     return proyecto;
   }

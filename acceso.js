@@ -6,7 +6,8 @@
  const existing=Almacen.leer().proyecto?.datos;
  if(existing && existing.nombres.length>=7){
   $('grupo').value=existing.grupo;$('num').value=existing.nombres.length;
-  $('fecha').value=existing.fecha;$('criterio').value=existing.criterio;
+  if (!existing.fechaNoRegistrada) $('fecha').value = existing.fecha;
+  $('criterio').value = existing.criterio;
   const custom=existing.nombres.some((s,i)=>s!=='P'+(i+1));
   $('custom').checked=custom;$('namesBox').hidden=!custom;
   if(custom){$('names').value=existing.nombres.join('\n');document.querySelector('.simple-details').open=true;}

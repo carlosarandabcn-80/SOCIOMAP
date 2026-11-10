@@ -2,17 +2,18 @@
 /* Interpretación descriptiva compartida: nunca infiere diagnósticos personales. */
 window.AnalisisRelacional = (() => {
   const etiqueta = n => 'P' + (n.id + 1);
-  function resumen(data) {
+  function resumen(data, nombre = etiqueta) {
     const nodes = data.nodes, m = data.metricas;
     if (!nodes.length) return ['No hay participantes para analizar.'];
     const max = Math.max(...nodes.map(n => n.recPos));
-    const leaders = nodes.filter(n => n.recPos === max).map(etiqueta);
-    const sinPos = nodes.filter(n => n.recPos === 0).map(etiqueta);
+    const leaders = nodes.filter(n => n.recPos === max).map(nombre);
+    const sinPos = nodes.filter(n => n.recPos === 0).map(nombre);
     const cobertura = m.respuestas + ' de ' + m.participantes + ' personas';
     return [
       'Datos observados: ' + cobertura + ' han respondido. Se registran ' + m.totalPos +
         ' elecciones positivas y ' + m.totalNeg + ' negativas. Las elecciones no emitidas no se computan como rechazos.',
-      'Indicadores calculados: máximo de ' + max + ' elecciones positivas recibidas (' +
+      max === 0 ? 'No se han observado elecciones positivas en las respuestas registradas.' :
+        'Indicadores calculados: máximo de ' + max + ' elecciones positivas recibidas (' +
         leaders.join(', ') + '). ' + (leaders.length > 1 ? 'Existe un empate en este indicador.' :
           'Es el valor máximo observado, no una clasificación de valor personal.'),
       'Relaciones recíprocas: ' + m.paresMutPos + ' pares se eligen mutuamente en sentido positivo. ' +
@@ -22,20 +23,24 @@ window.AnalisisRelacional = (() => {
         'No permiten deducir liderazgo, bienestar, causas ni diagnósticos. Las hipótesis socioeducativas requieren contraste profesional.'
     ];
   }
-  function insertar(container, data) {
-    container.replaceChildren(...resumen(data).map(t => UI.el('p', {}, t)));
+  function insertar(container, data, nombre) {
+    container.replaceChildren(...resumen(data, nombre).map(t => UI.el('p', {}, t)));
   }
   function grafico(container, data, seleccionar, nombre = etiqueta, imagen = () => null) {
-    const list = [...data.nodes].sort((a, b) => b.recPos - a.recPos || a.id - b.id);
+    const list = UI.ordenarElecciones(data.nodes);
     const max = Math.max(1, ...list.flatMap(n => [n.recPos, n.recNeg]));
-    container.replaceChildren(...list.map(n => {
+    const filas = list.map(n => ({ n, src: imagen(n) }));
+    const conRetratos = filas.some(({ src }) => Boolean(src));
+    container.replaceChildren(...filas.map(({ n, src }) => {
       const label = nombre(n);
+      const avatar = src ? UI.el('img', { className: 'avatar-ranking', src, alt: '', decoding: 'async' }) :
+        conRetratos ? UI.el('span', { className: 'avatar-ranking', 'aria-hidden': 'true' }, etiqueta(n)) : null;
       const btn = UI.el('button', {
         type: 'button', className: 'ranking-interactivo', 'data-rank-node': n.id,
         'aria-pressed': 'false',
         'aria-label': label + ' +' + n.recPos + ' −' + n.recNeg + '. Seleccionar participante con ' + n.recPos +
           ' elecciones positivas y ' + n.recNeg + ' negativas recibidas'
-      }, ...(imagen(n) ? [UI.el('img',{className:'avatar-ranking',src:imagen(n),alt:'',decoding:'async'})] : []),
+      }, avatar,
       UI.el('span', { className: 'ranking-persona' }, label),
       UI.el('span', { className: 'ranking-barras' },
         UI.el('span', { className: 'ranking-fila' },

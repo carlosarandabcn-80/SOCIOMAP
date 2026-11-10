@@ -85,6 +85,21 @@ test('A05: el estudio se mantiene cuando el soporte alternativo falla y se respe
  assert.ok(sessionStorage.getItem(S.STORAGE_KEY));
 });
 
+test('fallos de cuota y de limpieza conservan el estudio que se podía leer antes', () => {
+  const { Almacen, sessionStorage, localStorage } = storageHarness();
+  const data = S.demoPublica();
+  Almacen.guardar({ datos: data });
+  const otro = { ...data, grupo: 'Otro grupo' };
+  const set = localStorage.setItem;
+  localStorage.setItem = () => { throw new Error('Cuota'); };
+  assert.throws(() => Almacen.guardar({ datos: otro }, true), /Cuota/);
+  localStorage.setItem = set;
+  sessionStorage.removeItem = () => { throw new Error('Limpieza bloqueada'); };
+  assert.throws(() => Almacen.guardar({ datos: otro }, true), /Limpieza bloqueada/);
+  assert.equal(Almacen.leer().proyecto.datos.grupo, data.grupo);
+  assert.equal(localStorage.getItem(S.STORAGE_KEY), null);
+});
+
 test('fotografías: contrato estricto, copia JSON, seudónimos y preservación longitudinal',()=>{
   const source=S.demoPublica(),id=source.ids[0];
   const photo='data:image/png;base64,'+Buffer.from('retratos-ficticios-en-pruebas').toString('base64');

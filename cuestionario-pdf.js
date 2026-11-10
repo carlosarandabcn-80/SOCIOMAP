@@ -13,21 +13,22 @@ window.CuestionarioPDF = (() => {
   async function descargar() {
     const lib=await motor();
     const doc=await lib.PDFDocument.create();
-    doc.setTitle('SOCIOGRAMA - Hoja estándar de recogida de votos (2 cuestionarios por A4)');
-    doc.setAuthor('SOCIOGRAMA · ARANDA TOOLS');
+    doc.setTitle('SOCIOMAP - Hoja estándar de recogida de votos (2 cuestionarios por A4)');
+    doc.setAuthor('SOCIOMAP · ARANDA TOOLS');
     doc.registerFontkit(window.fontkit);
-    const [font,bold]=await Promise.all(['DejaVuSans.ttf','DejaVuSans-Bold.ttf'].map(async(n,i)=>{
+    const [font,bold]=await Promise.all(['DejaVuSans.ttf','DejaVuSans-Bold.ttf'].map(async n=>{
       const r=await fetch('vendor/'+n);if(!r.ok)throw new Error('Faltan las fuentes para crear el PDF.');
       return doc.embedFont(await r.arrayBuffer(),{subset:true});
     }));
     const page=doc.addPage([595.28,841.89]);
-    const ink=lib.rgb(.055,.105,.19),slate=lib.rgb(.27,.34,.44),blue=lib.rgb(.015,.38,.98),soft=lib.rgb(.90,.94,.98),white=lib.rgb(1,1,1);
+    const ink = lib.rgb(.2, .2, .2), slate = lib.rgb(.33, .33, .33);
+    const blue = lib.rgb(0, 108 / 255, 143 / 255), soft = lib.rgb(233 / 255, 246 / 255, 250 / 255);
     const line=(x1,y1,x2,y2,color=soft,w=1)=>page.drawLine({start:{x:x1,y:y1},end:{x:x2,y:y2},color,thickness:w});
     const text=(s,x,y,size=10,f=font,color=ink)=>page.drawText(s,{x,y,font:f,size,color});
     function half(top) {
       const y=v=>top-v; // Distancias en puntos desde el borde superior de cada mitad.
       page.drawRectangle({x:29,y:y(58),width:6,height:34,color:blue});
-      text('SOCIOGRAMA',47,y(33),17,bold);
+      text('SOCIOMAP',47,y(33),17,bold);
       text('HOJA DE ELECCIONES',47,y(49),8,bold,slate);
       text('Grupo:',35,y(81),10,bold);line(79,y(84),290,y(84));
       text('Fecha:',319,y(81),10,bold);line(355,y(84),555,y(84));

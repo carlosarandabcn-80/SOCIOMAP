@@ -7,7 +7,7 @@
 </head><body class="simple-site"><a class="skip" href="#contenido">Saltar al contenido</a>
 <header class="header brand-header"><nav class="nav" aria-label="Cabecera"><a class="brand brand-image" href="index.html" aria-label="SOCIOMAP · Volver al inicio"><img src="logo-sociograma.webp" width="240" height="80" alt="SOCIOMAP"></a><div class="accessibility-controls"><button type="button" id="abrirAccesibilidad" class="accessibility-trigger" aria-label="Opciones de accesibilidad" aria-expanded="false" aria-controls="panelAccesibilidad"><svg viewBox="0 0 32 32" width="27" height="27" aria-hidden="true" focusable="false"><circle cx="16" cy="5" r="3" fill="currentColor"/><path d="M4 11h24M16 10v8m0 0-7 11m7-11 7 11m-12-13h10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="accessibility-panel" id="panelAccesibilidad" hidden><h2>Accesibilidad</h2><p>Adapta la lectura a tus necesidades.</p><button type="button" id="tamanoTexto">Texto más grande</button><button type="button" id="altoContraste" aria-pressed="false">Alto contraste</button><button type="button" id="reducirMovimiento" aria-pressed="false">Reducir animaciones</button><button type="button" id="restablecerAccesibilidad">Restablecer ajustes</button><a href="instrucciones.html">Ayuda y metodología</a></div></div></nav></header>
 <main id="contenido" class="simple-main">
-<div class="simple-heading"><span class="eyebrow">Registro sociométrico</span><h1>Un grupo. Seis elecciones.</h1><p class="muted">Descarga la plantilla estándar en PDF, recoge las respuestas y después registra <strong>3 positivas y 3 negativas</strong> por persona.</p></div>
+<div class="simple-heading"><span class="eyebrow">Registro sociométrico</span><h1>Registra las elecciones del grupo</h1><p class="muted">Configura el grupo y registra <strong>3 elecciones positivas y 3 negativas</strong> por persona.</p></div>
 <section class="panel setup-panel" aria-labelledby="tituloGrupo"><div class="section-head"><span class="step">01</span><h2 id="tituloGrupo">Configura el grupo</h2></div>
 <div class="grid setup-grid">
 <div class="field"><label for="grupo">Grupo</label><input id="grupo" maxlength="200" placeholder="Ej. Grupo A" autocomplete="off"></div>
@@ -19,14 +19,26 @@
 <div id="namesBox" class="field" hidden><label for="names">Una persona por línea</label><textarea id="names" rows="5" placeholder="Ana&#10;Bea&#10;Carlos"></textarea></div>
 <div class="field"><label for="criterio">Pregunta de elección</label><input id="criterio" maxlength="400" value="¿Con quién preferirías realizar una actividad de grupo?"></div>
 </details>
-<p class="hint">Después de crear el grupo, podrás añadir una fotografía opcional a cada participante desde su ficha de votación. Se recorta y comprime en este navegador, sin subirla a servidores. Las fotos identifican personas: el sociograma y las exportaciones las ocultan por defecto cuando se muestran códigos.</p><p class="hint">Para comparar dos fechas, completa primero esta medición. Después selecciona una fecha posterior y pulsa «Guardar medición actual e iniciar otra fecha». Se descargará una copia JSON de la medición anterior antes de vaciar las respuestas; verifica que el archivo se haya guardado de forma segura.</p><p class="hint">Un A4 contiene dos papeletas independientes. Recorta por la línea central e imprime las copias necesarias.</p><div class="actions setup-actions"><button id="descargarCuestionarios" type="button" class="btn primary">Descargar plantilla PDF (2 por A4)</button><button id="crearTabla" type="button" class="btn">Crear grupo para registrar votos</button><button id="nuevaMedicion" type="button" class="btn" disabled>Guardar medición actual e iniciar otra fecha</button><button id="borrarDatos" type="button" class="btn text-btn">Borrar datos</button></div>
+<p class="hint">En cada ficha podrás editar el nombre o alias y añadir una foto opcional. El sociograma se abre con códigos y sin retratos.</p>
+<div class="actions setup-actions"><button id="crearTabla" type="button" class="btn primary">Crear grupo para registrar votos</button><button id="descargarCuestionarios" type="button" class="btn">Descargar plantilla PDF (2 por A4)</button></div>
+<details class="study-options">
+  <summary>Copias y mediciones</summary>
+  <p class="hint">Guarda una copia privada para recuperar este estudio, incluso si aún es un borrador. El JSON incluye los nombres, las fotos y las elecciones que hayas registrado.</p>
+  <div class="actions"><button id="guardarCopia" class="btn" type="button" disabled>Descargar copia privada JSON</button></div>
+  <div class="field"><label for="restaurarCopia">Restaurar un estudio desde una copia JSON</label><input id="restaurarCopia" type="file" accept=".json,application/json" aria-describedby="ayudaCopia"></div>
+  <p class="hint" id="ayudaCopia">Hasta 1 MB. Si hay un estudio activo, se pedirá confirmación antes de sustituirlo.</p>
+  <p class="hint">Para iniciar otra medición, completa las respuestas, elige una fecha posterior arriba y guarda la copia de la fecha actual.</p>
+  <div class="actions"><button id="nuevaMedicion" type="button" class="btn" disabled>Guardar medición actual e iniciar otra fecha</button></div>
+</details>
+<button id="borrarDatos" type="button" class="btn text-btn">Borrar datos</button>
 </section>
 <p id="mensaje" class="status" role="status" aria-live="polite"></p>
 <section id="matrizPanel" class="panel vote-panel" aria-labelledby="tituloRegistro" hidden>
-<div class="section-head"><span class="step">02</span><div><h2 id="tituloRegistro">Registra las elecciones</h2><p class="hint">Selecciona seis personas distintas, sin incluirse a sí misma. Puedes incorporar o retirar su retrato en la misma ficha.</p></div></div>
+<div class="section-head"><span class="step">02</span><div><h2 id="tituloRegistro">Registra las elecciones</h2><p class="hint">Selecciona seis personas distintas. Cada participante elige a otras personas del grupo.</p></div></div>
 <div class="progress-head"><strong id="progreso">0 de 7 personas completas</strong><span class="hint">3 positivas · 3 negativas</span></div>
 <div class="progress-track" role="progressbar" aria-label="Participantes completados" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="barraProgreso"><span id="barraRelleno"></span></div>
 <div id="pasos" class="person-pills" aria-label="Elegir participante"></div>
+<p id="mensajeFicha" class="status" role="status" aria-live="polite"></p>
 <div id="votacion" class="vote-content"></div>
 <div class="actions vote-actions"><button id="anterior" type="button" class="btn">← Anterior</button><button id="siguiente" type="button" class="btn">Siguiente →</button><button id="btnRanking" type="button" class="btn primary" disabled>Ver resultados</button></div>
 <p class="hint ethics-note">Las elecciones negativas se refieren únicamente a la pregunta planteada. No son diagnósticos ni etiquetas personales.</p>

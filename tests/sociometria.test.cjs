@@ -69,6 +69,9 @@ test('componentes recíprocos conectados por cadenas, sin exigir clique', () => 
 test('cuotas exactas y máximos; borradores recuperables sin saltarse la validación final', () => {
   const d = graph(3, [[0, 1]]); d.reglas = { positivos: 1, negativos: 1, modo: 'exactos' };
   assert.throws(() => S.calcular(d), /exactamente/); assert.doesNotThrow(() => S.validarDatos(d, { borrador: true }));
+  const excedida = graph(4, [[0, 1], [0, 2]]);
+  excedida.reglas = { positivos: 1, negativos: 1, modo: 'exactos' };
+  assert.throws(() => S.validarProyecto(excedida), /como máximo/);
   for (const reglas of [{ positivos: 1, negativos: 2, modo: 'maximos' }, { positivos: 0, negativos: 0, modo: 'maximos' }, { positivos: 1.5, negativos: 0, modo: 'exactos' }]) assert.throws(() => S.validarDatos({ ...d, reglas }));
 });
 test('rechaza nombres vacíos, duplicados normalizados, controles y longitudes excesivas', () => {
